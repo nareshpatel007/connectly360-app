@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2, ArrowRight, RotateCw, Mail, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useRegistrationSession } from "@/hooks/useRegistrationSession";
 
@@ -147,23 +148,27 @@ function VerifyEmailContent() {
         }
     };
 
-    // Show initial loading skeleton while checking backend challenge status
+    // Show initial loading skeleton matching final card layout without text messages
     if (isLoading) {
         return (
             <div className="w-full min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8 z-10 font-sans">
                 <main className="my-auto w-full max-w-md py-4 sm:py-6">
                     <Card className="w-full bg-white border border-slate-200/90 shadow-xl shadow-slate-200/40 rounded-3xl p-8 text-center space-y-6">
                         <div className="flex justify-center mb-2">
-                            <img src="/images/logo.png" alt="Connectly360" className="h-9 w-auto object-contain" />
+                            <Skeleton className="h-9 w-36 rounded-xl" />
                         </div>
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                            <div className="h-14 w-14 rounded-2xl bg-[#35877D]/10 flex items-center justify-center text-[#35877D]">
-                                <Loader2 size={32} className="animate-spin text-[#35877D]" />
+                        <div className="flex flex-col items-center justify-center space-y-4 py-2">
+                            <Skeleton variant="circular" className="h-16 w-16" />
+                            <div className="space-y-2 w-full flex flex-col items-center">
+                                <Skeleton className="h-6 w-56 rounded-lg" />
+                                <Skeleton className="h-4 w-72 rounded-md" />
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-sm font-bold text-slate-800">Checking registration session...</p>
-                                <p className="text-xs text-slate-400 font-medium">Please wait a moment</p>
+                            <div className="flex justify-center gap-2 pt-4 w-full">
+                                {[...Array(6)].map((_, i) => (
+                                    <Skeleton key={i} className="h-12 w-10 sm:w-12 rounded-xl" />
+                                ))}
                             </div>
+                            <Skeleton className="h-10 w-full rounded-xl mt-4" />
                         </div>
                     </Card>
                 </main>
