@@ -93,7 +93,7 @@ export default function DashboardPage() {
                     <Button
                         size="sm"
                         onClick={() => setIsBuyCreditsOpen(true)}
-                        className="h-9 px-4 rounded-xl bg-[#00382B] hover:bg-[#35877D] text-white text-xs font-bold transition-all shadow-xs cursor-pointer border-0"
+                        className="h-9 px-4 rounded-xl bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-bold transition-all shadow-xs cursor-pointer border-0"
                     >
                         <Sparkles size={14} className="mr-1.5 text-emerald-300" />
                         Buy Credits
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                             </div>
                             <Button
                                 onClick={() => setIsBuyCreditsOpen(true)}
-                                className="text-xs font-bold text-white bg-[#00382B] hover:bg-[#35877D] transition-all px-3.5 py-1.5 rounded-xl shadow-xs h-9 cursor-pointer border-0"
+                                className="text-xs font-bold text-white bg-[#378179] hover:bg-[#2c6f66] transition-all px-3.5 py-1.5 rounded-xl shadow-xs h-9 cursor-pointer border-0"
                             >
                                 Buy Credits
                             </Button>
@@ -452,7 +452,7 @@ export default function DashboardPage() {
                         onClick={() => setIsBuyCreditsOpen(true)}
                         className="p-3 bg-white border border-slate-200 hover:border-[#35877D] hover:bg-slate-50/80 rounded-2xl flex flex-col items-center justify-center text-center gap-2 group transition-all shadow-2xs cursor-pointer"
                     >
-                        <div className="h-9 w-9 rounded-xl bg-[#00382B] text-white group-hover:bg-[#35877D] flex items-center justify-center transition-colors">
+                        <div className="h-9 w-9 rounded-xl bg-[#378179] text-white group-hover:bg-[#2c6f66] flex items-center justify-center transition-colors">
                             <Sparkles size={16} className="text-emerald-300" />
                         </div>
                         <span className="text-xs font-bold text-slate-800 group-hover:text-[#35877D]">Buy Credits</span>

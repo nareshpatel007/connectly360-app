@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Sparkles, Zap, Loader2, Coins, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Sparkles, Zap, Loader2, Coins, ShieldCheck, CheckCircle2, RefreshCw, Settings, Wallet, Gift } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useToast } from "@/hooks/use-toast";
-import { CreditBalance } from "@/components/credit-balance";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 declare global {
     interface Window {
@@ -23,6 +26,15 @@ interface CreditPack {
     is_popular?: boolean;
 }
 
+interface CustomCalc {
+    amount_inr: number;
+    base_credits: number;
+    bonus_credits: number;
+    total_credits: number;
+    rate_per_credit: number;
+    tier_name: string;
+}
+
 const DEFAULT_PACKAGES: CreditPack[] = [
     { id: 1, name: "Starter Pack", credits: 500, price: 99, currency: "INR", bonus_credits: 0, total_credits: 500, is_popular: false },
     { id: 2, name: "Growth Pack", credits: 2000, price: 299, currency: "INR", bonus_credits: 0, total_credits: 2000, is_popular: true },
@@ -30,13 +42,27 @@ const DEFAULT_PACKAGES: CreditPack[] = [
     { id: 4, name: "Enterprise Pack", credits: 50000, price: 3999, currency: "INR", bonus_credits: 0, total_credits: 50000, is_popular: false },
 ];
 
+const PRESET_AMOUNTS = [500, 1000, 2500, 5000, 10000];
+
 export default function RechargeCreditsPage() {
     const { user, token, login } = useAuth();
-    const { toast } = useToast();
     const [packs, setPacks] = useState<CreditPack[]>(DEFAULT_PACKAGES);
     const [loadingPack, setLoadingPack] = useState<number | null>(null);
 
-    // Dynamically inject Razorpay Checkout CDN script
+    // Custom Recharge state
+    const [customAmountStr, setCustomAmountStr] = useState("500");
+    const [customCalc, setCustomCalc] = useState<CustomCalc | null>(null);
+    const [isCalculatingCustom, setIsCalculatingCustom] = useState(false);
+    const [isProcessingCustom, setIsProcessingCustom] = useState(false);
+
+    // Auto Recharge state
+    const [autoEnabled, setAutoEnabled] = useState(false);
+    const [autoThreshold, setAutoThreshold] = useState(500);
+    const [autoAmount, setAutoAmount] = useState(500);
+    const [autoMaxDaily, setAutoMaxDaily] = useState(3);
+    const [isSavingAuto, setIsSavingAuto] = useState(false);
+
+    // Inject Razorpay CDN
     useEffect(() => {
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -49,58 +75,116 @@ export default function RechargeCreditsPage() {
         };
     }, []);
 
-    // Load live packs from server
+    // Load dynamic packages & auto recharge settings
     useEffect(() => {
-        const fetchPacks = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch("/api/billing/credit-packs", {
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-                const result = await res.json();
-                if (result.status && Array.isArray(result.data) && result.data.length > 0) {
-                    setPacks(result.data);
+                const [packsRes, autoRes] = await Promise.all([
+                    fetch("/api/billing/credits/packages", { headers: token ? { Authorization: `Bearer ${token}` } : undefined }),
+                    fetch("/api/billing/credits/auto-recharge", { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
+                ]);
+
+                const packsData = await packsRes.json();
+                if (packsData.status && Array.isArray(packsData.data) && packsData.data.length > 0) {
+                    setPacks(packsData.data);
+                }
+
+                const autoData = await autoRes.json();
+                if (autoData.status && autoData.data) {
+                    setAutoEnabled(!!autoData.data.enabled);
+                    setAutoThreshold(autoData.data.threshold || 500);
+                    setAutoAmount(autoData.data.recharge_amount || 500);
+                    setAutoMaxDaily(autoData.data.max_per_day || 3);
                 }
             } catch (err) {
-                console.error("Failed to fetch packs from server", err);
+                console.error("Failed to load credit data", err);
             }
         };
 
         if (token) {
-            fetchPacks();
+            fetchData();
         }
     }, [token]);
 
-    const handlePurchase = async (pkg: CreditPack) => {
-        setLoadingPack(pkg.id);
-
+    // Calculate Custom Recharge
+    const calculateCustom = useCallback(async (amt: number) => {
+        if (amt < 50 || amt > 100000) {
+            setCustomCalc(null);
+            return;
+        }
+        setIsCalculatingCustom(true);
         try {
-            // 1. Create order on backend with pack_id
-            const res = await fetch("/api/billing/create-credit-order", {
+            const res = await fetch("/api/billing/credits/calculate-custom", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    Authorization: token ? `Bearer ${token}` : ""
                 },
-                body: JSON.stringify({ pack_id: pkg.id })
+                body: JSON.stringify({ amount: amt })
+            });
+            const data = await res.json();
+            if (data.status && data.data) {
+                setCustomCalc(data.data);
+            }
+        } catch {
+            setCustomCalc(null);
+        } finally {
+            setIsCalculatingCustom(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        const amt = parseFloat(customAmountStr);
+        if (!isNaN(amt)) {
+            const timer = setTimeout(() => calculateCustom(amt), 250);
+            return () => clearTimeout(timer);
+        } else {
+            setCustomCalc(null);
+        }
+    }, [customAmountStr, calculateCustom]);
+
+    // Package Purchase Handler
+    const handlePackagePurchase = async (pkg: CreditPack) => {
+        setLoadingPack(pkg.id);
+        try {
+            const res = await fetch("/api/billing/credits/purchase", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ purchase_type: "package", package_id: pkg.id })
             });
 
             const result = await res.json();
-
             if (!result.status) {
-                throw new Error(result.message || "Failed to initiate payment.");
+                throw new Error(result.message || "Failed to create order.");
             }
 
             const orderData = result.data;
 
-            // 2. Open Razorpay checkout interface
-            if (!window.Razorpay) {
-                toast({
-                    title: "Razorpay unavailable",
-                    description: "Failed to load payment gateway client. Please refresh and try again.",
-                    variant: "destructive"
+            if (orderData.is_mock || !window.Razorpay) {
+                const verifyRes = await fetch("/api/billing/credits/verify", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 12),
+                        razorpay_order_id: orderData.order_id,
+                        razorpay_signature: "sig_mock"
+                    })
                 });
+                const verifyData = await verifyRes.json();
+                if (verifyData.status) {
+                    toast.success(`Successfully added ${(pkg.total_credits || pkg.credits).toLocaleString()} credits!`);
+                    if (verifyData.data?.access_token) {
+                        login(verifyData.data.access_token);
+                    }
+                } else {
+                    toast.error(verifyData.message || "Payment verification failed.");
+                }
                 setLoadingPack(null);
                 return;
             }
@@ -110,200 +194,478 @@ export default function RechargeCreditsPage() {
                 amount: orderData.amount,
                 currency: orderData.currency,
                 name: "Connectly360",
-                description: `Purchase ${pkg.name} (${(pkg.total_credits || pkg.credits).toLocaleString()} Credits)`,
+                description: `Purchase ${pkg.name}`,
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
-                    setLoadingPack(pkg.id);
                     try {
-                        // 3. Verify Razorpay payment signature
-                        const verifyRes = await fetch("/api/billing/verify-credit-payment", {
+                        const verifyRes = await fetch("/api/billing/credits/verify", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                "Authorization": `Bearer ${token}`
+                                Authorization: `Bearer ${token}`
                             },
                             body: JSON.stringify({
-                                order_id: orderData.order_id,
                                 razorpay_payment_id: response.razorpay_payment_id,
                                 razorpay_order_id: response.razorpay_order_id,
-                                razorpay_signature: response.razorpay_signature || ""
+                                razorpay_signature: response.razorpay_signature
                             })
                         });
 
-                        const verifyResult = await verifyRes.json();
-
-                        if (verifyResult.status) {
-                            toast({
-                                title: "Payment Successful!",
-                                description: `Added ${(pkg.total_credits || pkg.credits).toLocaleString()} credits to your wallet.`,
-                            });
-                            if (verifyResult.data?.access_token) {
-                                login(verifyResult.data.access_token);
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.status) {
+                            toast.success(`Payment verified! Added ${(pkg.total_credits || pkg.credits).toLocaleString()} credits.`);
+                            if (verifyData.data?.access_token) {
+                                login(verifyData.data.access_token);
                             }
                         } else {
-                            toast({
-                                title: "Verification failed",
-                                description: verifyResult.message || "Signature check failed.",
-                                variant: "destructive"
-                            });
+                            toast.error(verifyData.message || "Verification failed.");
                         }
                     } catch (err: any) {
-                        toast({
-                            title: "Connection error",
-                            description: err.message || "Could not reach verification server.",
-                            variant: "destructive"
-                        });
+                        toast.error(err.message || "Verification error.");
                     } finally {
                         setLoadingPack(null);
                     }
                 },
-                prefill: {
-                    name: user?.name || "",
-                    email: user?.email || "",
-                },
-                theme: {
-                    color: "#00382B"
-                },
                 modal: {
-                    ondismiss: function () {
-                        setLoadingPack(null);
-                    }
-                }
+                    ondismiss: () => setLoadingPack(null)
+                },
+                theme: { color: "#378179" }
             };
 
-            // Developer Mock Mode Checkout Popup
-            if (orderData.is_mock) {
-                toast({
-                    title: "Mock Mode Active",
-                    description: "Simulating Razorpay payment gateway approval...",
-                });
-
-                setTimeout(async () => {
-                    options.handler({
-                        razorpay_payment_id: `pay_mock_${bin2Hex(12)}`,
-                        razorpay_order_id: orderData.order_id,
-                        razorpay_signature: "signature_mock"
-                    });
-                }, 1000);
-            } else {
-                const rzp = new window.Razorpay(options);
-                rzp.open();
-            }
+            const rzp = new window.Razorpay(options);
+            rzp.open();
 
         } catch (err: any) {
-            toast({
-                title: "Purchase failed",
-                description: err.message || "Payment process aborted.",
-                variant: "destructive"
-            });
+            toast.error(err.message || "Purchase failed.");
             setLoadingPack(null);
         }
     };
 
-    function bin2Hex(length: number) {
-        let result = "";
-        const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-        for (let i = 0; i < length; i++) {
-            result += characters.charAt(Math.floor(Math.random() * characters.length));
+    // Custom Purchase Handler
+    const handleCustomPurchase = async () => {
+        const amt = parseFloat(customAmountStr);
+        if (isNaN(amt) || amt < 50 || amt > 100000) {
+            toast.error("Custom recharge amount must be between ₹50 and ₹100,000.");
+            return;
         }
-        return result;
-    }
+
+        setIsProcessingCustom(true);
+        try {
+            const res = await fetch("/api/billing/credits/purchase", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ purchase_type: "custom", amount: amt })
+            });
+
+            const result = await res.json();
+            if (!result.status) {
+                throw new Error(result.message || "Failed to create custom purchase order.");
+            }
+
+            const orderData = result.data;
+
+            if (orderData.is_mock || !window.Razorpay) {
+                const verifyRes = await fetch("/api/billing/credits/verify", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 12),
+                        razorpay_order_id: orderData.order_id,
+                        razorpay_signature: "sig_mock"
+                    })
+                });
+                const verifyData = await verifyRes.json();
+                if (verifyData.status) {
+                    toast.success(`Successfully recharged ${orderData.total_credits.toLocaleString()} credits!`);
+                    if (verifyData.data?.access_token) {
+                        login(verifyData.data.access_token);
+                    }
+                } else {
+                    toast.error(verifyData.message || "Payment verification failed.");
+                }
+                setIsProcessingCustom(false);
+                return;
+            }
+
+            const options = {
+                key: orderData.key,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: "Connectly360",
+                description: `Custom Recharge ₹${amt.toLocaleString()}`,
+                order_id: orderData.order_id,
+                handler: async function (response: any) {
+                    try {
+                        const verifyRes = await fetch("/api/billing/credits/verify", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.status) {
+                            toast.success(`Payment verified! Added ${orderData.total_credits.toLocaleString()} credits.`);
+                            if (verifyData.data?.access_token) {
+                                login(verifyData.data.access_token);
+                            }
+                        } else {
+                            toast.error(verifyData.message || "Verification failed.");
+                        }
+                    } catch (err: any) {
+                        toast.error(err.message || "Verification error.");
+                    } finally {
+                        setIsProcessingCustom(false);
+                    }
+                },
+                modal: {
+                    ondismiss: () => setIsProcessingCustom(false)
+                },
+                theme: { color: "#378179" }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+
+        } catch (err: any) {
+            toast.error(err.message || "Custom recharge failed.");
+            setIsProcessingCustom(false);
+        }
+    };
+
+    // Save Auto Recharge Settings
+    const handleSaveAutoRecharge = async () => {
+        setIsSavingAuto(true);
+        try {
+            const res = await fetch("/api/billing/credits/auto-recharge", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    enabled: autoEnabled,
+                    threshold: autoThreshold,
+                    recharge_amount: autoAmount,
+                    max_per_day: autoMaxDaily
+                })
+            });
+
+            const data = await res.json();
+            if (data.status) {
+                toast.success(data.message || "Auto recharge settings updated successfully.");
+            } else {
+                toast.error(data.message || "Failed to update settings.");
+            }
+        } catch {
+            toast.error("Auto recharge update error.");
+        } finally {
+            setIsSavingAuto(false);
+        }
+    };
 
     return (
-        <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto py-4 pb-12">
-            {/* Header section */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 flex items-center justify-center">
-                        <Zap size={20} className="text-[#35877D]" />
+        <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto py-2 pb-12 font-sans">
+            <PageHeader
+                icon={Zap}
+                title="Recharge Credits"
+                description="Purchase predefined packages, enter a custom recharge amount, or configure auto recharge safety thresholds."
+                actions={
+                    <div className="flex items-center gap-2 bg-[#EAF7F2] border border-[#A8E0D0] px-4 py-2 rounded-2xl text-xs font-bold text-[#0B2E1E] shadow-2xs">
+                        <Coins size={15} className="text-[#378179]" />
+                        <span>Wallet Balance: <strong className="text-[#378179] font-black">{user?.credits !== undefined ? Number(user.credits).toLocaleString() : 0} Credits</strong></span>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-extrabold tracking-tight text-slate-900">Buy Credit Packs</h1>
-                        <p className="text-xs text-slate-500 mt-0.5">Pay-as-you-go credit packages. Never expire. No monthly recurring fee.</p>
-                    </div>
+                }
+            />
+
+            {/* Predefined Credit Packages Grid */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Sparkles size={16} className="text-[#378179]" />
+                        Predefined Credit Packages
+                    </h2>
+                    <span className="text-[11px] font-semibold text-slate-400">Instant Wallet Delivery • No Commitments</span>
                 </div>
-                <div className="flex items-center gap-2 bg-[#35877D]/5 border border-[#35877D]/10 px-4 py-2 rounded-xl text-xs font-bold text-[#35877D] shadow-xs">
-                    <Coins size={14} className="fill-[#35877D]/10" />
-                    <span>Current Wallet Balance: {user?.credits !== undefined ? Number(user.credits).toLocaleString() : 0} Credits</span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {packs.map((pkg) => {
+                        const isLoading = loadingPack === pkg.id;
+                        const totalCredits = pkg.total_credits || (pkg.credits + (pkg.bonus_credits || 0));
+                        const perCredit = (pkg.price / totalCredits).toFixed(2);
+
+                        return (
+                            <Card
+                                key={pkg.id}
+                                className={`rounded-[24px] border p-5 flex flex-col justify-between transition-all duration-200 bg-white relative ${
+                                    pkg.is_popular
+                                        ? "border-[#378179] shadow-md ring-2 ring-[#378179]/15 bg-gradient-to-b from-[#EAF7F2]/40 to-white"
+                                        : "border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs"
+                                }`}
+                            >
+                                {pkg.is_popular && (
+                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-[#378179] to-[#2c6f66] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-2xl shadow-2xs">
+                                        Most Popular
+                                    </div>
+                                )}
+
+                                <div className="space-y-1">
+                                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">{pkg.name}</span>
+                                    <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">{totalCredits.toLocaleString()}</p>
+                                    <p className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">Credits</p>
+                                </div>
+
+                                {pkg.bonus_credits && pkg.bonus_credits > 0 ? (
+                                    <p className="text-[11px] font-extrabold text-[#378179] mt-2 flex items-center gap-1 bg-[#EAF7F2] p-1.5 rounded-xl border border-[#A8E0D0]/60">
+                                        <Gift size={12} />
+                                        <span>+{pkg.bonus_credits.toLocaleString()} Bonus Included!</span>
+                                    </p>
+                                ) : (
+                                    <div className="h-6" />
+                                )}
+
+                                <div className="py-2.5 my-2 border-y border-slate-100 flex items-baseline justify-between">
+                                    <span className="text-2xl font-black text-slate-900">₹{pkg.price.toLocaleString()}</span>
+                                    <span className="text-[10px] font-semibold text-slate-400">₹{perCredit} / credit</span>
+                                </div>
+
+                                <Button
+                                    onClick={() => handlePackagePurchase(pkg)}
+                                    disabled={!!loadingPack}
+                                    className="w-full h-11 rounded-2xl text-xs font-extrabold transition-all bg-[#378179] hover:bg-[#2c6f66] text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-1"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <span>Purchase Pack</span>
+                                    )}
+                                </Button>
+                            </Card>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Packages grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-2">
-                {packs.map((pkg) => {
-                    const isLoading = loadingPack === pkg.id;
-                    const totalCredits = pkg.total_credits || (pkg.credits + (pkg.bonus_credits || 0));
-                    const perCredit = (pkg.price / totalCredits).toFixed(2);
+            {/* Custom Recharge & Auto Recharge Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
+                {/* Custom Recharge Card (7 cols) */}
+                <div className="lg:col-span-7">
+                    <Card className="p-6 bg-white border border-slate-200/80 rounded-[24px] space-y-5 shadow-2xs">
+                        <CardHeader className="p-0 pb-3 border-b border-slate-100">
+                            <CardTitle className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                                <Coins size={18} className="text-[#378179]" />
+                                Custom Credit Recharge
+                            </CardTitle>
+                            <CardDescription className="text-xs text-slate-500 font-medium">
+                                Enter any custom INR amount to purchase credits with automated tier bonus calculation.
+                            </CardDescription>
+                        </CardHeader>
 
-                    return (
-                        <div
-                            key={pkg.id}
-                            className={`rounded-2xl border p-6 flex flex-col gap-5 transition-all duration-300 bg-white relative overflow-hidden ${pkg.is_popular
-                                    ? "border-[#00382B] shadow-md ring-2 ring-[#00382B]/10 scale-102"
-                                    : "border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md"
-                                }`}
-                        >
-                            {pkg.is_popular && (
-                                <div className="absolute top-0 right-0 bg-[#00382B] text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl flex items-center gap-1">
-                                    <Zap size={9} className="fill-white" /> Most Popular
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-extrabold text-slate-800">
+                                        Enter Amount in INR (₹)
+                                    </label>
+                                    <span className="text-[11px] font-semibold text-slate-400">Min ₹50 • Max ₹100,000</span>
+                                </div>
+
+                                {/* Custom Input */}
+                                <div className="relative">
+                                    <span className="absolute left-4 top-3 text-lg font-black text-[#378179]">₹</span>
+                                    <Input
+                                        type="number"
+                                        min={50}
+                                        max={100000}
+                                        value={customAmountStr}
+                                        onChange={(e) => setCustomAmountStr(e.target.value)}
+                                        placeholder="500"
+                                        className="h-12 pl-9 bg-slate-50/80 border-slate-200 text-slate-900 text-lg font-black rounded-2xl focus-visible:ring-[#378179] focus-visible:bg-white transition-all shadow-inner"
+                                    />
+                                </div>
+
+                                {/* Quick Presets */}
+                                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mr-1">Quick Select:</span>
+                                    {PRESET_AMOUNTS.map((amt) => {
+                                        const isSelected = customAmountStr === amt.toString();
+                                        return (
+                                            <button
+                                                key={amt}
+                                                type="button"
+                                                onClick={() => setCustomAmountStr(amt.toString())}
+                                                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
+                                                    isSelected
+                                                        ? "bg-[#378179] text-white border-[#378179] shadow-2xs"
+                                                        : "bg-slate-100/80 text-slate-700 border-slate-200/80 hover:bg-slate-200/80"
+                                                }`}
+                                            >
+                                                ₹{amt.toLocaleString()}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Live calculation display */}
+                            {isCalculatingCustom ? (
+                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500 font-medium">
+                                    <Loader2 size={16} className="animate-spin text-[#378179]" />
+                                    <span>Calculating effective rates...</span>
+                                </div>
+                            ) : customCalc ? (
+                                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#EAF7F2] via-emerald-50/40 to-white border border-[#A8E0D0] space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
+                                        <span>Calculated Base Credits</span>
+                                        <span className="font-extrabold text-slate-900">{customCalc.base_credits.toLocaleString()}</span>
+                                    </div>
+                                    {customCalc.bonus_credits > 0 ? (
+                                        <div className="flex items-center justify-between text-xs text-[#378179] font-bold">
+                                            <span>
+                                                Bonus Credits {customCalc.tier_name ? `(${customCalc.tier_name})` : "(Volume Discount)"}
+                                            </span>
+                                            <span className="bg-[#378179]/15 text-[#378179] px-2 py-0.5 rounded-lg text-xs font-black">
+                                                +{customCalc.bonus_credits.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ) : null}
+
+                                    {/* Total Highlight */}
+                                    <div className="pt-3 border-t border-[#A8E0D0]/80 flex items-center justify-between bg-white/90 p-3 rounded-xl border border-[#A8E0D0]/60 shadow-2xs">
+                                        <div>
+                                            <p className="text-xs font-black text-slate-900">Total Credits Received</p>
+                                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                                Effective Rate: <span className="font-bold text-slate-700">₹{customCalc.rate_per_credit.toFixed(2)} / credit</span>
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-2xl font-black text-[#378179] tracking-tight">{customCalc.total_credits.toLocaleString()}</span>
+                                            <span className="text-xs font-bold text-slate-400 ml-1">Credits</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs text-amber-800 font-semibold text-center">
+                                    Enter an amount between ₹50 and ₹100,000.
                                 </div>
                             )}
 
-                            <div className="space-y-1">
-                                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">{pkg.name}</span>
-                                <p className="text-3xl font-black text-slate-950 mt-1">{totalCredits.toLocaleString()}</p>
-                                <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Credits</p>
-                            </div>
-
-                            <div className="flex flex-col gap-0.5 py-1 border-b border-slate-100">
-                                <span className="text-2xl font-bold text-[#00382B]">₹{pkg.price.toLocaleString()}</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">₹{perCredit} / credit</span>
-                            </div>
-
-                            <div className="text-xs text-slate-500 leading-relaxed font-medium flex-grow space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-slate-700">
-                                    <CheckCircle2 size={13} className="text-emerald-555 shrink-0" />
-                                    <span>Instant Wallet Crediting</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-700">
-                                    <CheckCircle2 size={13} className="text-emerald-555 shrink-0" />
-                                    <span>Credits Never Expire</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-700">
-                                    <CheckCircle2 size={13} className="text-emerald-555 shrink-0" />
-                                    <span>Valid for AI, Broadcasts &amp; CRM</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handlePurchase(pkg)}
-                                disabled={!!loadingPack}
-                                className={`w-full py-3.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer border-0 ${pkg.is_popular
-                                        ? "bg-[#00382B] hover:bg-[#35877D] text-white shadow-xs"
-                                        : "bg-slate-950 hover:bg-slate-800 text-white shadow-xs"
-                                    }`}
+                            <Button
+                                onClick={handleCustomPurchase}
+                                disabled={isProcessingCustom || !customCalc}
+                                className="w-full h-12 bg-gradient-to-r from-[#378179] to-[#2c6f66] hover:opacity-95 text-white rounded-2xl text-xs font-extrabold shadow-md shadow-[#378179]/20 cursor-pointer border-0 transition-all flex items-center justify-center gap-2"
                             >
-                                {isLoading ? (
+                                {isProcessingCustom ? (
                                     <>
-                                        <Loader2 className="animate-spin h-3.5 w-3.5" />
-                                        Processing...
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span>Initiating Custom Payment...</span>
                                     </>
                                 ) : (
-                                    `Buy for ₹${pkg.price.toLocaleString()}`
+                                    <>
+                                        <Sparkles size={16} className="text-emerald-300" />
+                                        <span>Continue to Razorpay Checkout (₹{customCalc ? customCalc.amount_inr.toLocaleString() : customAmountStr})</span>
+                                    </>
                                 )}
-                            </button>
+                            </Button>
                         </div>
-                    );
-                })}
+                    </Card>
+                </div>
+
+                {/* Auto Recharge Settings Card (5 cols) */}
+                <div className="lg:col-span-5">
+                    <Card className="p-6 bg-white border border-slate-200/80 rounded-[24px] space-y-4 shadow-2xs">
+                        <CardHeader className="p-0 pb-3 border-b border-slate-100">
+                            <CardTitle className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                                <Settings size={18} className="text-[#378179]" />
+                                Auto Recharge Controls
+                            </CardTitle>
+                            <CardDescription className="text-xs text-slate-500 font-medium">
+                                Automatically trigger recharges when balance falls below threshold.
+                            </CardDescription>
+                        </CardHeader>
+
+                        <div className="space-y-4 pt-1">
+                            <div className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                                <div>
+                                    <p className="text-xs font-extrabold text-slate-900">Auto Recharge Enabled</p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Prevent campaign &amp; AI interruption</p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={autoEnabled}
+                                    onChange={(e) => setAutoEnabled(e.target.checked)}
+                                    className="h-5 w-5 accent-[#378179] cursor-pointer"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
+                                <Input
+                                    type="number"
+                                    value={autoThreshold}
+                                    onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
+                                    placeholder="500"
+                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
+                                <Input
+                                    type="number"
+                                    value={autoAmount}
+                                    onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
+                                    placeholder="500"
+                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
+                                <Input
+                                    type="number"
+                                    value={autoMaxDaily}
+                                    onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
+                                    placeholder="3"
+                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
+                                />
+                            </div>
+
+                            <Button
+                                onClick={handleSaveAutoRecharge}
+                                disabled={isSavingAuto}
+                                variant="outline"
+                                className="w-full h-10 border-slate-200 text-slate-800 hover:bg-slate-50 text-xs font-extrabold rounded-xl cursor-pointer"
+                            >
+                                {isSavingAuto ? "Saving..." : "Save Auto Recharge Settings"}
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
-            {/* Security Guarantee */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            {/* Security Guarantee Note */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-[#35877D]" />
-                    <span className="font-semibold">Razorpay Verified 256-bit Encrypted Checkout</span>
+                    <ShieldCheck size={18} className="text-[#378179]" />
+                    <span className="font-semibold">Razorpay Verified 256-bit Encrypted Payments</span>
                 </div>
-                <span>Official GST invoice generated automatically after purchase.</span>
+                <span className="font-medium text-slate-500">Official GST invoice generated automatically after purchase.</span>
             </div>
         </div>
     );

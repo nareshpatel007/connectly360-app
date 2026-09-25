@@ -48,7 +48,7 @@ export function CreditBalance({ variant = "header", className = "", showBuyButto
                             <Button
                                 size="sm"
                                 onClick={() => setIsBuyModalOpen(true)}
-                                className="bg-[#00382B] hover:bg-[#00241B] text-white text-xs font-bold rounded-xl h-8 px-3 flex items-center gap-1 shadow-xs cursor-pointer border-0"
+                                className="bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-bold rounded-xl h-8 px-3 flex items-center gap-1 shadow-xs cursor-pointer border-0"
                             >
                                 <Plus size={13} />
                                 <span>Recharge</span>
@@ -95,7 +95,7 @@ export function CreditBalance({ variant = "header", className = "", showBuyButto
                     <Button
                         size="sm"
                         onClick={() => setIsBuyModalOpen(true)}
-                        className="h-7.5 px-2.5 rounded-lg bg-[#00382B] hover:bg-[#00241B] text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs cursor-pointer border-0"
+                        className="h-7.5 px-2.5 rounded-lg bg-[#378179] hover:bg-[#2c6f66] text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs cursor-pointer border-0"
                     >
                         <Sparkles size={11} className="text-emerald-300" />
                         <span>Buy Credits</span>

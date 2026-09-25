@@ -199,6 +199,32 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState<boolean>(false);
     const [commandOpen, setCommandOpen] = useState<boolean>(false);
 
+    // Single-accordion menu state: only 1 sub-menu open at a time
+    const checkActiveSub = (sub: SubItem) => {
+        return sub.href === "/billing"
+            ? pathname === "/billing"
+            : (pathname === sub.href || 
+               (sub.href === "/billing/buy-credits" && pathname === "/billing/recharge-credits") ||
+               (sub.href !== "/dashboard" && sub.href !== "/billing" && pathname.startsWith(sub.href + "/")));
+    };
+
+    const initialActiveParent = NAV_SECTIONS
+        .flatMap((s) => s.items)
+        .find((item) => item.subItems?.some(checkActiveSub));
+
+    const [openMenuHref, setOpenMenuHref] = useState<string | null>(
+        initialActiveParent ? initialActiveParent.href : null
+    );
+
+    useEffect(() => {
+        const currentActiveParent = NAV_SECTIONS
+            .flatMap((s) => s.items)
+            .find((item) => item.subItems?.some(checkActiveSub));
+        if (currentActiveParent) {
+            setOpenMenuHref(currentActiveParent.href);
+        }
+    }, [pathname]);
+
     // Notifications state
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -341,8 +367,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 const hasSubItems = item.subItems && item.subItems.length > 0;
                                 const isActive =
                                     pathname === item.href ||
-                                    (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||
-                                    (hasSubItems && item.subItems!.some(s => pathname === s.href || (s.href !== "/dashboard" && pathname.startsWith(s.href))));
+                                    (item.href !== "/dashboard" && item.href !== "/billing" && pathname.startsWith(item.href + "/")) ||
+                                    (hasSubItems && item.subItems!.some(checkActiveSub));
 
                                 if (!hasSubItems) {
                                     const navLink = (
@@ -381,8 +407,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 }
 
                                 // Collapsible Group Item
+                                const isOpen = openMenuHref === item.href;
+
                                 const parentLink = (
-                                    <Collapsible key={item.href} defaultOpen={isActive} className="w-full">
+                                    <Collapsible
+                                        key={item.href}
+                                        open={isOpen}
+                                        onOpenChange={(nextOpen) => {
+                                            setOpenMenuHref(nextOpen ? item.href : null);
+                                        }}
+                                        className="w-full"
+                                    >
                                         <CollapsibleTrigger asChild>
                                             <button
                                                 className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "justify-between px-3.5"
@@ -396,7 +431,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                     {!collapsed && <span className="truncate">{item.label}</span>}
                                                 </div>
                                                 {!collapsed && (
-                                                    <ChevronDown size={14} className="text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+                                                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} shrink-0`} />
                                                 )}
                                             </button>
                                         </CollapsibleTrigger>
@@ -405,7 +440,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                             <CollapsibleContent className="pl-4 pr-1 pt-1 space-y-0.5 border-l border-slate-100 my-1 ml-4">
                                                 {item.subItems!.map((sub) => {
                                                     const SubIcon = sub.icon;
-                                                    const isSubActive = pathname === sub.href || (sub.href !== "/dashboard" && pathname.startsWith(sub.href));
+                                                    const isSubActive = sub.href === "/billing"
+                                                        ? pathname === "/billing"
+                                                        : (pathname === sub.href || 
+                                                           (sub.href === "/billing/buy-credits" && pathname === "/billing/recharge-credits") ||
+                                                           (sub.href !== "/dashboard" && pathname.startsWith(sub.href + "/")));
 
                                                     return (
                                                         <Link
