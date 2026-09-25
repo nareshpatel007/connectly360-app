@@ -1,11 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Save, Globe, Phone, MapPin, Briefcase, Upload, Camera, Check, X } from "lucide-react";
+import { Building2, Save, Globe, Phone, MapPin, Briefcase, Upload, Camera, X, Loader2, Check } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function CompanyProfilePage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+
+    const [companyName, setCompanyName] = useState("Connectly360");
+    const [industry, setIndustry] = useState("SaaS / Technology");
+    const [website, setWebsite] = useState("https://connectly360.com");
+    const [phone, setPhone] = useState("+91 98765 43210");
+    const [address, setAddress] = useState("123 Business Park, Mumbai, Maharashtra, India");
+    const [companySize, setCompanySize] = useState("11-50");
+    const [foundedYear, setFoundedYear] = useState("2020");
+    const [description, setDescription] = useState("Empowering businesses with multi-channel messaging and AI automation.");
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -18,196 +32,241 @@ export default function CompanyProfilePage() {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
         setIsSaving(true);
         setTimeout(() => {
             setIsSaving(false);
-        }, 2000);
+            toast.success("Company profile updated successfully!");
+        }, 1200);
     };
 
     return (
-        <div className="space-y-8 max-w-4xl">
-            <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-[#378179] to-[#079E61] rounded-xl shadow-lg">
-                        <Building2 className="w-6 h-6 text-white" />
-                    </div>
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">Company Profile</h1>
-                </div>
-                <p className="text-muted-foreground text-lg pl-14">Manage your company information and branding</p>
-            </div>
+        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+            <PageHeader
+                icon={Building2}
+                title="Company Profile"
+                description="Manage your company information, branding assets, and organizational details."
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
-                    <div className="border-2 shadow-xl rounded-2xl bg-white p-6 hover:shadow-2xl transition-all duration-300">
-                        <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                            <Camera className="w-5 h-5 text-[#378179]" />
-                            Company Logo
-                        </h2>
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="relative group">
-                                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden group-hover:border-[#378179] transition-colors">
-                                    {logoPreview ? (
-                                        <img src={logoPreview} alt="Company Logo" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <Upload className="w-8 h-8 text-slate-400 group-hover:text-[#378179] transition-colors" />
+            <form onSubmit={handleSave} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left Column: Company Logo */}
+                    <div className="lg:col-span-4">
+                        <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
+                            <CardHeader className="border-b border-slate-100 pb-4">
+                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <Camera size={18} className="text-[#378179]" />
+                                    Company Logo
+                                </CardTitle>
+                                <CardDescription className="text-slate-500 text-sm mt-0.5">
+                                    Branding icon displayed on customer invoices and chats.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="relative group">
+                                        <div className="w-32 h-32 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden group-hover:border-[#378179] transition-colors">
+                                            {logoPreview ? (
+                                                <img src={logoPreview} alt="Company Logo" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="flex flex-col items-center text-slate-400 group-hover:text-[#378179] transition-colors gap-1.5">
+                                                    <Upload size={24} />
+                                                    <span className="text-[11px] font-semibold">Upload Logo</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleLogoUpload}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-400 text-center leading-relaxed">
+                                        Recommended format: PNG or JPG<br />
+                                        Max file size: 2MB (200x200px)
+                                    </p>
+                                    {logoPreview && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setLogoPreview(null)}
+                                            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 rounded-xl flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <X size={14} />
+                                            Remove Logo
+                                        </Button>
                                     )}
                                 </div>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleLogoUpload}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                />
-                            </div>
-                            <p className="text-xs text-slate-500 text-center">
-                                Upload your company logo<br />
-                                Recommended: 200x200px PNG/JPG
-                            </p>
-                            {logoPreview && (
-                                <button
-                                    onClick={() => setLogoPreview(null)}
-                                    className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
-                                >
-                                    <X className="w-3 h-3" />
-                                    Remove
-                                </button>
-                            )}
-                        </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right Column: Company Information */}
+                    <div className="lg:col-span-8 space-y-6">
+                        <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
+                            <CardHeader className="border-b border-slate-100 pb-4">
+                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <Briefcase size={18} className="text-[#378179]" />
+                                    General Details
+                                </CardTitle>
+                                <CardDescription className="text-slate-500 text-sm mt-0.5">
+                                    Core business contact information and identity.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <Building2 size={13} className="text-[#378179]" />
+                                            Company Name
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            value={companyName}
+                                            onChange={(e) => setCompanyName(e.target.value)}
+                                            className="h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <Briefcase size={13} className="text-blue-500" />
+                                            Industry
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            value={industry}
+                                            onChange={(e) => setIndustry(e.target.value)}
+                                            className="h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <Globe size={13} className="text-emerald-500" />
+                                            Website URL
+                                        </label>
+                                        <Input
+                                            type="url"
+                                            value={website}
+                                            onChange={(e) => setWebsite(e.target.value)}
+                                            className="h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <Phone size={13} className="text-purple-500" />
+                                            Business Phone
+                                        </label>
+                                        <Input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <MapPin size={13} className="text-amber-500" />
+                                            Address
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={address}
+                                            onChange={(e) => setAddress(e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#378179] transition-all resize-none"
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
+                            <CardHeader className="border-b border-slate-100 pb-4">
+                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <Building2 size={18} className="text-[#378179]" />
+                                    Organization Profile
+                                </CardTitle>
+                                <CardDescription className="text-slate-500 text-sm mt-0.5">
+                                    Company size, founding history, and public summary.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700">Company Size</label>
+                                        <select
+                                            value={companySize}
+                                            onChange={(e) => setCompanySize(e.target.value)}
+                                            className="h-9 w-full border border-slate-200 rounded-xl px-3 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#378179]"
+                                        >
+                                            <option value="1-10">1-10 employees</option>
+                                            <option value="11-50">11-50 employees</option>
+                                            <option value="51-200">51-200 employees</option>
+                                            <option value="201-500">201-500 employees</option>
+                                            <option value="500+">500+ employees</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700">Founded Year</label>
+                                        <Input
+                                            type="number"
+                                            value={foundedYear}
+                                            onChange={(e) => setFoundedYear(e.target.value)}
+                                            className="h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                        />
+                                    </div>
+
+                                    <div className="sm:col-span-2 space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-700">Company Description</label>
+                                        <textarea
+                                            rows={3}
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#378179] transition-all resize-none"
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="border-2 shadow-xl rounded-2xl bg-white p-6 hover:shadow-2xl transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-gradient-to-br from-[#378179] to-[#079E61] rounded-lg">
-                                <Briefcase className="w-5 h-5 text-white" />
-                            </div>
-                            <h2 className="text-2xl font-semibold text-slate-900">Company Information</h2>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <Building2 className="w-4 h-4 text-[#378179]" />
-                                    Company Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Connectly360"
-                                    className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#378179]/30 focus:border-[#378179] transition-all"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4 text-blue-500" />
-                                    Industry
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="SaaS / Technology"
-                                    className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <Globe className="w-4 h-4 text-green-500" />
-                                    Website
-                                </label>
-                                <input
-                                    type="url"
-                                    placeholder="https://connectly360.com"
-                                    className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <Phone className="w-4 h-4 text-purple-500" />
-                                    Phone
-                                </label>
-                                <input
-                                    type="tel"
-                                    placeholder="+91 98765 43210"
-                                    className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
-                                />
-                            </div>
-                            <div className="sm:col-span-2 flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-orange-500" />
-                                    Address
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    placeholder="123 Business Park, Mumbai, Maharashtra, India"
-                                    className="border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all resize-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="border-2 shadow-xl rounded-2xl bg-white p-6 hover:shadow-2xl transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                                <Building2 className="w-5 h-5 text-white" />
-                            </div>
-                            <h2 className="text-2xl font-semibold text-slate-900">Additional Details</h2>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700">Company Size</label>
-                                <select className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#378179]/30 focus:border-[#378179] transition-all">
-                                    <option value="">Select size</option>
-                                    <option value="1-10">1-10 employees</option>
-                                    <option value="11-50">11-50 employees</option>
-                                    <option value="51-200">51-200 employees</option>
-                                    <option value="201-500">201-500 employees</option>
-                                    <option value="500+">500+ employees</option>
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700">Founded Year</label>
-                                <input
-                                    type="number"
-                                    placeholder="2020"
-                                    min="1800"
-                                    max={new Date().getFullYear()}
-                                    className="h-12 border-2 border-slate-200 rounded-xl px-4 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#378179]/30 focus:border-[#378179] transition-all"
-                                />
-                            </div>
-                            <div className="sm:col-span-2 flex flex-col gap-2">
-                                <label className="text-sm font-semibold text-slate-700">Description</label>
-                                <textarea
-                                    rows={4}
-                                    placeholder="Tell us about your company mission and vision..."
-                                    className="border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#378179]/30 focus:border-[#378179] transition-all resize-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                {/* Submit bar */}
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 px-4 rounded-xl text-xs font-semibold border-slate-200 text-slate-600 cursor-pointer"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        disabled={isSaving}
+                        className="bg-[#378179] hover:bg-[#2c6f66] text-white text-xs h-9 px-5 rounded-xl border-0 font-semibold cursor-pointer shadow-xs"
+                    >
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="animate-spin mr-1.5" size={14} />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={14} className="mr-1.5" />
+                                Save Changes
+                            </>
+                        )}
+                    </Button>
                 </div>
-            </div>
-
-            <div className="flex justify-end gap-3">
-                <button className="px-6 py-3 border-2 border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors">
-                    Cancel
-                </button>
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#378179] to-[#079E61] hover:from-[#2d6a63] hover:from-[#068c55] text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isSaving ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Saving...
-                        </>
-                    ) : (
-                        <>
-                            <Save size={16} />
-                            Save Changes
-                        </>
-                    )}
-                </button>
-            </div>
+            </form>
         </div>
     );
 }

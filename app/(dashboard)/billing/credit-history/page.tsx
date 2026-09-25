@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { 
-    History, ArrowUpRight, ArrowDownLeft, Filter, Search, 
-    Calendar, RefreshCw, Zap, FileText, CheckCircle2, ChevronLeft, ChevronRight 
+    History, ArrowUpRight, ArrowDownLeft, Search, 
+    RefreshCw, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
+import { PageHeader } from "@/components/page-header";
 
 interface CreditTransaction {
     id: number;
@@ -78,36 +79,32 @@ export default function CreditHistoryPage() {
     });
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <History size={24} className="text-[#35877D]" />
-                        Credit Transaction History
-                    </h1>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                        Full audit trail of credit purchases, welcome bonuses, and action-by-action usage.
-                    </p>
-                </div>
-                <Button 
-                    variant="outline"
-                    onClick={() => fetchHistory(currentPage, filterType)}
-                    className="h-9 text-xs font-semibold rounded-xl border-slate-200 cursor-pointer self-start sm:self-auto"
-                >
-                    <RefreshCw size={13} className={`mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
-                    Refresh
-                </Button>
-            </div>
+            <PageHeader
+                icon={History}
+                title="Credit History"
+                description="Full audit trail of credit purchases, welcome bonuses, and action-by-action usage."
+                actions={
+                    <Button 
+                        variant="outline"
+                        onClick={() => fetchHistory(currentPage, filterType)}
+                        className="h-9 text-xs font-semibold rounded-xl border-slate-200 cursor-pointer"
+                    >
+                        <RefreshCw size={13} className={`mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+                        Refresh
+                    </Button>
+                }
+            />
 
             {/* Filter Toolbar */}
-            <Card className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+            <Card className="p-4 rounded-2xl bg-white border border-[#EAE6DF] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button 
                         size="sm"
                         variant={filterType === "all" ? "default" : "outline"}
                         onClick={() => handleFilterChange("all")}
-                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "all" ? "bg-[#00382B] text-white" : ""}`}
+                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "all" ? "bg-[#378179] text-white border-0" : ""}`}
                     >
                         All Transactions
                     </Button>
@@ -115,7 +112,7 @@ export default function CreditHistoryPage() {
                         size="sm"
                         variant={filterType === "credit" ? "default" : "outline"}
                         onClick={() => handleFilterChange("credit")}
-                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "credit" ? "bg-emerald-600 text-white" : ""}`}
+                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "credit" ? "bg-emerald-600 text-white border-0" : ""}`}
                     >
                         Credits Added (+)
                     </Button>
@@ -123,27 +120,28 @@ export default function CreditHistoryPage() {
                         size="sm"
                         variant={filterType === "debit" ? "default" : "outline"}
                         onClick={() => handleFilterChange("debit")}
-                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "debit" ? "bg-amber-600 text-white" : ""}`}
+                        className={`text-xs font-bold rounded-xl h-8 px-3 cursor-pointer ${filterType === "debit" ? "bg-amber-600 text-white border-0" : ""}`}
                     >
                         Credits Used (-)
                     </Button>
                 </div>
 
-                <div className="w-full sm:w-64">
+                <div className="w-full sm:w-64 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                     <Input 
-                        placeholder="Search description or action..."
+                        placeholder="Search description..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8.5 text-xs rounded-xl border-slate-200"
+                        className="pl-9 h-9 text-xs rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
                     />
                 </div>
             </Card>
 
             {/* Transactions Table */}
-            <Card className="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+            <Card className="rounded-2xl bg-white border border-[#EAE6DF] shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                        <thead className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
                             <tr>
                                 <th className="px-6 py-3.5">Date &amp; Time</th>
                                 <th className="px-6 py-3.5">Action / Type</th>
@@ -152,7 +150,7 @@ export default function CreditHistoryPage() {
                                 <th className="px-6 py-3.5 text-right">Balance After</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 font-medium">
                             {isLoading ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
@@ -169,15 +167,15 @@ export default function CreditHistoryPage() {
                                 filtered.map((tx) => {
                                     const isAddition = tx.credits_amount > 0;
                                     return (
-                                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
-                                                {new Date(tx.created_at).toLocaleString()}
+                                        <tr key={tx.id} className="hover:bg-slate-50/40 transition-colors">
+                                            <td className="px-6 py-3.5 text-slate-500 whitespace-nowrap">
+                                                {new Date(tx.created_at).toLocaleString("en-IN")}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                            <td className="px-6 py-3.5 whitespace-nowrap">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
                                                     isAddition 
-                                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                                                        : "bg-slate-100 text-slate-700 border border-slate-200"
+                                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                                                        : "bg-slate-50 text-slate-600 border border-slate-200"
                                                 }`}>
                                                     {isAddition ? (
                                                         <ArrowDownLeft size={12} className="text-emerald-600" />
@@ -187,15 +185,15 @@ export default function CreditHistoryPage() {
                                                     {tx.action_type?.replace(/_/g, " ").toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 font-medium text-slate-800">
+                                            <td className="px-6 py-3.5 font-medium text-slate-800">
                                                 {tx.description}
                                             </td>
-                                            <td className="px-6 py-4 text-right whitespace-nowrap font-extrabold">
+                                            <td className="px-6 py-3.5 text-right whitespace-nowrap font-extrabold">
                                                 <span className={isAddition ? "text-emerald-600" : "text-slate-800"}>
                                                     {isAddition ? `+${tx.credits_amount.toLocaleString()}` : tx.credits_amount.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right whitespace-nowrap font-bold text-slate-600">
+                                            <td className="px-6 py-3.5 text-right whitespace-nowrap font-bold text-slate-600">
                                                 {tx.balance_after?.toLocaleString()}
                                             </td>
                                         </tr>
@@ -216,7 +214,7 @@ export default function CreditHistoryPage() {
                                 variant="outline"
                                 disabled={currentPage <= 1 || isLoading}
                                 onClick={() => fetchHistory(currentPage - 1)}
-                                className="h-8 text-xs rounded-lg cursor-pointer"
+                                className="h-8 text-xs rounded-xl cursor-pointer"
                             >
                                 <ChevronLeft size={14} className="mr-1" />
                                 Previous
@@ -226,7 +224,7 @@ export default function CreditHistoryPage() {
                                 variant="outline"
                                 disabled={currentPage >= lastPage || isLoading}
                                 onClick={() => fetchHistory(currentPage + 1)}
-                                className="h-8 text-xs rounded-lg cursor-pointer"
+                                className="h-8 text-xs rounded-xl cursor-pointer"
                             >
                                 Next
                                 <ChevronRight size={14} className="ml-1" />

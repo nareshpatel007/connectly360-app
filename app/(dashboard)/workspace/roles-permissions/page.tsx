@@ -1,24 +1,28 @@
-import { Shield, CheckCircle2 } from "lucide-react";
+"use client";
+
+import { Shield, CheckCircle2, Lock } from "lucide-react";
 import { UpgradeGuard } from "@/components/upgrade-guard";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
 const ROLES = [
     {
         name: "Owner",
-        desc: "Full access to all features and settings",
-        permissions: ["Manage billing", "Manage team", "All agent permissions", "Delete workspace"],
-        color: "purple",
+        desc: "Full access to workspace settings, billing, team management, and workspace deletion.",
+        permissions: ["Manage billing & subscriptions", "Invite & remove team members", "Configure AI agents & workflows", "Delete workspace"],
+        badgeClass: "bg-purple-50 text-purple-700 border border-purple-200",
     },
     {
         name: "Admin",
-        desc: "Manage team and most platform features",
-        permissions: ["Invite team members", "Manage integrations", "View reports", "All agent permissions"],
-        color: "blue",
+        desc: "Manage team members, integrations, channels, and platform settings.",
+        permissions: ["Invite team members", "Manage WABA & API integrations", "View detailed usage & analytics", "Configure message templates"],
+        badgeClass: "bg-blue-50 text-blue-700 border border-blue-200",
     },
     {
         name: "Agent",
-        desc: "Handle conversations and use core features",
-        permissions: ["View inbox", "Reply to conversations", "Use AI assistant", "View contacts"],
-        color: "green",
+        desc: "Handle customer conversations, execute campaigns, and manage contacts.",
+        permissions: ["View & respond in shared inbox", "Use AI assistant & quick replies", "Manage contacts & leads", "Launch messaging campaigns"],
+        badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
     },
 ];
 
@@ -29,35 +33,38 @@ export default function RolesPermissionsPage() {
             featureName="Roles & Permissions" 
             description="Delegate workspace administration, configure security levels, and manage role assignments."
         >
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[#378179]/10 flex items-center justify-center">
-                        <Shield size={20} className="text-[#378179]" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-900">Roles & Permissions</h1>
-                        <p className="text-sm text-slate-500">Manage role-based access for your team</p>
-                    </div>
-                </div>
+            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+                <PageHeader
+                    icon={Shield}
+                    title="Roles & Permissions"
+                    description="Configure access levels and role-based permissions across your workspace."
+                />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {ROLES.map((role) => (
-                        <div key={role.name} className="rounded-2xl border border-slate-200 bg-white p-6 flex flex-col gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${role.color === "purple" ? "bg-purple-100 text-purple-700" : role.color === "blue" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-                                    {role.name}
-                                </span>
-                            </div>
-                            <p className="text-sm text-slate-600">{role.desc}</p>
-                            <ul className="space-y-2">
-                                {role.permissions.map((p) => (
-                                    <li key={p} className="flex items-center gap-2 text-xs text-slate-600">
-                                        <CheckCircle2 size={13} className="text-[#378179] shrink-0" />
-                                        {p}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <Card key={role.name} className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden flex flex-col justify-between">
+                            <CardHeader className="border-b border-slate-100 pb-4">
+                                <div className="flex items-center justify-between">
+                                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${role.badgeClass}`}>
+                                        {role.name}
+                                    </span>
+                                </div>
+                                <CardDescription className="text-slate-500 text-xs mt-2 leading-relaxed">
+                                    {role.desc}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-5 flex-1 bg-slate-50/30">
+                                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">Allowed Capabilities</p>
+                                <ul className="space-y-2.5">
+                                    {role.permissions.map((p) => (
+                                        <li key={p} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                                            <CheckCircle2 size={15} className="text-[#378179] shrink-0 mt-0.5" />
+                                            <span>{p}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </div>
