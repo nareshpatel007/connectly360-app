@@ -159,7 +159,7 @@ export default function BillingOverviewPage() {
                     <div className="space-y-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Current Wallet Balance</span>
                         <div className="flex items-baseline gap-2 pt-1">
-                            <span className="text-3xl font-extrabold tracking-tight">{balance.toLocaleString()}</span>
+                            <span className="text-3xl font-extrabold tracking-tight">{(balance ?? 0).toLocaleString()}</span>
                             <span className="text-xs font-semibold text-emerald-200">Credits</span>
                         </div>
                     </div>
@@ -181,7 +181,7 @@ export default function BillingOverviewPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lifetime Purchased</span>
                         <div className="flex items-baseline gap-2 pt-1">
                             <span className="text-2xl font-black text-slate-800 tracking-tight">
-                                {summary ? summary.lifetime_purchased.toLocaleString() : "0"}
+                                {summary?.lifetime_purchased?.toLocaleString() ?? "0"}
                             </span>
                             <span className="text-xs font-semibold text-slate-400">Credits</span>
                         </div>
@@ -198,14 +198,14 @@ export default function BillingOverviewPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Credits Consumed</span>
                         <div className="flex items-baseline gap-2 pt-1">
                             <span className="text-2xl font-black text-slate-800 tracking-tight">
-                                {summary ? summary.lifetime_used.toLocaleString() : "0"}
+                                {summary?.lifetime_used?.toLocaleString() ?? "0"}
                             </span>
                             <span className="text-xs font-semibold text-slate-400">Credits</span>
                         </div>
                     </div>
                     <div className="pt-3 border-t border-slate-100 flex items-center text-xs text-slate-500 gap-1 mt-3">
                         <ArrowUpRight size={13} className="text-amber-500" />
-                        <span>This Month: {summary ? summary.this_month_used.toLocaleString() : "0"}</span>
+                        <span>This Month: {summary?.this_month_used?.toLocaleString() ?? "0"}</span>
                     </div>
                 </Card>
 

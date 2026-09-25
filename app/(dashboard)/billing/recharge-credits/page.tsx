@@ -57,9 +57,13 @@ export default function RechargeCreditsPage() {
 
     // Auto Recharge state
     const [autoEnabled, setAutoEnabled] = useState(false);
+    const [autoStatus, setAutoStatus] = useState("NOT_CONFIGURED");
     const [autoThreshold, setAutoThreshold] = useState(500);
     const [autoAmount, setAutoAmount] = useState(500);
     const [autoMaxDaily, setAutoMaxDaily] = useState(3);
+    const [autoRechargesToday, setAutoRechargesToday] = useState(0);
+    const [autoConsent, setAutoConsent] = useState(true);
+    const [paymentSourceInfo, setPaymentSourceInfo] = useState<any>(null);
     const [isSavingAuto, setIsSavingAuto] = useState(false);
 
     // Inject Razorpay CDN
@@ -92,9 +96,12 @@ export default function RechargeCreditsPage() {
                 const autoData = await autoRes.json();
                 if (autoData.status && autoData.data) {
                     setAutoEnabled(!!autoData.data.enabled);
-                    setAutoThreshold(autoData.data.threshold || 500);
-                    setAutoAmount(autoData.data.recharge_amount || 500);
-                    setAutoMaxDaily(autoData.data.max_per_day || 3);
+                    setAutoStatus(autoData.data.status || (autoData.data.enabled ? "ACTIVE" : "NOT_CONFIGURED"));
+                    setAutoThreshold(autoData.data.threshold_credits || autoData.data.auto_recharge_threshold || 500);
+                    setAutoAmount(autoData.data.recharge_amount || autoData.data.auto_recharge_amount || 500);
+                    setAutoMaxDaily(autoData.data.max_recharges_per_day || autoData.data.auto_recharge_max_per_day || 3);
+                    setAutoRechargesToday(autoData.data.recharges_today || 0);
+                    setPaymentSourceInfo(autoData.data.payment_source || null);
                 }
             } catch (err) {
                 console.error("Failed to load credit data", err);
@@ -195,6 +202,7 @@ export default function RechargeCreditsPage() {
                 currency: orderData.currency,
                 name: "Connectly360",
                 description: `Purchase ${pkg.name}`,
+                image: orderData.company_logo || orderData.image || (typeof window !== "undefined" ? `${window.location.origin}/images/icon.png` : ""),
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     try {
@@ -299,6 +307,7 @@ export default function RechargeCreditsPage() {
                 currency: orderData.currency,
                 name: "Connectly360",
                 description: `Custom Recharge ₹${amt.toLocaleString()}`,
+                image: orderData.company_logo || orderData.image || (typeof window !== "undefined" ? `${window.location.origin}/images/icon.png` : ""),
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     try {
@@ -345,15 +354,144 @@ export default function RechargeCreditsPage() {
         }
     };
 
-    const [autoConsent, setAutoConsent] = useState(false);
-
     // Save Auto Recharge Settings
-    const handleSaveAutoRecharge = async () => {
-        if (autoEnabled && !autoConsent) {
-            toast.error("You must explicitly authorize Connectly360 to automatically charge your payment method.");
+    const handleAuthorizeAutoRecharge = async () => {
+        if (!autoConsent) {
+            toast.error("Please check the explicit authorization consent checkbox.");
             return;
         }
+        setIsSavingAuto(true);
+        try {
+            const res = await fetch("/api/billing/credits/auto-recharge/authorize", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    threshold_credits: autoThreshold,
+                    recharge_amount: autoAmount,
+                    max_recharges_per_day: autoMaxDaily,
+                    consent_given: autoConsent
+                })
+            });
+            const data = await res.json();
+            if (!data.status) {
+                toast.error(data.message || "Authorization initialization failed.");
+                setIsSavingAuto(false);
+                return;
+            }
 
+            const authData = data.data;
+
+            if (authData.is_mock || !window.Razorpay) {
+                const confirmRes = await fetch("/api/billing/credits/auto-recharge/confirm", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 12),
+                        razorpay_order_id: authData.order_id,
+                        razorpay_signature: "sig_mock",
+                        payment_method_type: "upi_autopay"
+                    })
+                });
+                const confirmJson = await confirmRes.json();
+                if (confirmJson.status) {
+                    toast.success("Auto Recharge successfully authorized & activated!");
+                    setAutoStatus(confirmJson.data.status);
+                    setAutoEnabled(true);
+                    setPaymentSourceInfo(confirmJson.data.payment_source);
+                } else {
+                    toast.error(confirmJson.message || "Failed to confirm authorization.");
+                }
+                setIsSavingAuto(false);
+                return;
+            }
+
+            const options = {
+                key: authData.key,
+                amount: authData.amount,
+                currency: authData.currency,
+                name: authData.name || "Connectly360",
+                description: authData.description,
+                image: authData.company_logo || (typeof window !== "undefined" ? `${window.location.origin}/images/icon.png` : ""),
+                order_id: authData.order_id,
+                handler: async function (response: any) {
+                    try {
+                        const confirmRes = await fetch("/api/billing/credits/auto-recharge/confirm", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                payment_method_type: "upi_autopay"
+                            })
+                        });
+                        const confirmJson = await confirmRes.json();
+                        if (confirmJson.status) {
+                            toast.success("Auto Recharge successfully authorized & activated!");
+                            setAutoStatus(confirmJson.data.status);
+                            setAutoEnabled(true);
+                            setPaymentSourceInfo(confirmJson.data.payment_source);
+                        } else {
+                            toast.error(confirmJson.message || "Failed to confirm authorization.");
+                        }
+                    } catch (err: any) {
+                        toast.error(err.message || "Error confirming authorization.");
+                    } finally {
+                        setIsSavingAuto(false);
+                    }
+                },
+                modal: {
+                    ondismiss: function () {
+                        setIsSavingAuto(false);
+                    }
+                },
+                theme: { color: "#378179" }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to initiate authorization.");
+            setIsSavingAuto(false);
+        }
+    };
+
+    const handleDisableAutoRecharge = async () => {
+        setIsSavingAuto(true);
+        try {
+            const res = await fetch("/api/billing/credits/auto-recharge/disable", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: "Disabled by user" })
+            });
+            const data = await res.json();
+            if (data.status) {
+                toast.success("Auto Recharge has been disabled.");
+                setAutoEnabled(false);
+                setAutoStatus("DISABLED");
+            } else {
+                toast.error(data.message || "Failed to disable.");
+            }
+        } catch {
+            toast.error("Error disabling Auto Recharge.");
+        } finally {
+            setIsSavingAuto(false);
+        }
+    };
+
+    const handleSaveAutoRecharge = async () => {
         setIsSavingAuto(true);
         try {
             const res = await fetch("/api/billing/credits/auto-recharge", {
@@ -363,11 +501,9 @@ export default function RechargeCreditsPage() {
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    auto_recharge_enabled: autoEnabled,
-                    auto_recharge_threshold: autoThreshold,
-                    auto_recharge_amount: autoAmount,
-                    auto_recharge_max_per_day: autoMaxDaily,
-                    consent_given: autoConsent
+                    threshold_credits: autoThreshold,
+                    recharge_amount: autoAmount,
+                    max_recharges_per_day: autoMaxDaily,
                 })
             });
 
@@ -608,75 +744,164 @@ export default function RechargeCreditsPage() {
                         </CardHeader>
 
                         <div className="space-y-4 pt-1">
-                            <div className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80">
-                                <div>
-                                    <p className="text-xs font-extrabold text-slate-900">Auto Recharge Enabled</p>
-                                    <p className="text-[10px] text-slate-500 font-medium">Prevent campaign &amp; AI interruption</p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    checked={autoEnabled}
-                                    onChange={(e) => setAutoEnabled(e.target.checked)}
-                                    className="h-5 w-5 accent-[#378179] cursor-pointer"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
-                                <Input
-                                    type="number"
-                                    value={autoThreshold}
-                                    onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
-                                    placeholder="500"
-                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
-                                <Input
-                                    type="number"
-                                    value={autoAmount}
-                                    onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
-                                    placeholder="500"
-                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
-                                <Input
-                                    type="number"
-                                    value={autoMaxDaily}
-                                    onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
-                                    placeholder="3"
-                                    className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
-                                />
-                            </div>
-
-                            {autoEnabled && (
-                                <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl space-y-2">
-                                    <label className="flex items-start gap-2 cursor-pointer select-none">
-                                        <input
-                                            type="checkbox"
-                                            checked={autoConsent}
-                                            onChange={(e) => setAutoConsent(e.target.checked)}
-                                            className="h-4 w-4 mt-0.5 accent-[#378179] rounded cursor-pointer shrink-0"
-                                        />
-                                        <span className="text-[11px] text-amber-900 font-medium leading-tight">
-                                            I explicitly authorize Connectly360 to automatically charge my authorized Razorpay payment method when my wallet balance drops below {autoThreshold} credits.
+                            {autoEnabled && (autoStatus === "ACTIVE" || autoStatus === "AUTHORIZED") ? (
+                                <>
+                                    <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200">
+                                        <div>
+                                            <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                                                <CheckCircle2 size={15} className="text-emerald-600" />
+                                                Auto Recharge Active
+                                            </p>
+                                            <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                                                {paymentSourceInfo?.masked_display || "UPI AutoPay / Card"}
+                                            </p>
+                                        </div>
+                                        <span className="bg-emerald-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                                            ✓ Authorized
                                         </span>
-                                    </label>
-                                </div>
-                            )}
+                                    </div>
 
-                            <Button
-                                onClick={handleSaveAutoRecharge}
-                                disabled={isSavingAuto}
-                                className="w-full h-11 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
-                            >
-                                {isSavingAuto ? "Saving..." : "Save Auto Recharge Authorization"}
-                            </Button>
+                                    <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-2 text-slate-700">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500 font-medium">Recharge Threshold:</span>
+                                            <span className="font-extrabold text-slate-900">{autoThreshold} credits</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500 font-medium">Recharge Amount:</span>
+                                            <span className="font-extrabold text-slate-900">₹{autoAmount}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-t border-slate-200/60 pt-2">
+                                            <span className="text-slate-500 font-medium">Today's Auto Charges:</span>
+                                            <span className="font-extrabold text-[#378179]">{autoRechargesToday} / {autoMaxDaily}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
+                                        <Input
+                                            type="number"
+                                            value={autoThreshold}
+                                            onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
+                                        <Input
+                                            type="number"
+                                            value={autoAmount}
+                                            onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
+                                        <Input
+                                            type="number"
+                                            value={autoMaxDaily}
+                                            onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 pt-2">
+                                        <Button
+                                            onClick={handleSaveAutoRecharge}
+                                            disabled={isSavingAuto}
+                                            className="w-full h-10 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
+                                        >
+                                            {isSavingAuto ? "Saving..." : "Save Settings"}
+                                        </Button>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleDisableAutoRecharge}
+                                                disabled={isSavingAuto}
+                                                className="h-9 border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold cursor-pointer"
+                                            >
+                                                Disable Auto Recharge
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleAuthorizeAutoRecharge}
+                                                disabled={isSavingAuto}
+                                                className="h-9 border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold cursor-pointer"
+                                            >
+                                                Re-Authorize
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                                        <div>
+                                            <p className="text-xs font-extrabold text-slate-900">Auto Recharge</p>
+                                            <p className="text-[10px] text-slate-500 font-medium">Prevent campaign &amp; AI interruption</p>
+                                        </div>
+                                        <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                                            Not Authorized
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
+                                        <Input
+                                            type="number"
+                                            value={autoThreshold}
+                                            onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
+                                            placeholder="500"
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
+                                        <Input
+                                            type="number"
+                                            value={autoAmount}
+                                            onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
+                                            placeholder="500"
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
+                                        <Input
+                                            type="number"
+                                            value={autoMaxDaily}
+                                            onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
+                                            placeholder="3"
+                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
+                                        />
+                                    </div>
+
+                                    <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl space-y-2">
+                                        <label className="flex items-start gap-2 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={autoConsent}
+                                                onChange={(e) => setAutoConsent(e.target.checked)}
+                                                className="h-4 w-4 mt-0.5 accent-[#378179] rounded cursor-pointer shrink-0"
+                                            />
+                                            <span className="text-[11px] text-amber-900 font-medium leading-tight">
+                                                I explicitly authorize Connectly360 to automatically charge my authorized Razorpay payment method when my wallet balance drops below {autoThreshold} credits.
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleAuthorizeAutoRecharge}
+                                        disabled={isSavingAuto}
+                                        className="w-full h-11 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
+                                    >
+                                        {isSavingAuto ? "Initiating Razorpay Authorization..." : "Authorize Auto Recharge"}
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </Card>
                 </div>

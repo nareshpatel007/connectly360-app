@@ -205,6 +205,7 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                 currency: orderData.currency,
                 name: "Connectly360",
                 description: `Purchase ${selectedPack.name}`,
+                image: orderData.company_logo || orderData.image || (typeof window !== "undefined" ? `${window.location.origin}/images/icon.png` : ""),
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     try {
@@ -317,6 +318,7 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                 currency: orderData.currency,
                 name: "Connectly360",
                 description: `Custom Recharge ₹${amt.toLocaleString()}`,
+                image: orderData.company_logo || orderData.image || (typeof window !== "undefined" ? `${window.location.origin}/images/icon.png` : ""),
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     try {

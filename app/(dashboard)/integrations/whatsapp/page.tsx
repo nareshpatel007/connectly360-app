@@ -294,6 +294,20 @@ export default function WhatsAppIntegrationPage() {
                 </div>
             </div>
 
+            {/* Test Mode Banner */}
+            {(account as any)?.is_test_mode && (
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 text-amber-900 shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-1 bg-amber-500 text-white font-bold text-[10px] tracking-wider uppercase rounded-lg shadow-xs shrink-0">
+                            {(account as any)?.modeBadge || "TEST MODE"}
+                        </span>
+                        <p className="text-xs font-medium">
+                            {(account as any)?.bannerMessage || "WhatsApp messages are simulated and will not be delivered to real customers."}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Radix Tabs Wrapper */}
             <Tabs defaultValue="settings" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-slate-100/80 p-1 rounded-xl mb-6 flex w-fit gap-1 border border-slate-200/50">
