@@ -271,25 +271,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    const isAdmin = user?.role === "owner" || user?.role === "admin";
     const navSections = [...NAV_SECTIONS];
-
-    if (isAdmin) {
-        // Append Platform section for authorized admin users
-        navSections.push({
-            section: "PLATFORM",
-            items: [
-                {
-                    label: "Admin Panel",
-                    icon: ShieldCheck,
-                    href: "/admin/credits",
-                    subItems: [
-                        { label: "Credit Management", icon: Coins, href: "/admin/credits" }
-                    ]
-                }
-            ]
-        });
-    }
 
     const isInboxPage = pathname === "/conversations" || pathname.startsWith("/customer/inbox");
 
@@ -308,16 +290,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* SIDEBAR APPLICATION PANEL */}
             <aside
-                className={`fixed lg:static top-0 left-0 bottom-0 bg-white border-r border-slate-200 flex flex-col z-50 transition-all duration-300 ease-in-out shrink-0 ${
-                    mobileOpen
-                        ? "translate-x-0 w-64"
-                        : "-translate-x-full lg:translate-x-0 " + (collapsed ? "w-[72px]" : "w-64")
-                }`}
+                className={`fixed lg:static top-0 left-0 bottom-0 bg-white border-r border-slate-200 flex flex-col z-50 transition-all duration-300 ease-in-out shrink-0 ${mobileOpen
+                    ? "translate-x-0 w-64"
+                    : "-translate-x-full lg:translate-x-0 " + (collapsed ? "w-[72px]" : "w-64")
+                    }`}
             >
                 {/* Brand Header */}
-                <div className={`h-16 px-4 flex items-center border-b border-slate-200 bg-white shrink-0 ${
-                    collapsed ? "justify-center" : "justify-between"
-                }`}>
+                <div className={`h-16 px-4 flex items-center border-b border-slate-200 bg-white shrink-0 ${collapsed ? "justify-center" : "justify-between"
+                    }`}>
                     <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
                         <img
                             src="/images/logo.png"
@@ -370,13 +350,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                             key={item.href}
                                             href={item.href}
                                             onClick={() => setMobileOpen(false)}
-                                            className={`flex items-center ${
-                                                collapsed ? "justify-center px-2" : "justify-between px-3.5"
-                                            } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-                                                isActive
+                                            className={`flex items-center ${collapsed ? "justify-center px-2" : "justify-between px-3.5"
+                                                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${isActive
                                                     ? "bg-[#35877D] text-white shadow-xs font-bold"
                                                     : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <Icon size={18} className={isActive ? "text-white" : "text-slate-500"} />
@@ -407,13 +385,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     <Collapsible key={item.href} defaultOpen={isActive} className="w-full">
                                         <CollapsibleTrigger asChild>
                                             <button
-                                                className={`w-full flex items-center ${
-                                                    collapsed ? "justify-center px-2" : "justify-between px-3.5"
-                                                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                                                    isActive
+                                                className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "justify-between px-3.5"
+                                                    } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive
                                                         ? "bg-[#35877D]/10 text-[#35877D] font-bold"
                                                         : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <Icon size={18} className={isActive ? "text-[#35877D]" : "text-slate-500"} />
@@ -436,11 +412,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                             key={sub.href}
                                                             href={sub.href}
                                                             onClick={() => setMobileOpen(false)}
-                                                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
-                                                                isSubActive
-                                                                    ? "bg-[#35877D] text-white font-bold shadow-2xs"
-                                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                                            }`}
+                                                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${isSubActive
+                                                                ? "bg-[#35877D] text-white font-bold shadow-2xs"
+                                                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                                }`}
                                                         >
                                                             <SubIcon size={14} className={isSubActive ? "text-white" : "text-slate-400"} />
                                                             <span className="truncate">{sub.label}</span>
@@ -474,9 +449,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button
-                                className={`w-full flex items-center ${
-                                    collapsed ? "justify-center p-2" : "gap-3 p-2.5"
-                                } rounded-xl bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 transition-colors text-left focus:outline-none cursor-pointer`}
+                                className={`w-full flex items-center ${collapsed ? "justify-center p-2" : "gap-3 p-2.5"
+                                    } rounded-xl bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 transition-colors text-left focus:outline-none cursor-pointer`}
                             >
                                 <div className="h-8 w-8 rounded-full bg-[#35877D] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
                                     {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
