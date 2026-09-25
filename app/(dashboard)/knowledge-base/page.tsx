@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     ChevronDown,
     ChevronRight,
@@ -195,12 +196,15 @@ export default function KnowledgeBasePage() {
         }
     };
 
-    const handleDeleteKb = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this Q&A entry?")) return;
+    const [deletingKbId, setDeletingKbId] = useState<number | null>(null);
+
+    const confirmDeleteKb = async () => {
+        if (!deletingKbId) return;
         try {
-            await deleteKbMutation.mutateAsync({ id });
+            await deleteKbMutation.mutateAsync({ id: deletingKbId });
             toast.success("Knowledge Base entry deleted successfully.");
             queryClient.invalidateQueries({ queryKey: ["listKnowledgeBase"] });
+            setDeletingKbId(null);
         } catch (err: any) {
             toast.error(err.message || "Failed to delete entry.");
         }
@@ -463,7 +467,7 @@ export default function KnowledgeBasePage() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                onClick={() => handleDeleteKb(item.id)}
+                                                                onClick={() => setDeletingKbId(item.id)}
                                                                 className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
                                                             >
                                                                 <Trash2 size={13} />
@@ -828,6 +832,16 @@ export default function KnowledgeBasePage() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={!!deletingKbId}
+                onOpenChange={(open) => !open && setDeletingKbId(null)}
+                title="Delete Q&A Entry?"
+                description="Are you sure you want to delete this Knowledge Base entry? This action cannot be undone."
+                confirmText="Delete Entry"
+                variant="destructive"
+                onConfirm={confirmDeleteKb}
+            />
 
         </div>
         </UpgradeGuard>

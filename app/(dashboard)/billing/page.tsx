@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { 
     Zap, Sparkles, ArrowRight, History, Receipt, CreditCard, 
-    CheckCircle2, Clock, ArrowUpRight, ArrowDownLeft, ShieldCheck, AlertCircle 
+    CheckCircle2, Clock, ArrowUpRight, ArrowDownLeft, ShieldCheck, AlertCircle, X 
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,20 @@ export default function BillingOverviewPage() {
     const [summary, setSummary] = useState<UsageSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+    const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && sessionStorage.getItem("low_credits_alert_dismissed") === "true") {
+            setIsAlertDismissed(true);
+        }
+    }, []);
+
+    const handleDismissAlert = () => {
+        setIsAlertDismissed(true);
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("low_credits_alert_dismissed", "true");
+        }
+    };
 
     useEffect(() => {
         const fetchSummary = async () => {
@@ -87,7 +101,7 @@ export default function BillingOverviewPage() {
             </div>
 
             {/* Low / Zero Alert */}
-            {isZeroCredits ? (
+            {isZeroCredits && !isAlertDismissed ? (
                 <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="text-rose-600 shrink-0" size={20} />
@@ -96,15 +110,24 @@ export default function BillingOverviewPage() {
                             <p className="text-[11px] text-rose-700">AI replies, incoming resolutions, and broadcasts are currently paused.</p>
                         </div>
                     </div>
-                    <Button 
-                        size="sm"
-                        onClick={() => setIsBuyModalOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
-                    >
-                        Refill Now
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            size="sm"
+                            onClick={() => setIsBuyModalOpen(true)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
+                        >
+                            Refill Now
+                        </Button>
+                        <button
+                            onClick={handleDismissAlert}
+                            className="text-rose-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
+                            title="Dismiss alert"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
-            ) : isLowCredits ? (
+            ) : isLowCredits && !isAlertDismissed ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="text-amber-600 shrink-0" size={20} />
@@ -113,13 +136,22 @@ export default function BillingOverviewPage() {
                             <p className="text-[11px] text-amber-700">Recharge before your balance reaches zero to prevent service disruptions.</p>
                         </div>
                     </div>
-                    <Button 
-                        size="sm"
-                        onClick={() => setIsBuyModalOpen(true)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
-                    >
-                        Add Credits
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            size="sm"
+                            onClick={() => setIsBuyModalOpen(true)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
+                        >
+                            Add Credits
+                        </Button>
+                        <button
+                            onClick={handleDismissAlert}
+                            className="text-amber-500 hover:text-amber-800 p-1.5 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                            title="Dismiss alert"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
             ) : null}
 

@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -83,6 +84,8 @@ export default function ProductsPage() {
     }
   };
 
+  const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
+
   const toggleActive = (id: number, active: boolean) => {
     updateProduct.mutate(
       { id, data: { active } },
@@ -92,18 +95,18 @@ export default function ProductsPage() {
     );
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      deleteProduct.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-            toast({ title: "Product deleted" });
-          }
+  const confirmDeleteProduct = () => {
+    if (!deletingProductId) return;
+    deleteProduct.mutate(
+      { id: deletingProductId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+          toast({ title: "Product deleted", variant: "success" });
+          setDeletingProductId(null);
         }
-      );
-    }
+      }
+    );
   };
 
   return (
@@ -220,7 +223,7 @@ export default function ProductsPage() {
                   <Button variant="outline" size="icon" onClick={() => openEdit(product)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(product.id)}>
+                  <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => setDeletingProductId(product.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -232,6 +235,17 @@ export default function ProductsPage() {
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={!!deletingProductId}
+        onOpenChange={(open) => !open && setDeletingProductId(null)}
+        title="Delete Product?"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete Product"
+        variant="destructive"
+        loading={deleteProduct.isPending}
+        onConfirm={confirmDeleteProduct}
+      />
     </div>
   );
 }

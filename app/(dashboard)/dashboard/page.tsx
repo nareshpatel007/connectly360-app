@@ -26,6 +26,20 @@ export default function DashboardPage() {
     const { user, token } = useAuth();
     const [isBuyCreditsOpen, setIsBuyCreditsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && sessionStorage.getItem("low_credits_alert_dismissed") === "true") {
+            setIsAlertDismissed(true);
+        }
+    }, []);
+
+    const handleDismissAlert = () => {
+        setIsAlertDismissed(true);
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("low_credits_alert_dismissed", "true");
+        }
+    };
 
     // TanStack Query API hooks
     const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary } = useGetAnalyticsSummary();
@@ -75,6 +89,7 @@ export default function DashboardPage() {
                         <RefreshCw size={14} className="mr-1.5" />
                         Refresh
                     </Button>
+
                     <Button
                         size="sm"
                         onClick={() => setIsBuyCreditsOpen(true)}
@@ -87,9 +102,9 @@ export default function DashboardPage() {
             </div>
 
             {/* CRITICAL / LOW CREDIT WARNING ALERT */}
-            {isZeroCredits ? (
-                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-                    <div className="flex items-start gap-3.5">
+            {isZeroCredits && !isAlertDismissed ? (
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs relative">
+                    <div className="flex items-start gap-3.5 pr-6 sm:pr-0">
                         <div className="h-10 w-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
                             <AlertTriangle size={20} />
                         </div>
@@ -100,17 +115,27 @@ export default function DashboardPage() {
                             </p>
                         </div>
                     </div>
-                    <Button
-                        onClick={() => setIsBuyCreditsOpen(true)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl h-9 px-4 shrink-0 shadow-xs cursor-pointer border-0"
-                    >
-                        <Zap size={14} className="mr-1.5 fill-white" />
-                        Recharge Credits
-                    </Button>
+                    <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+                        <Button
+                            onClick={() => setIsBuyCreditsOpen(true)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl h-9 px-4 shrink-0 shadow-xs cursor-pointer border-0"
+                        >
+                            <Zap size={14} className="mr-1.5 fill-white" />
+                            Recharge Credits
+                        </Button>
+                        <button
+                            onClick={handleDismissAlert}
+                            className="text-rose-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer"
+                            title="Dismiss alert"
+                            aria-label="Dismiss low credits message"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
-            ) : isLowCredits ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-                    <div className="flex items-start gap-3.5">
+            ) : isLowCredits && !isAlertDismissed ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs relative">
+                    <div className="flex items-start gap-3.5 pr-6 sm:pr-0">
                         <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
                             <AlertTriangle size={20} />
                         </div>
@@ -121,13 +146,23 @@ export default function DashboardPage() {
                             </p>
                         </div>
                     </div>
-                    <Button
-                        onClick={() => setIsBuyCreditsOpen(true)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl h-9 px-4 shrink-0 shadow-xs cursor-pointer border-0"
-                    >
-                        <Zap size={14} className="mr-1.5 fill-white" />
-                        Refill Credits
-                    </Button>
+                    <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+                        <Button
+                            onClick={() => setIsBuyCreditsOpen(true)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl h-9 px-4 shrink-0 shadow-xs cursor-pointer border-0"
+                        >
+                            <Zap size={14} className="mr-1.5 fill-white" />
+                            Refill Credits
+                        </Button>
+                        <button
+                            onClick={handleDismissAlert}
+                            className="text-amber-500 hover:text-amber-800 p-1.5 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                            title="Dismiss alert"
+                            aria-label="Dismiss low credits message"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
             ) : null}
 
