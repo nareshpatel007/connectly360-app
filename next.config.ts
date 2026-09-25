@@ -4,7 +4,7 @@ const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3001
 
 const nextConfig: NextConfig = {
     env: {
-        API_URL: process.env.API_URL || "http://localhost:8000/api",
+        API_URL: process.env.API_URL || "http://localhost/connectly360/connectly360-backend/public/api",
     },
     async redirects() {
         return [

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ALLOWED_ORIGIN = process.env.SITE_URL || "https://connectly360.sandboxtechnology.in";
+const ALLOWED_ORIGIN = process.env.SITE_URL || "http://localhost:3000";
 const API_TOKEN = process.env.API_TOKEN || "";
 
 export async function handleApiProxy(
@@ -13,12 +13,15 @@ export async function handleApiProxy(
         const origin = req.headers.get("origin");
         const referer = req.headers.get("referer");
 
-        // Remove this when we have a proper authentication system
-        const isValidOrigin = origin === ALLOWED_ORIGIN || (referer && referer.startsWith(ALLOWED_ORIGIN));
+        const isValidOrigin =
+            !origin && !referer
+                ? true
+                : (origin && (origin === ALLOWED_ORIGIN || origin.startsWith(ALLOWED_ORIGIN))) ||
+                  (referer && referer.startsWith(ALLOWED_ORIGIN));
 
         if (!isValidOrigin) {
             return NextResponse.json(
-                { success: false, message: "Unauthorized token" },
+                { success: false, message: "Unauthorized origin" },
                 { status: 403 }
             );
         }
@@ -45,8 +48,13 @@ export async function handleApiProxy(
             }
         }
 
+        const rawApiUrl = process.env.API_URL || "http://localhost/connectly360/connectly360-backend/public/api";
+        const baseUrl = rawApiUrl.endsWith("/") ? rawApiUrl.slice(0, -1) : rawApiUrl;
+        const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+        const targetUrl = `${baseUrl}${normalizedEndpoint}`;
+
         // Call backend API
-        const apiRes = await fetch(`${process.env.API_URL}${endpoint}`, fetchOptions);
+        const apiRes = await fetch(targetUrl, fetchOptions);
 
         const text = await apiRes.text();
 

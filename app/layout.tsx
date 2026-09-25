@@ -32,6 +32,11 @@ export const metadata: Metadata = {
     },
     description: "Connect WhatsApp, automate replies, capture leads, and grow your business with AI-powered customer engagement.",
     keywords: ["WhatsApp Business", "WhatsApp Automation", "Meta Embedded Signup", "AI Customer Engagement", "Lead Pipeline", "CRM Automation"],
+    icons: {
+        icon: "/images/favicon.png",
+        shortcut: "/favicon.ico",
+        apple: "/images/icon.png",
+    },
     openGraph: {
         title: "Connectly360 - Manage Customer Conversations, Leads, and AI Automation in One Platform",
         description: "Connect WhatsApp, automate replies, capture leads, and grow your business with AI-powered customer engagement.",
