@@ -1,21 +1,52 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, ArrowRight, Users, Zap, Bot } from "lucide-react";
+import { MessageSquare, ArrowRight, Users, Zap, Bot, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { login } = useAuth();
+
+    useEffect(() => {
+        const errorParam = searchParams.get("error");
+        if (errorParam) {
+            switch (errorParam) {
+                case "google_cancelled":
+                    setError("Google sign-in was cancelled.");
+                    break;
+                case "invalid_state":
+                    setError("Authentication request expired or invalid security token. Please try again.");
+                    break;
+                case "google_no_email":
+                    setError("Unable to retrieve your email address from Google. Please try another account or sign up with email.");
+                    break;
+                case "google_email_conflict":
+                    setError("A Connectly360 account already exists with this email. Please sign in using your existing password first.");
+                    break;
+                case "account_suspended":
+                    setError("Your Connectly360 account is currently suspended. Please contact support.");
+                    break;
+                case "google_registration_failed":
+                    setError("Could not complete account setup via Google. Please try again or sign up with email.");
+                    break;
+                default:
+                    setError("Google sign-in failed. Please try again or use email and password.");
+                    break;
+            }
+        }
+    }, [searchParams]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,6 +69,25 @@ export default function LoginPage() {
             setError("Unable to connect to authentication server.");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setError(null);
+        setIsGoogleLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/google/redirect");
+            const data = await res.json();
+            if (data.status && data.url) {
+                window.location.href = data.url;
+            } else {
+                setError(data.message || "Google sign-in is temporarily unavailable. Please use email and password.");
+                setIsGoogleLoading(false);
+            }
+        } catch (err) {
+            setError("Unable to connect to authentication server. Please try again.");
+            setIsGoogleLoading(false);
         }
     };
 
@@ -133,18 +183,28 @@ export default function LoginPage() {
                             <Button
                                 variant="outline"
                                 type="button"
+                                disabled={isLoading || isGoogleLoading}
                                 className="w-full justify-center gap-2 border-slate-250 text-slate-700 font-bold hover:bg-slate-50 h-10.5 rounded-xl transition-all shadow-2xs cursor-pointer text-xs sm:text-sm"
-                                onClick={() => router.push("/dashboard")}
+                                onClick={handleGoogleLogin}
                             >
-                                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <g transform="matrix(1, 0, 0, 1, 0, 0)">
-                                        <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.43 21.35,11.1z" fill="#4285F4" />
-                                        <path d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97 -2.34,0 -4.33,-1.58 -5.04,-3.7L2.92,16.3c1.5,2.98 4.6,5 8.2,5z" fill="#34A853" />
-                                        <path d="M6.96,13.57C6.78,13.04 6.68,12.48 6.68,11.9c0,-0.58 0.1,-1.14 0.28,-1.67L3.63,7.57C3.01,8.8 2.68,10.2 2.68,11.9c0,1.7 0.33,3.1 0.95,4.33z" fill="#FBBC05" />
-                                        <path d="M12,5.27c1.3,0 2.48,0.45 3.4,1.33L17.5,4.5C16.03,3.12 14,2.27 12,2.27c-3.6,0 -6.7,2.02 -8.2,5l3.7,2.83c0.7,-2.12 2.7,-3.7 5.04,-3.7z" fill="#EA4335" />
-                                    </g>
-                                </svg>
-                                Continue with Google
+                                {isGoogleLoading ? (
+                                    <>
+                                        <Loader2 className="animate-spin text-[#35877D]" size={16} />
+                                        Connecting to Google...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                                                <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.43 21.35,11.1z" fill="#4285F4" />
+                                                <path d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97 -2.34,0 -4.33,-1.58 -5.04,-3.7L2.92,16.3c1.5,2.98 4.6,5 8.2,5z" fill="#34A853" />
+                                                <path d="M6.96,13.57C6.78,13.04 6.68,12.48 6.68,11.9c0,-0.58 0.1,-1.14 0.28,-1.67L3.63,7.57C3.01,8.8 2.68,10.2 2.68,11.9c0,1.7 0.33,3.1 0.95,4.33z" fill="#FBBC05" />
+                                                <path d="M12,5.27c1.3,0 2.48,0.45 3.4,1.33L17.5,4.5C16.03,3.12 14,2.27 12,2.27c-3.6,0 -6.7,2.02 -8.2,5l3.7,2.83c0.7,-2.12 2.7,-3.7 5.04,-3.7z" fill="#EA4335" />
+                                            </g>
+                                        </svg>
+                                        Continue with Google
+                                    </>
+                                )}
                             </Button>
 
                             {/* Divider */}
@@ -164,7 +224,7 @@ export default function LoginPage() {
                                         id="email"
                                         type="email"
                                         required
-                                        disabled={isLoading}
+                                        disabled={isLoading || isGoogleLoading}
                                         placeholder="name@company.com"
                                         className="h-10.5 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-xs sm:text-sm"
                                         value={email}
@@ -185,7 +245,7 @@ export default function LoginPage() {
                                         id="password"
                                         type="password"
                                         required
-                                        disabled={isLoading}
+                                        disabled={isLoading || isGoogleLoading}
                                         placeholder="••••••••"
                                         className="h-10.5 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-xs sm:text-sm"
                                         value={password}
@@ -195,7 +255,7 @@ export default function LoginPage() {
 
                                 <Button
                                     type="submit"
-                                    disabled={isLoading}
+                                    disabled={isLoading || isGoogleLoading}
                                     className="w-full bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-11 rounded-xl gap-1.5 cursor-pointer shadow-md transition-all mt-1 text-xs sm:text-sm"
                                 >
                                     {isLoading ? "Signing In..." : "Sign In"}
@@ -221,6 +281,18 @@ export default function LoginPage() {
                 © {new Date().getFullYear()} Connectly360. All rights reserved.
             </footer>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+                <Loader2 className="animate-spin text-[#35877D]" size={32} />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }
 

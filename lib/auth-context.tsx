@@ -13,6 +13,7 @@ interface User {
     plan?: string;
     trial_ends_at?: string | null;
     credits?: number;
+    onboarding_completed?: boolean;
 }
 
 interface AuthContextType {
@@ -20,7 +21,7 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (token: string) => void;
+    login: (token: string, targetPath?: string) => void;
     logout: () => void;
 }
 
@@ -53,7 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     role: fetchedUser.role,
                     plan: fetchedUser.plan,
                     trial_ends_at: fetchedUser.trial_ends_at,
-                    credits: fetchedUser.credits
+                    credits: fetchedUser.credits,
+                    onboarding_completed: fetchedUser.onboarding_completed
                 });
             } else {
                 logout();
@@ -66,9 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        // Load auth data from localStorage on mount
         const storedToken = localStorage.getItem("auth_token");
-        // Ensure legacy auth_user is completely removed
         localStorage.removeItem("auth_user");
 
         if (storedToken) {
@@ -96,28 +96,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             pathname === "/login" ||
             pathname === "/register" ||
             pathname === "/forgot-password" ||
-            pathname.startsWith("/verify");
+            pathname.startsWith("/verify") ||
+            pathname.startsWith("/auth/google");
 
         const isAuthPage =
             pathname === "/login" ||
             pathname === "/register" ||
             pathname === "/forgot-password";
 
-        if (!token && !isPublicPage) {
-            // Redirect to login if not authenticated and not on a public page
+        if (!token && !isPublicPage && pathname !== "/onboarding") {
             router.push("/login");
         } else if (token && isAuthPage) {
-            // Redirect to dashboard home if already logged in and visiting auth pages
-            router.push("/dashboard");
+            router.push(user?.onboarding_completed ? "/dashboard" : "/onboarding");
         }
     }, [token, user, pathname, isLoading, router]);
 
-    const login = (newToken: string) => {
+    const login = (newToken: string, targetPath?: string) => {
         localStorage.setItem("auth_token", newToken);
         setToken(newToken);
         setIsLoading(true);
         fetchProfile(newToken);
-        router.push("/dashboard");
+        if (targetPath) {
+            router.push(targetPath);
+        } else {
+            router.push(user?.onboarding_completed ? "/dashboard" : "/onboarding");
+        }
     };
 
     const logout = () => {
@@ -141,7 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pathname === "/login" ||
         pathname === "/register" ||
         pathname === "/forgot-password" ||
-        pathname.startsWith("/verify");
+        pathname.startsWith("/verify") ||
+        pathname.startsWith("/auth/google") ||
+        pathname === "/onboarding";
 
     const showContent = isPublicPage || (token && !isLoading);
 
@@ -162,11 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-br from-[#f2f8f7] to-[#e6f2f0]">
                     <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-white/40 backdrop-blur-lg border border-white/30 shadow-xl shadow-[#35877D]/5">
                         <div className="relative flex items-center justify-center">
-                            {/* Glowing effect */}
                             <div className="absolute inset-0 rounded-full bg-[#35877D]/20 blur-xl animate-pulse" />
-                            {/* Outer ring */}
                             <div className="h-12 w-12 rounded-full border-4 border-[#35877D]/25 border-t-[#35877D] animate-spin" />
-                            {/* Inner ring spinning in reverse */}
                             <div className="absolute h-6 w-6 rounded-full border-2 border-transparent border-t-[#35877D] border-b-[#35877D] animate-spin [animation-direction:reverse]" />
                         </div>
                         <p className="text-sm font-bold text-[#35877D] tracking-wide font-sans animate-pulse">

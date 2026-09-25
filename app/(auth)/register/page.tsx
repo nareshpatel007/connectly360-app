@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Sparkles, CheckCircle2, Loader2, Info } from "lucide-react";
-import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+import { ArrowRight, Sparkles, Loader2, Info, Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { OtpVerification } from "@/components/auth/OtpVerification";
+import { useAuth } from "@/lib/auth-context";
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com";
 
@@ -16,18 +17,39 @@ function RegisterContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const inviteToken = searchParams.get("invite_token");
+    const { login } = useAuth();
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState<string | undefined>("");
-    const [referralSource, setReferralSource] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
+    
+    const [step, setStep] = useState<"account" | "verify">("account");
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isCheckingInvite, setIsCheckingInvite] = useState(false);
+
+    const handleGoogleLogin = async () => {
+        setError(null);
+        setIsGoogleLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/google/redirect");
+            const data = await res.json();
+            if (data.status && data.url) {
+                window.location.href = data.url;
+            } else {
+                setError(data.message || "Google sign-in is temporarily unavailable. Please use email and password.");
+                setIsGoogleLoading(false);
+            }
+        } catch (err) {
+            setError("Unable to connect to authentication server. Please try again.");
+            setIsGoogleLoading(false);
+        }
+    };
     const [inviteDetails, setInviteDetails] = useState<{
         email: string;
         role: string;
@@ -63,6 +85,12 @@ function RegisterContent() {
             setError("You must agree to the Terms of Service and Privacy Policy.");
             return;
         }
+
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters long.");
+            return;
+        }
+
         setError(null);
         setIsLoading(true);
 
@@ -71,49 +99,39 @@ function RegisterContent() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
                     name: `${firstName} ${lastName}`.trim(),
                     email,
                     password,
-                    phone: phoneNumber,
-                    referral_source: referralSource || "Workspace Invite",
                     invite_token: inviteToken || undefined
                 }),
             });
             const data = await res.json();
             if (data.status) {
-                setSuccess(true);
+                setStep("verify");
             } else {
                 setError(data.message || "Failed to create account.");
             }
         } catch (err) {
-            setError("Unable to connect to registration server.");
+            setError("Unable to connect to registration server. Please try again.");
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleVerificationComplete = (token: string) => {
+        login(token);
+        router.push("/onboarding");
+    };
+
     return (
         <Card className="w-full bg-white border border-slate-200 shadow-md rounded-3xl overflow-hidden p-6 sm:p-9 space-y-6">
-            {success ? (
-                <div className="text-center space-y-6 py-4">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-[#35877D] border border-emerald-100 shadow-xs">
-                        <CheckCircle2 size={32} />
-                    </div>
-                    <div className="space-y-3">
-                        <h2 className="text-2xl font-black tracking-tight text-slate-900">Verify Your Email</h2>
-                        <p className="text-sm text-slate-600 leading-relaxed max-w-sm mx-auto font-normal">
-                            We've sent an email verification link to <strong className="text-slate-800 font-medium">{email}</strong>. Please check your inbox and follow the instructions to verify your account and join the workspace.
-                        </p>
-                    </div>
-                    <div className="pt-2">
-                        <Button
-                            onClick={() => router.push("/login")}
-                            className="w-full bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-11.5 rounded-xl transition-all shadow-md cursor-pointer"
-                        >
-                            Go to Sign In
-                        </Button>
-                    </div>
-                </div>
+            {step === "verify" ? (
+                <OtpVerification
+                    email={email}
+                    onVerified={handleVerificationComplete}
+                />
             ) : (
                 <>
                     <div className="text-center space-y-2">
@@ -134,7 +152,7 @@ function RegisterContent() {
                             </div>
                         )}
                         <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Create your account</h2>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">Get started with Connectly360 today.</p>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium">Start your free trial and connect your customer conversations in one place.</p>
                     </div>
 
                     {isCheckingInvite ? (
@@ -145,10 +163,45 @@ function RegisterContent() {
                     ) : (
                         <>
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-3.5 text-xs font-semibold text-center">
+                                <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-3.5 text-xs font-semibold text-center">
                                     {error}
                                 </div>
                             )}
+
+                            {/* Google SSO Button */}
+                            <Button
+                                variant="outline"
+                                type="button"
+                                disabled={isLoading || isGoogleLoading}
+                                className="w-full justify-center gap-2 border-slate-250 text-slate-700 font-bold hover:bg-slate-50 h-11 rounded-xl transition-all shadow-2xs cursor-pointer text-xs sm:text-sm"
+                                onClick={handleGoogleLogin}
+                            >
+                                {isGoogleLoading ? (
+                                    <>
+                                        <Loader2 className="animate-spin text-[#35877D]" size={16} />
+                                        Connecting to Google...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                                                <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.43 21.35,11.1z" fill="#4285F4" />
+                                                <path d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97 -2.34,0 -4.33,-1.58 -5.04,-3.7L2.92,16.3c1.5,2.98 4.6,5 8.2,5z" fill="#34A853" />
+                                                <path d="M6.96,13.57C6.78,13.04 6.68,12.48 6.68,11.9c0,-0.58 0.1,-1.14 0.28,-1.67L3.63,7.57C3.01,8.8 2.68,10.2 2.68,11.9c0,1.7 0.33,3.1 0.95,4.33z" fill="#FBBC05" />
+                                                <path d="M12,5.27c1.3,0 2.48,0.45 3.4,1.33L17.5,4.5C16.03,3.12 14,2.27 12,2.27c-3.6,0 -6.7,2.02 -8.2,5l3.7,2.83c0.7,-2.12 2.7,-3.7 5.04,-3.7z" fill="#EA4335" />
+                                            </g>
+                                        </svg>
+                                        Continue with Google
+                                    </>
+                                )}
+                            </Button>
+
+                            {/* Divider */}
+                            <div className="relative flex py-0.5 items-center">
+                                <div className="flex-grow border-t border-slate-200"></div>
+                                <span className="flex-shrink mx-3 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">or</span>
+                                <div className="flex-grow border-t border-slate-200"></div>
+                            </div>
 
                             {/* Registration Form */}
                             <form onSubmit={handleRegister} className="space-y-4">
@@ -156,13 +209,13 @@ function RegisterContent() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label htmlFor="firstName" className="text-xs font-bold text-slate-800">
-                                            First Name
+                                            First Name <span className="text-rose-500">*</span>
                                         </label>
                                         <Input
                                             id="firstName"
                                             type="text"
                                             required
-                                            disabled={isLoading || success}
+                                            disabled={isLoading}
                                             placeholder="John"
                                             className="h-11 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-sm"
                                             value={firstName}
@@ -171,13 +224,13 @@ function RegisterContent() {
                                     </div>
                                     <div className="space-y-1.5">
                                         <label htmlFor="lastName" className="text-xs font-bold text-slate-800">
-                                            Last Name
+                                            Last Name <span className="text-rose-500">*</span>
                                         </label>
                                         <Input
                                             id="lastName"
                                             type="text"
                                             required
-                                            disabled={isLoading || success}
+                                            disabled={isLoading}
                                             placeholder="Doe"
                                             className="h-11 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-sm"
                                             value={lastName}
@@ -189,13 +242,13 @@ function RegisterContent() {
                                 {/* Business Email */}
                                 <div className="space-y-1.5">
                                     <label htmlFor="email" className="text-xs font-bold text-slate-800">
-                                        Email Address
+                                        Email Address <span className="text-rose-500">*</span>
                                     </label>
                                     <Input
                                         id="email"
                                         type="email"
                                         required
-                                        disabled={isLoading || success || !!inviteDetails}
+                                        disabled={isLoading || !!inviteDetails}
                                         placeholder="name@company.com"
                                         className="h-11 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-sm"
                                         value={email}
@@ -203,81 +256,42 @@ function RegisterContent() {
                                     />
                                 </div>
 
-                                {/* Password */}
+                                {/* Password with Toggle & Strength Meter */}
                                 <div className="space-y-1.5">
                                     <label htmlFor="password" className="text-xs font-bold text-slate-800">
-                                        Password
+                                        Password <span className="text-rose-500">*</span>
                                     </label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        required
-                                        disabled={isLoading || success}
-                                        placeholder="Create a secure password"
-                                        className="h-11 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-sm"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Phone Number with react-phone-number-input */}
-                                <div className="space-y-1.5 custom-phone-input">
-                                    <label htmlFor="phoneNumber" className="text-xs font-bold text-slate-800">
-                                        Phone Number
-                                    </label>
-                                    <PhoneInput
-                                        international
-                                        withCountryCallingCode
-                                        placeholder="98765 43210"
-                                        value={phoneNumber}
-                                        onChange={setPhoneNumber}
-                                        defaultCountry="IN"
-                                        disabled={isLoading || success}
-                                        required
-                                        numberInputProps={{
-                                            className: "h-11 w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#35877D] focus:border-[#35877D] rounded-xl bg-slate-50 font-medium px-3 text-sm text-slate-900 transition-all"
-                                        }}
-                                        className="flex gap-2 items-center"
-                                    />
-                                </div>
-
-                                {/* Referral Info (Only shown for non-invites) */}
-                                {!inviteDetails && (
-                                    <div className="space-y-1.5">
-                                        <label htmlFor="referral" className="text-xs font-bold text-slate-800">
-                                            How did you hear about Connectly360?
-                                        </label>
-                                        <select
-                                            id="referral"
+                                    <div className="relative">
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? "text" : "password"}
                                             required
-                                            disabled={isLoading || success}
-                                            value={referralSource}
-                                            onChange={(e) => setReferralSource(e.target.value)}
-                                            className="h-11 w-full border border-slate-200 focus:ring-[#35877D] focus:border-[#35877D] focus:outline-none rounded-xl bg-slate-50 font-medium px-3 text-sm text-slate-900"
+                                            disabled={isLoading}
+                                            placeholder="Create a secure password"
+                                            className="h-11 pr-10 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-sm"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                                         >
-                                            <option value="" disabled>Select an option</option>
-                                            <option value="Google Search">Google Search</option>
-                                            <option value="Social Media">Social Media (LinkedIn, Twitter, Facebook)</option>
-                                            <option value="YouTube">YouTube</option>
-                                            <option value="Meta Partner Directory">Meta Partner Directory</option>
-                                            <option value="Word of Mouth">Word of Mouth / Colleague Recommendation</option>
-                                            <option value="LLM (ChatGPT, Claude, Perplexity)">LLM (ChatGPT, Claude, Perplexity)</option>
-                                            <option value="Connectly360 Blog">Connectly360 Blog</option>
-                                            <option value="Newsletter">Newsletter</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
-                                )}
+                                    <PasswordStrengthMeter password={password} />
+                                </div>
 
                                 {/* Checkbox agreement */}
                                 <div className="flex items-start gap-2.5 pt-1">
                                     <input
                                         id="agreedToTerms"
                                         type="checkbox"
-                                        disabled={isLoading || success}
+                                        disabled={isLoading}
                                         checked={agreedToTerms}
                                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                        className="mt-1.5 h-4 w-4 rounded border-slate-300 text-[#35877D] focus:ring-[#35877D]"
+                                        className="mt-1.5 h-4 w-4 rounded border-slate-300 text-[#35877D] focus:ring-[#35877D] cursor-pointer"
                                         required
                                     />
                                     <label htmlFor="agreedToTerms" className="text-xs text-slate-500 font-normal leading-relaxed select-none">
@@ -298,8 +312,17 @@ function RegisterContent() {
                                     disabled={isLoading}
                                     className="w-full bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-11.5 rounded-xl gap-1.5 shadow-md transition-all mt-3 cursor-pointer text-sm"
                                 >
-                                    {isLoading ? "Creating Account..." : success ? "Account Created!" : "Create Account"}
-                                    {!isLoading && !success && <ArrowRight size={16} />}
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            Creating Account...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Create Account
+                                            <ArrowRight size={16} />
+                                        </>
+                                    )}
                                 </Button>
                             </form>
                         </>
@@ -332,36 +355,9 @@ export default function RegisterPage() {
                 </Suspense>
             </main>
 
-            {/* Simple Auth Footer */}
             <footer className="w-full text-center py-2 text-xs text-slate-400 font-medium">
                 © {new Date().getFullYear()} Connectly360. All rights reserved.
             </footer>
-
-            {/* Custom Styles for react-phone-number-input flag styling */}
-            <style jsx global>{`
-                .custom-phone-input .PhoneInputCountry {
-                    display: flex;
-                    align-items: center;
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 0.75rem;
-                    padding: 0 0.75rem;
-                    height: 2.75rem;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .custom-phone-input .PhoneInputCountry:hover {
-                    border-color: #cbd5e1;
-                }
-                .custom-phone-input .PhoneInputCountrySelectArrow {
-                    margin-left: 0.35rem;
-                    color: #64748b;
-                }
-                .custom-phone-input .PhoneInputCountryIcon--border {
-                    background-color: transparent;
-                    box-shadow: none;
-                }
-            `}</style>
         </div>
     );
 }
