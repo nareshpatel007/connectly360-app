@@ -345,8 +345,15 @@ export default function RechargeCreditsPage() {
         }
     };
 
+    const [autoConsent, setAutoConsent] = useState(false);
+
     // Save Auto Recharge Settings
     const handleSaveAutoRecharge = async () => {
+        if (autoEnabled && !autoConsent) {
+            toast.error("You must explicitly authorize Connectly360 to automatically charge your payment method.");
+            return;
+        }
+
         setIsSavingAuto(true);
         try {
             const res = await fetch("/api/billing/credits/auto-recharge", {
@@ -356,10 +363,11 @@ export default function RechargeCreditsPage() {
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    enabled: autoEnabled,
-                    threshold: autoThreshold,
-                    recharge_amount: autoAmount,
-                    max_per_day: autoMaxDaily
+                    auto_recharge_enabled: autoEnabled,
+                    auto_recharge_threshold: autoThreshold,
+                    auto_recharge_amount: autoAmount,
+                    auto_recharge_max_per_day: autoMaxDaily,
+                    consent_given: autoConsent
                 })
             });
 
@@ -646,13 +654,28 @@ export default function RechargeCreditsPage() {
                                 />
                             </div>
 
+                            {autoEnabled && (
+                                <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl space-y-2">
+                                    <label className="flex items-start gap-2 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={autoConsent}
+                                            onChange={(e) => setAutoConsent(e.target.checked)}
+                                            className="h-4 w-4 mt-0.5 accent-[#378179] rounded cursor-pointer shrink-0"
+                                        />
+                                        <span className="text-[11px] text-amber-900 font-medium leading-tight">
+                                            I explicitly authorize Connectly360 to automatically charge my authorized Razorpay payment method when my wallet balance drops below {autoThreshold} credits.
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
                             <Button
                                 onClick={handleSaveAutoRecharge}
                                 disabled={isSavingAuto}
-                                variant="outline"
-                                className="w-full h-10 border-slate-200 text-slate-800 hover:bg-slate-50 text-xs font-extrabold rounded-xl cursor-pointer"
+                                className="w-full h-11 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
                             >
-                                {isSavingAuto ? "Saving..." : "Save Auto Recharge Settings"}
+                                {isSavingAuto ? "Saving..." : "Save Auto Recharge Authorization"}
                             </Button>
                         </div>
                     </Card>
