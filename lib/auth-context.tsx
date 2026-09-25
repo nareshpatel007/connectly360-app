@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 interface User {
@@ -34,7 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const fetchProfile = async (authToken: string) => {
+    const logout = useCallback(() => {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+        setToken(null);
+        setUser(null);
+        router.push("/login");
+    }, [router]);
+
+    const fetchProfile = useCallback(async (authToken: string) => {
         try {
             const res = await fetch("/api/auth/profile", {
                 method: "GET",
@@ -60,12 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
                 logout();
             }
-        } catch (err) {
+        } catch {
             logout();
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [logout]);
 
     useEffect(() => {
         const storedToken = localStorage.getItem("auth_token");
@@ -77,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
             setIsLoading(false);
         }
-    }, []);
+    }, [fetchProfile]);
 
     // Route protection logic
     useEffect(() => {
@@ -121,14 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
             router.push(user?.onboarding_completed ? "/dashboard" : "/onboarding");
         }
-    };
-
-    const logout = () => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_user");
-        setToken(null);
-        setUser(null);
-        router.push("/login");
     };
 
     const isPublicPage =

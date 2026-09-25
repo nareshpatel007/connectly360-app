@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, ArrowRight, Users, Zap, Bot, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ function LoginContent() {
     const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -63,10 +64,10 @@ function LoginContent() {
             if (data.status) {
                 login(data.data.access_token);
             } else {
-                setError(data.message || "Failed to log in. Please check your credentials.");
+                setError(data.message || "Invalid email or password. Please try again.");
             }
         } catch (err) {
-            setError("Unable to connect to authentication server.");
+            setError("Unable to connect to Connectly360. Please check your connection and try again.");
         } finally {
             setIsLoading(false);
         }
@@ -92,192 +93,157 @@ function LoginContent() {
     };
 
     return (
-        <div className="w-full h-full max-h-screen flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 z-10 overflow-hidden">
-            {/* Top Brand bar (Optional subtle brand indicator on mobile) */}
-            <div className="w-full max-w-6xl flex items-center justify-between py-1 lg:hidden">
-                <Link href="/" className="flex items-center gap-2">
-                    <img src="/images/logo.png" alt="Connectly360" className="h-8 w-auto object-contain" />
-                </Link>
-            </div>
-
-            {/* Main Centered Auth Container */}
-            <main className="my-auto w-full max-w-6xl py-2">
-                <div className="grid lg:grid-cols-12 gap-5 lg:gap-8 items-center">
-
-                    {/* Left Side: Product Highlights & Value Proposition */}
-                    <div className="hidden lg:flex lg:col-span-7 flex-col justify-between bg-white border border-[#35877D]/15 p-6 md:p-8 lg:p-10 text-slate-800 rounded-3xl shadow-sm relative">
-                        <div>
-                            {/* Logo */}
-                            <div className="mb-6">
-                                <img src="/images/logo.png" alt="Connectly360 Logo" className="h-9 w-auto object-contain" />
-                            </div>
-
-                            {/* Core Marketing Copy */}
-                            <div className="space-y-2.5 max-w-xl">
-                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                                    Turn WhatsApp Chats Into <span className="text-[#35877D]">Qualified CRM Leads Automatically.</span>
-                                </h1>
-                                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
-                                    Connectly360 natively integrates your entire sales and support pipeline, automating standard inquiries to save your team hours of work.
-                                </p>
-                            </div>
-
-                            {/* Feature list */}
-                            <div className="grid sm:grid-cols-2 gap-3 mt-6">
-                                <FeatureRow
-                                    icon={MessageSquare}
-                                    title="WhatsApp Integration"
-                                    description="Official Meta WhatsApp API integrations"
-                                />
-                                <FeatureRow
-                                    icon={Bot}
-                                    title="AI Chatbot Agent"
-                                    description="Smart 24/7 support trained on your data"
-                                />
-                                <FeatureRow
-                                    icon={Users}
-                                    title="CRM Pipeline"
-                                    description="Organize leads and track directories"
-                                />
-                                <FeatureRow
-                                    icon={Zap}
-                                    title="Workflows Engine"
-                                    description="No-code visual automation builder"
-                                />
-                            </div>
+        <div className="w-full h-full max-h-screen flex flex-col items-center justify-between p-3 sm:p-4 z-10 overflow-y-auto sm:overflow-hidden">
+            <main className="w-full max-w-[420px] my-auto py-2 sm:py-4">
+                <Card className="w-full bg-white border border-slate-200/80 shadow-xl shadow-slate-200/40 rounded-3xl p-5 sm:p-6 space-y-4 sm:space-y-5">
+                    {/* Header: Logo, Welcome Title & Subtitle */}
+                    <div className="text-center space-y-1.5">
+                        <div className="flex flex-col items-center justify-center">
+                            <Link href="/" className="inline-block transition-transform hover:scale-[1.02]">
+                                <img src="/images/logo.png" alt="Connectly360 Logo" className="h-7.5 sm:h-8.5 w-auto object-contain" />
+                            </Link>
+                            <span className="text-[10px] font-semibold text-[#35877D] tracking-widest uppercase mt-0.5 opacity-85">
+                                Connect • Automate • Grow
+                            </span>
                         </div>
-
-                        {/* Trust Badge Strip */}
-                        <div className="border-t border-[#35877D]/10 pt-4 mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-                            <div>
-                                <p className="text-[10px] font-bold text-[#35877D] uppercase tracking-wider">Trusted Meta Partner</p>
-                                <p className="text-[11px] text-slate-500 font-medium mt-0.5">Secure, reliable APIs compliant with WhatsApp policy</p>
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold text-slate-900 shadow-2xs">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span>Meta Verified Portal</span>
-                            </div>
+                        <div className="pt-1 space-y-0.5">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                                Welcome back 👋
+                            </h1>
+                            <p className="text-xs text-slate-500 font-medium">
+                                Sign in to your Connectly360 account
+                            </p>
                         </div>
                     </div>
 
-                    {/* Right Side: Sign In Form */}
-                    <div className="lg:col-span-5 flex flex-col justify-center items-center w-full">
-                        <Card className="w-full max-w-md bg-white border border-slate-200 shadow-md rounded-3xl overflow-hidden p-5 sm:p-7 lg:p-8 space-y-4">
-                            
-                            {/* Header inside Form Card for mobile visibility */}
-                            <div className="text-center space-y-1.5">
-                                <div className="flex justify-center mb-2 lg:hidden">
-                                    <img src="/images/logo.png" alt="Connectly360 Logo" className="h-8 w-auto object-contain" />
-                                </div>
-                                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">Sign in to Connectly360</h2>
-                                <p className="text-xs text-slate-500 font-semibold">Welcome back! Please sign in to continue.</p>
-                            </div>
+                    {/* Clean Polished Alert Banner */}
+                    {error && (
+                        <div
+                            role="alert"
+                            aria-live="polite"
+                            className="flex items-start gap-2.5 p-3 bg-rose-50/90 border border-rose-200/80 rounded-xl text-rose-800 text-xs font-medium leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
+                        >
+                            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                            <div className="flex-1">{error}</div>
+                        </div>
+                    )}
 
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs font-semibold text-center leading-normal">
-                                    {error}
-                                </div>
-                            )}
+                    {/* Google SSO Button */}
+                    <Button
+                        variant="outline"
+                        type="button"
+                        disabled={isLoading || isGoogleLoading}
+                        className="w-full justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold h-9.5 sm:h-10 rounded-xl transition-all shadow-xs cursor-pointer text-xs sm:text-sm"
+                        onClick={handleGoogleLogin}
+                    >
+                        {isGoogleLoading ? (
+                            <>
+                                <Loader2 className="animate-spin text-[#35877D]" size={15} />
+                                <span>Connecting to Google...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                                        <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.43 21.35,11.1z" fill="#4285F4" />
+                                        <path d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97 -2.34,0 -4.33,-1.58 -5.04,-3.7L2.92,16.3c1.5,2.98 4.6,5 8.2,5z" fill="#34A853" />
+                                        <path d="M6.96,13.57C6.78,13.04 6.68,12.48 6.68,11.9c0,-0.58 0.1,-1.14 0.28,-1.67L3.63,7.57C3.01,8.8 2.68,10.2 2.68,11.9c0,1.7 0.33,3.1 0.95,4.33z" fill="#FBBC05" />
+                                        <path d="M12,5.27c1.3,0 2.48,0.45 3.4,1.33L17.5,4.5C16.03,3.12 14,2.27 12,2.27c-3.6,0 -6.7,2.02 -8.2,5l3.7,2.83c0.7,-2.12 2.7,-3.7 5.04,-3.7z" fill="#EA4335" />
+                                    </g>
+                                </svg>
+                                <span>Continue with Google</span>
+                            </>
+                        )}
+                    </Button>
 
-                            {/* Google SSO Button */}
-                            <Button
-                                variant="outline"
-                                type="button"
+                    {/* Divider */}
+                    <div className="relative flex py-0 items-center">
+                        <div className="flex-grow border-t border-slate-200"></div>
+                        <span className="flex-shrink mx-2 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">or</span>
+                        <div className="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    {/* Sign In Form */}
+                    <form onSubmit={handleLogin} className="space-y-3">
+                        <div className="space-y-1">
+                            <label htmlFor="email" className="text-xs font-semibold text-slate-700">
+                                Email address
+                            </label>
+                            <Input
+                                id="email"
+                                type="email"
+                                required
+                                autoComplete="email"
                                 disabled={isLoading || isGoogleLoading}
-                                className="w-full justify-center gap-2 border-slate-250 text-slate-700 font-bold hover:bg-slate-50 h-10.5 rounded-xl transition-all shadow-2xs cursor-pointer text-xs sm:text-sm"
-                                onClick={handleGoogleLogin}
-                            >
-                                {isGoogleLoading ? (
-                                    <>
-                                        <Loader2 className="animate-spin text-[#35877D]" size={16} />
-                                        Connecting to Google...
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <g transform="matrix(1, 0, 0, 1, 0, 0)">
-                                                <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.43 21.35,11.1z" fill="#4285F4" />
-                                                <path d="M12,21c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97 -2.34,0 -4.33,-1.58 -5.04,-3.7L2.92,16.3c1.5,2.98 4.6,5 8.2,5z" fill="#34A853" />
-                                                <path d="M6.96,13.57C6.78,13.04 6.68,12.48 6.68,11.9c0,-0.58 0.1,-1.14 0.28,-1.67L3.63,7.57C3.01,8.8 2.68,10.2 2.68,11.9c0,1.7 0.33,3.1 0.95,4.33z" fill="#FBBC05" />
-                                                <path d="M12,5.27c1.3,0 2.48,0.45 3.4,1.33L17.5,4.5C16.03,3.12 14,2.27 12,2.27c-3.6,0 -6.7,2.02 -8.2,5l3.7,2.83c0.7,-2.12 2.7,-3.7 5.04,-3.7z" fill="#EA4335" />
-                                            </g>
-                                        </svg>
-                                        Continue with Google
-                                    </>
-                                )}
-                            </Button>
+                                placeholder="name@company.com"
+                                className="h-9.5 border-slate-200 focus-visible:ring-2 focus-visible:ring-[#35877D]/20 focus-visible:border-[#35877D] rounded-xl bg-slate-50/50 font-medium text-slate-900 text-xs sm:text-sm px-3"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
 
-                            {/* Divider */}
-                            <div className="relative flex py-0.5 items-center">
-                                <div className="flex-grow border-t border-slate-200"></div>
-                                <span className="flex-shrink mx-3 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">or</span>
-                                <div className="flex-grow border-t border-slate-200"></div>
-                            </div>
-
-                            {/* Sign In Form */}
-                            <form onSubmit={handleLogin} className="space-y-3.5">
-                                <div className="space-y-1">
-                                    <label htmlFor="email" className="text-xs font-bold text-slate-900">
-                                        Email Address
-                                    </label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        required
-                                        disabled={isLoading || isGoogleLoading}
-                                        placeholder="name@company.com"
-                                        className="h-10.5 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-xs sm:text-sm"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center">
-                                        <label htmlFor="password" className="text-xs font-bold text-slate-900">
-                                            Password
-                                        </label>
-                                        <Link href="/forgot-password" className="text-xs font-bold text-[#35877D] hover:text-[#2c6f66] hover:underline cursor-pointer">
-                                            Forgot password?
-                                        </Link>
-                                    </div>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        required
-                                        disabled={isLoading || isGoogleLoading}
-                                        placeholder="••••••••"
-                                        className="h-10.5 border-slate-200 focus-visible:ring-[#35877D] focus-visible:border-[#35877D] rounded-xl bg-slate-50 font-medium text-slate-900 text-xs sm:text-sm"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                    />
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    disabled={isLoading || isGoogleLoading}
-                                    className="w-full bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-11 rounded-xl gap-1.5 cursor-pointer shadow-md transition-all mt-1 text-xs sm:text-sm"
-                                >
-                                    {isLoading ? "Signing In..." : "Sign In"}
-                                    {!isLoading && <ArrowRight size={15} />}
-                                </Button>
-                            </form>
-
-                            {/* Sign Up Link */}
-                            <div className="text-center text-xs text-slate-500 font-medium pt-0.5">
-                                Don't have an account?{" "}
-                                <Link href="/register" className="text-[#35877D] font-extrabold hover:underline cursor-pointer">
-                                    Sign up
+                        <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                                <label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                                    Password
+                                </label>
+                                <Link href="/forgot-password" className="text-xs font-semibold text-[#35877D] hover:text-[#2b7068] hover:underline cursor-pointer transition-colors">
+                                    Forgot password?
                                 </Link>
                             </div>
-                        </Card>
-                    </div>
+                            <div className="relative">
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    autoComplete="current-password"
+                                    disabled={isLoading || isGoogleLoading}
+                                    placeholder="••••••••••••"
+                                    className="h-9.5 pr-9 border-slate-200 focus-visible:ring-2 focus-visible:ring-[#35877D]/20 focus-visible:border-[#35877D] rounded-xl bg-slate-50/50 font-medium text-slate-900 text-xs sm:text-sm px-3"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1 rounded-md focus:outline-none"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
+                        </div>
 
-                </div>
+                        <Button
+                            type="submit"
+                            disabled={isLoading || isGoogleLoading}
+                            className="w-full bg-[#35877D] hover:bg-[#2b7068] active:scale-[0.99] text-white font-semibold h-9.5 sm:h-10 rounded-xl gap-2 cursor-pointer shadow-sm shadow-[#35877D]/20 transition-all text-xs sm:text-sm mt-1"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={15} />
+                                    <span>Signing in...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Sign In</span>
+                                    <ArrowRight size={15} />
+                                </>
+                            )}
+                        </Button>
+                    </form>
+
+                    {/* Sign Up Link */}
+                    <div className="text-center text-xs text-slate-500 font-medium pt-1.5 border-t border-slate-100">
+                        Don't have an account?{" "}
+                        <Link href="/register" className="text-[#35877D] font-bold hover:underline cursor-pointer transition-colors">
+                            Sign up
+                        </Link>
+                    </div>
+                </Card>
             </main>
 
-            {/* Simple Auth Footer */}
-            <footer className="w-full text-center py-1 text-[11px] text-slate-400 font-medium shrink-0">
+            <footer className="w-full text-center py-1 text-[11px] text-slate-400 font-medium">
                 © {new Date().getFullYear()} Connectly360. All rights reserved.
             </footer>
         </div>
@@ -293,19 +259,5 @@ export default function LoginPage() {
         }>
             <LoginContent />
         </Suspense>
-    );
-}
-
-function FeatureRow({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
-    return (
-        <div className="flex gap-2.5 p-2.5 rounded-2xl hover:bg-slate-50 transition-all duration-200 border border-transparent hover:border-slate-100 group">
-            <div className="flex-shrink-0 flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-[#35877D]/10 text-[#35877D] border border-[#35877D]/15 transition-transform group-hover:scale-105">
-                <Icon size={15} />
-            </div>
-            <div>
-                <h4 className="text-xs font-bold text-slate-900 tracking-tight">{title}</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-normal font-medium">{description}</p>
-            </div>
-        </div>
     );
 }

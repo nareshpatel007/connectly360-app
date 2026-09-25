@@ -1,23 +1,8 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuItem,
-    SidebarMenuButton,
-    SidebarProvider,
-    SidebarTrigger,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
-    SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     LayoutDashboard,
     MessageSquare,
@@ -25,7 +10,7 @@ import {
     Settings,
     BarChart3,
     Plug,
-    ArrowRight,
+    ChevronRight,
     Sparkles,
     ChevronDown,
     LogOut,
@@ -41,18 +26,21 @@ import {
     CreditCard,
     Wallet,
     Shield,
-    Activity,
     Building2,
     MessageCircle,
-    BrainCircuit,
     BellRing,
     UserPlus,
     Zap,
     GitBranch,
     Coins,
+    Search,
+    Menu,
+    X,
+    PanelLeftClose,
+    PanelLeftOpen,
+    ShieldCheck
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import {
     DropdownMenu,
@@ -63,294 +51,175 @@ import {
     DropdownMenuSeparator,
     DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import React, { useState, useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { CreditBalance } from "@/components/credit-balance";
+import { AppCommandPalette } from "@/components/app-command-palette";
 
-type SubItem = {
+interface SubItem {
     icon: React.ElementType;
     label: string;
     href: string;
-};
+}
 
-type NavGroup = {
-    items: {
-        icon: React.ElementType;
-        label: string;
-        href: string;
-        subItems?: SubItem[];
-    }[];
-};
+interface NavItem {
+    label: string;
+    icon: React.ElementType;
+    href: string;
+    subItems?: SubItem[];
+}
 
-const NAV_STRUCTURE: NavGroup[] = [
+interface NavSection {
+    section: string;
+    items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
     {
+        section: "OVERVIEW",
         items: [
-            { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-        ],
+            { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        ]
     },
     {
+        section: "CUSTOMER & SALES",
         items: [
             {
-                icon: MessageSquare,
                 label: "CRM",
+                icon: MessageSquare,
                 href: "/conversations",
                 subItems: [
-                    { icon: MessageSquare, label: "Inbox", href: "/conversations" },
-                    { icon: Users, label: "Contacts", href: "/contacts" },
-                    { icon: GitBranch, label: "Leads", href: "/leads" },
-                ],
-            },
-        ],
+                    { label: "Inbox", icon: MessageSquare, href: "/conversations" },
+                    { label: "Contacts", icon: Users, href: "/contacts" },
+                    { label: "Leads", icon: GitBranch, href: "/leads" },
+                ]
+            }
+        ]
     },
     {
+        section: "AI & AUTOMATION",
         items: [
             {
+                label: "AI Platform",
                 icon: Bot,
-                label: "AI",
                 href: "/ai-assistant",
                 subItems: [
-                    { icon: Bot, label: "AI Assistant", href: "/ai-assistant" },
-                    { icon: Zap, label: "Automations", href: "/automations" },
-                    { icon: BookOpen, label: "Knowledge Base", href: "/knowledge-base" },
-                ],
+                    { label: "AI Assistant", icon: Bot, href: "/ai-assistant" },
+                    { label: "Knowledge Base", icon: BookOpen, href: "/knowledge-base" },
+                ]
             },
-        ],
+            { label: "Automations", icon: Zap, href: "/automations" },
+        ]
     },
     {
+        section: "MARKETING",
         items: [
             {
-                icon: Megaphone,
                 label: "Marketing",
+                icon: Megaphone,
                 href: "/marketing/campaigns",
                 subItems: [
-                    { icon: Megaphone, label: "Campaigns", href: "/marketing/campaigns" },
-                    { icon: FileText, label: "Templates", href: "/marketing/templates" },
-                ],
-            },
-        ],
+                    { label: "Campaigns", icon: Megaphone, href: "/marketing/campaigns" },
+                    { label: "Templates", icon: FileText, href: "/marketing/templates" },
+                ]
+            }
+        ]
     },
     {
+        section: "INTEGRATIONS",
         items: [
             {
-                icon: Plug,
                 label: "Integrations",
+                icon: Plug,
                 href: "/integrations/whatsapp",
                 subItems: [
-                    { icon: MessageCircle, label: "WhatsApp", href: "/integrations/whatsapp" },
-                    { icon: Key, label: "API Keys", href: "/integrations/api-keys" },
-                    { icon: Webhook, label: "Webhooks", href: "/integrations/webhooks" },
-                ],
-            },
-        ],
+                    { label: "WhatsApp WABA", icon: MessageCircle, href: "/integrations/whatsapp" },
+                    { label: "API Keys", icon: Key, href: "/integrations/api-keys" },
+                    { label: "Webhooks", icon: Webhook, href: "/integrations/webhooks" },
+                ]
+            }
+        ]
     },
     {
+        section: "ANALYTICS",
         items: [
             {
-                icon: BarChart3,
                 label: "Reports",
+                icon: BarChart3,
                 href: "/analytics",
                 subItems: [
-                    { icon: PieChart, label: "Analytics", href: "/analytics" },
-                    { icon: BarChart3, label: "Usage Reports", href: "/reports/usage-reports" },
-                ],
-            },
-        ],
+                    { label: "Analytics", icon: PieChart, href: "/analytics" },
+                    { label: "Usage Reports", icon: BarChart3, href: "/reports/usage-reports" },
+                ]
+            }
+        ]
     },
     {
+        section: "BILLING",
         items: [
             {
-                icon: Wallet,
                 label: "Billing & Credits",
+                icon: Wallet,
                 href: "/billing",
                 subItems: [
-                    { icon: LayoutDashboard, label: "Overview", href: "/billing" },
-                    { icon: Sparkles, label: "Buy Credits", href: "/billing/buy-credits" },
-                    { icon: Receipt, label: "Credit History", href: "/billing/credit-history" },
-                    { icon: CreditCard, label: "Payments", href: "/billing/payments" },
-                    { icon: FileText, label: "Invoices", href: "/billing/invoices" },
-                ],
-            },
-        ],
+                    { label: "Overview", icon: LayoutDashboard, href: "/billing" },
+                    { label: "Buy Credits", icon: Sparkles, href: "/billing/buy-credits" },
+                    { label: "Credit History", icon: Receipt, href: "/billing/credit-history" },
+                    { label: "Payments", icon: CreditCard, href: "/billing/payments" },
+                    { label: "Invoices", icon: FileText, href: "/billing/invoices" },
+                ]
+            }
+        ]
     },
     {
+        section: "ACCOUNT",
         items: [
             {
-                icon: Settings,
                 label: "Settings",
+                icon: Settings,
                 href: "/settings/company-profile",
                 subItems: [
-                    { icon: UserPlus, label: "Team Members", href: "/workspace/team-members" },
-                    { icon: Shield, label: "Roles & Permissions", href: "/workspace/roles-permissions" },
-                    { icon: Building2, label: "Company Profile", href: "/settings/company-profile" },
-                    { icon: BellRing, label: "Notifications", href: "/settings/notification-settings" },
-                ],
-            },
-        ],
-    },
-];
-
-function CollapsibleNavItem({
-    item,
-    isParentActive,
-    pathname,
-    openHref,
-    setOpenHref,
-}: {
-    item: NavGroup["items"][0];
-    isParentActive: boolean;
-    pathname: string;
-    openHref: string | null;
-    setOpenHref: (href: string | null) => void;
-}) {
-    const open = openHref === item.href;
-    const setOpen = (next: boolean) => setOpenHref(next ? item.href : null);
-
-    return (
-        <Collapsible open={open} onOpenChange={setOpen} className="w-full">
-            <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                        isActive={isParentActive}
-                        tooltip={item.label}
-                        size="sm"
-                        className={
-                            isParentActive
-                                ? "!bg-[#378179]/10 !text-[#378179] hover:!bg-[#378179]/15 hover:!text-[#378179] font-semibold rounded-lg transition-all duration-200 group cursor-pointer w-full"
-                                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium rounded-lg transition-all duration-200 group cursor-pointer w-full"
-                        }
-                    >
-                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <item.icon
-                                size={15}
-                                className={isParentActive ? "text-[#378179] shrink-0" : "text-slate-400 group-hover:text-slate-700 transition-colors shrink-0"}
-                            />
-                            <span className="text-xs truncate">{item.label}</span>
-                        </div>
-                        <ChevronDown
-                            size={12}
-                            className={`shrink-0 transition-transform duration-200 group-data-[state=collapsed]:hidden ${open ? "rotate-180" : ""} ${isParentActive ? "text-[#378179]" : "text-slate-400"}`}
-                        />
-                    </SidebarMenuButton>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <SidebarMenuSub className="border-l border-slate-200 ml-4 pl-3 mt-0.5 gap-0.5">
-                        {item.subItems!.map((sub) => {
-                            const isSubActive = pathname === sub.href || (sub.href !== "/dashboard" && pathname.startsWith(sub.href));
-                            return (
-                                <SidebarMenuSubItem key={sub.href}>
-                                    <SidebarMenuSubButton
-                                        asChild
-                                        isActive={isSubActive}
-                                        size="sm"
-                                        className={
-                                             isSubActive
-                                                ? "!text-[#378179] !bg-[#378179]/8 font-semibold rounded-lg"
-                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                                        }
-                                    >
-                                        <Link href={sub.href} className="flex items-center gap-2.5">
-                                            <sub.icon
-                                                size={13}
-                                                className={isSubActive ? "text-[#378179] shrink-0" : "text-slate-400 shrink-0"}
-                                            />
-                                            <span className="text-[11px] font-medium">{sub.label}</span>
-                                        </Link>
-                                    </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                            );
-                        })}
-                    </SidebarMenuSub>
-                </CollapsibleContent>
-            </SidebarMenuItem>
-        </Collapsible>
-    );
-}
-
-function SidebarNav({ pathname }: { pathname: string }) {
-    const { user } = useAuth();
-    const isAdmin = user?.role === "owner" || user?.role === "admin";
-
-    const navGroups = [...NAV_STRUCTURE];
-    if (isAdmin) {
-        navGroups.push({
-            items: [
-                {
-                    icon: Shield,
-                    label: "Admin Panel",
-                    href: "/admin/credits",
-                    subItems: [
-                        { icon: Coins, label: "Credit Management", href: "/admin/credits" },
-                    ],
-                },
-            ],
-        });
+                    { label: "Team Members", icon: UserPlus, href: "/workspace/team-members" },
+                    { label: "Roles & Permissions", icon: Shield, href: "/workspace/roles-permissions" },
+                    { label: "Company Profile", icon: Building2, href: "/settings/company-profile" },
+                    { label: "Notifications", icon: BellRing, href: "/settings/notification-settings" },
+                ]
+            }
+        ]
     }
-
-    // Find the initially-active collapsible item so it opens on first render
-    const initialOpen = navGroups.flatMap(g => g.items)
-        .find(item => item.subItems?.some(
-            sub => pathname === sub.href || (sub.href !== "/dashboard" && pathname.startsWith(sub.href))
-        ))?.href ?? null;
-
-    const [openHref, setOpenHref] = useState<string | null>(initialOpen);
-
-    return (
-        <SidebarGroup className="py-0 px-2">
-            <SidebarMenu className="gap-0.5">
-                {navGroups.flatMap(g => g.items).map((item) => {
-                    const hasSubItems = item.subItems && item.subItems.length > 0;
-
-                    if (!hasSubItems) {
-                        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                        return (
-                            <SidebarMenuItem key={item.href}>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={isActive}
-                                    tooltip={item.label}
-                                    size="sm"
-                                    className={isActive
-                                        ? "!bg-[#378179]/10 !text-[#378179] hover:!bg-[#378179]/15 hover:!text-[#378179] font-semibold rounded-lg transition-all duration-200 group"
-                                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium rounded-lg transition-all duration-200 group"}
-                                >
-                                    <Link href={item.href} className="flex items-center gap-2.5 w-full">
-                                        <item.icon size={15} className={isActive ? "text-[#378179]" : "text-slate-400 group-hover:text-slate-700 transition-colors"} />
-                                        <span className="text-xs">{item.label}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        );
-                    }
-
-                    // Collapsible parent item
-                    const isParentActive = item.subItems!.some(
-                        sub => pathname === sub.href || (sub.href !== "/dashboard" && pathname.startsWith(sub.href))
-                    );
-
-                    return (
-                        <CollapsibleNavItem
-                            key={item.href}
-                            item={item}
-                            isParentActive={isParentActive}
-                            pathname={pathname}
-                            openHref={openHref}
-                            setOpenHref={setOpenHref}
-                        />
-                    );
-                })}
-            </SidebarMenu>
-        </SidebarGroup>
-    );
-}
+];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { token, user, logout } = useAuth();
 
+    // Sidebar states: collapsed & mobile drawer
+    const [collapsed, setCollapsed] = useState<boolean>(false);
+    const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+    const [commandOpen, setCommandOpen] = useState<boolean>(false);
+
+    // Notifications state
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
+    // Load initial collapse state from localStorage
+    useEffect(() => {
+        const savedState = localStorage.getItem("connectly360-sidebar-collapsed");
+        if (savedState !== null) {
+            setCollapsed(savedState === "true");
+        }
+    }, []);
+
+    const toggleCollapse = () => {
+        setCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem("connectly360-sidebar-collapsed", String(next));
+            return next;
+        });
+    };
+
+    // Fetch Notifications
     const fetchNotifications = async () => {
         if (!token) return;
         try {
@@ -370,7 +239,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
+        const interval = setInterval(fetchNotifications, 12000);
         return () => clearInterval(interval);
     }, [token]);
 
@@ -391,201 +260,463 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }
     };
 
-    // If the page is login, register, or forgot-password, we don't render the sidebar layout wrapper!
-    const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
+    // Handle authentication / public standalone pages
+    const isAuthPage =
+        pathname === "/login" ||
+        pathname === "/register" ||
+        pathname === "/forgot-password" ||
+        pathname === "/verify-email";
+
     if (isAuthPage) {
         return <>{children}</>;
+    }
+
+    const isAdmin = user?.role === "owner" || user?.role === "admin";
+    const navSections = [...NAV_SECTIONS];
+
+    if (isAdmin) {
+        // Append Platform section for authorized admin users
+        navSections.push({
+            section: "PLATFORM",
+            items: [
+                {
+                    label: "Admin Panel",
+                    icon: ShieldCheck,
+                    href: "/admin/credits",
+                    subItems: [
+                        { label: "Credit Management", icon: Coins, href: "/admin/credits" }
+                    ]
+                }
+            ]
+        });
     }
 
     const isInboxPage = pathname === "/conversations" || pathname.startsWith("/customer/inbox");
 
     return (
-        <SidebarProvider>
-            <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans dashboard-theme">
-                {/* 1. TOP HEADER BAR */}
-                <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-5 shrink-0 z-40 select-none shadow-xs">
-                    {/* Left side: Logo & Sidebar Toggle */}
+        <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans selection:bg-[#35877D] selection:text-white dashboard-theme">
+            {/* Command Palette Component */}
+            <AppCommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+
+            {/* Mobile Backdrop */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            {/* SIDEBAR APPLICATION PANEL */}
+            <aside
+                className={`fixed lg:static top-0 left-0 bottom-0 bg-white border-r border-slate-200 flex flex-col z-50 transition-all duration-300 ease-in-out shrink-0 ${
+                    mobileOpen
+                        ? "translate-x-0 w-64"
+                        : "-translate-x-full lg:translate-x-0 " + (collapsed ? "w-[72px]" : "w-64")
+                }`}
+            >
+                {/* Brand Header */}
+                <div className={`h-16 px-4 flex items-center border-b border-slate-200 bg-white shrink-0 ${
+                    collapsed ? "justify-center" : "justify-between"
+                }`}>
+                    <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+                        <img
+                            src="/images/logo.png"
+                            alt="Connectly360 Logo"
+                            className="h-8 w-auto object-contain shrink-0"
+                        />
+                    </Link>
+
+                    {!collapsed && (
+                        <button
+                            onClick={toggleCollapse}
+                            className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Collapse Sidebar"
+                        >
+                            <PanelLeftClose size={18} />
+                        </button>
+                    )}
+
+                    <button
+                        className="lg:hidden text-slate-400 hover:text-slate-700 cursor-pointer"
+                        onClick={() => setMobileOpen(false)}
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Navigation Menu */}
+                <nav className="flex-1 overflow-y-auto p-3 space-y-4 font-sans scrollbar-thin">
+                    {navSections.map((section, sIdx) => (
+                        <div key={sIdx} className="space-y-1">
+                            {!collapsed ? (
+                                <div className="px-3 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest truncate">
+                                    {section.section}
+                                </div>
+                            ) : (
+                                <div className="h-px bg-slate-100 my-2" />
+                            )}
+
+                            {section.items.map((item) => {
+                                const Icon = item.icon;
+                                const hasSubItems = item.subItems && item.subItems.length > 0;
+                                const isActive =
+                                    pathname === item.href ||
+                                    (item.href !== "/dashboard" && pathname.startsWith(item.href)) ||
+                                    (hasSubItems && item.subItems!.some(s => pathname === s.href || (s.href !== "/dashboard" && pathname.startsWith(s.href))));
+
+                                if (!hasSubItems) {
+                                    const navLink = (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className={`flex items-center ${
+                                                collapsed ? "justify-center px-2" : "justify-between px-3.5"
+                                            } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                                                isActive
+                                                    ? "bg-[#35877D] text-white shadow-xs font-bold"
+                                                    : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <Icon size={18} className={isActive ? "text-white" : "text-slate-500"} />
+                                                {!collapsed && <span className="truncate">{item.label}</span>}
+                                            </div>
+                                            {!collapsed && isActive && (
+                                                <ChevronRight size={14} className="text-white/80 shrink-0" />
+                                            )}
+                                        </Link>
+                                    );
+
+                                    if (collapsed) {
+                                        return (
+                                            <Tooltip key={item.href} delayDuration={100}>
+                                                <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+                                                <TooltipContent side="right" className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg">
+                                                    {item.label}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        );
+                                    }
+
+                                    return navLink;
+                                }
+
+                                // Collapsible Group Item
+                                const parentLink = (
+                                    <Collapsible key={item.href} defaultOpen={isActive} className="w-full">
+                                        <CollapsibleTrigger asChild>
+                                            <button
+                                                className={`w-full flex items-center ${
+                                                    collapsed ? "justify-center px-2" : "justify-between px-3.5"
+                                                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                                                    isActive
+                                                        ? "bg-[#35877D]/10 text-[#35877D] font-bold"
+                                                        : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <Icon size={18} className={isActive ? "text-[#35877D]" : "text-slate-500"} />
+                                                    {!collapsed && <span className="truncate">{item.label}</span>}
+                                                </div>
+                                                {!collapsed && (
+                                                    <ChevronDown size={14} className="text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+                                                )}
+                                            </button>
+                                        </CollapsibleTrigger>
+
+                                        {!collapsed && (
+                                            <CollapsibleContent className="pl-4 pr-1 pt-1 space-y-0.5 border-l border-slate-100 my-1 ml-4">
+                                                {item.subItems!.map((sub) => {
+                                                    const SubIcon = sub.icon;
+                                                    const isSubActive = pathname === sub.href || (sub.href !== "/dashboard" && pathname.startsWith(sub.href));
+
+                                                    return (
+                                                        <Link
+                                                            key={sub.href}
+                                                            href={sub.href}
+                                                            onClick={() => setMobileOpen(false)}
+                                                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                                                                isSubActive
+                                                                    ? "bg-[#35877D] text-white font-bold shadow-2xs"
+                                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                            }`}
+                                                        >
+                                                            <SubIcon size={14} className={isSubActive ? "text-white" : "text-slate-400"} />
+                                                            <span className="truncate">{sub.label}</span>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </CollapsibleContent>
+                                        )}
+                                    </Collapsible>
+                                );
+
+                                if (collapsed) {
+                                    return (
+                                        <Tooltip key={item.href} delayDuration={100}>
+                                            <TooltipTrigger asChild>{parentLink}</TooltipTrigger>
+                                            <TooltipContent side="right" className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg">
+                                                {item.label}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    );
+                                }
+
+                                return parentLink;
+                            })}
+                        </div>
+                    ))}
+                </nav>
+
+                {/* Sidebar Footer User Info */}
+                <div className="p-3 border-t border-slate-200 bg-slate-50/70">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className={`w-full flex items-center ${
+                                    collapsed ? "justify-center p-2" : "gap-3 p-2.5"
+                                } rounded-xl bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 transition-colors text-left focus:outline-none cursor-pointer`}
+                            >
+                                <div className="h-8 w-8 rounded-full bg-[#35877D] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                                </div>
+                                {!collapsed && (
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-slate-900 truncate">
+                                            {user?.name || "Workspace User"}
+                                        </p>
+                                        <span className="text-[9px] font-bold text-emerald-600 flex items-center gap-1 mt-0.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            Workspace Admin
+                                        </span>
+                                    </div>
+                                )}
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            side="top"
+                            className="w-56 p-1.5 border border-slate-200 bg-white text-slate-800 rounded-2xl shadow-xl font-sans"
+                        >
+                            <DropdownMenuLabel className="px-2 py-1.5">
+                                <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                                    Account Profile
+                                </p>
+                                <p className="text-xs font-bold text-slate-900 truncate mt-0.5">
+                                    {user?.name || "User"}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                    {user?.email || ""}
+                                </p>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-slate-100" />
+                            <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer font-semibold">
+                                <Link href="/settings/company-profile" className="flex items-center gap-2">
+                                    <Settings size={14} />
+                                    <span>Account Settings</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer font-semibold">
+                                <Link href="/integrations/whatsapp" className="flex items-center gap-2">
+                                    <MessageCircle size={14} />
+                                    <span>WhatsApp Setup</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-100" />
+                            <DropdownMenuItem
+                                onClick={logout}
+                                className="rounded-lg px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 cursor-pointer font-bold flex items-center gap-2"
+                            >
+                                <LogOut size={14} />
+                                <span>Sign Out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </aside>
+
+            {/* MAIN APPLICATION VIEWPORT CONTENT */}
+            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-slate-50/60">
+                {/* STICKY TOP HEADER */}
+                <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 sticky top-0">
                     <div className="flex items-center gap-3">
-                        <SidebarTrigger className="text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg cursor-pointer shrink-0" />
-                        <Link href="/dashboard" className="flex items-center gap-2">
-                            <img src="/images/logo.png" alt="Connectly360 Logo" className="h-9 w-auto object-contain" />
-                        </Link>
+                        <button
+                            className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                            onClick={() => setMobileOpen(true)}
+                        >
+                            <Menu size={20} />
+                        </button>
+
+                        {/* Expand button when collapsed desktop */}
+                        {collapsed && (
+                            <button
+                                onClick={toggleCollapse}
+                                className="hidden lg:flex p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer mr-1"
+                                title="Expand Sidebar"
+                            >
+                                <PanelLeftOpen size={18} />
+                            </button>
+                        )}
+
+                        {/* Global Search Bar (opens Command Palette) */}
+                        <button
+                            onClick={() => setCommandOpen(true)}
+                            className="flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-[#35877D]/50 text-xs text-slate-500 w-52 sm:w-72 md:w-80 transition-all cursor-pointer shadow-2xs group"
+                        >
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Search size={14} className="text-slate-400 group-hover:text-[#35877D] shrink-0" />
+                                <span className="truncate text-slate-500 font-medium text-xs">
+                                    Search contacts, leads, campaigns...
+                                </span>
+                            </div>
+                            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded shadow-2xs shrink-0">
+                                ⌘K
+                            </kbd>
+                        </button>
                     </div>
 
-                    {/* Right side: Widgets and Actions */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         {/* Credits Balance display */}
                         <CreditBalance variant="header" />
 
-                        {/* WhatsApp Connection status indicator if needed */}
-                        <Button variant="outline" asChild className="hidden sm:inline-flex border-[#378179] text-[#378179] hover:bg-[#EAF7F2] text-xs font-medium h-8 px-3.5 rounded-lg bg-transparent cursor-pointer">
-                            <Link href="/billing">Wallet &amp; Credits</Link>
-                        </Button>
-
                         <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-
-                        {/* Notifications (Bell Icon) */}
+                        {/* Notifications Bell */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <div className="relative cursor-pointer">
-                                    <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-lg cursor-pointer">
-                                        <Bell size={18} />
-                                    </Button>
+                                <button className="relative p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-xl cursor-pointer transition-colors focus:outline-none">
+                                    <Bell size={18} />
                                     {unreadCount > 0 && (
-                                        <span className="absolute top-0.5 right-0.5 bg-red-500 text-white font-extrabold text-[9px] h-4.5 w-4.5 rounded-full flex items-center justify-center border border-white shadow-xs">
+                                        <span className="absolute top-1 right-1 bg-rose-500 text-white font-extrabold text-[9px] h-4.5 w-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-2xs">
                                             {unreadCount}
                                         </span>
                                     )}
-                                </div>
+                                </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
-                                className="w-80 p-2 border border-slate-200 bg-white rounded-xl shadow-lg z-50 flex flex-col gap-1"
+                                className="w-80 p-2 border border-slate-200 bg-white rounded-2xl shadow-xl z-50 flex flex-col gap-1 font-sans"
                                 side="bottom"
                                 align="end"
                             >
                                 <div className="flex items-center justify-between px-2 py-1">
-                                    <span className="text-xs font-bold text-slate-800">Notifications</span>
+                                    <span className="text-xs font-bold text-slate-900">Notifications</span>
                                     {unreadCount > 0 && (
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleReadAll();
                                             }}
-                                            className="text-[10px] text-[#378179] font-bold hover:underline bg-transparent border-0 cursor-pointer"
+                                            className="text-[10px] text-[#35877D] font-bold hover:underline bg-transparent border-0 cursor-pointer"
                                         >
-                                            Mark all as read
+                                            Mark all read
                                         </button>
                                     )}
                                 </div>
-                                <DropdownMenuSeparator className="my-1" />
+                                <DropdownMenuSeparator className="my-1 bg-slate-100" />
                                 <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 flex flex-col">
                                     {notifications.length === 0 ? (
-                                        <div className="py-8 px-4 flex flex-col items-center justify-center text-center select-none animate-in fade-in-50 duration-300">
-                                            <div className="h-10 w-10 rounded-xl bg-[#378179]/5 border border-[#378179]/10 flex items-center justify-center text-[#378179] mb-2.5 shadow-xs">
+                                        <div className="py-8 px-4 flex flex-col items-center justify-center text-center select-none">
+                                            <div className="h-9 w-9 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mb-2">
                                                 <Bell size={16} />
                                             </div>
                                             <p className="text-xs font-bold text-slate-800">All caught up!</p>
-                                            <p className="text-xs text-slate-500 mt-1 max-w-[300px] leading-normal font-normal">
-                                                No new notifications. We'll let you know when workspace updates happen.
+                                            <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                                                No new notifications. We'll update you when activities occur.
                                             </p>
                                         </div>
                                     ) : (
                                         notifications.slice(0, 5).map((n) => (
                                             <div
                                                 key={n.id}
-                                                className={`p-2 hover:bg-slate-50 transition-colors flex flex-col gap-0.5 rounded-lg ${!n.is_read ? 'bg-slate-50/50' : ''}`}
+                                                className={`p-2 hover:bg-slate-50 transition-colors flex flex-col gap-0.5 rounded-xl ${!n.is_read ? 'bg-slate-50/70' : ''}`}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
                                                     <span className="text-xs font-bold text-slate-800 truncate">{n.title}</span>
                                                     {!n.is_read && (
-                                                        <span className="h-1.5 w-1.5 rounded-full bg-[#378179] shrink-0 mt-1" />
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-[#35877D] shrink-0 mt-1" />
                                                     )}
                                                 </div>
-                                                <p className="text-[10.5px] text-slate-500 leading-normal">{n.message}</p>
-                                                <span className="text-[9px] text-slate-450 font-medium">
+                                                <p className="text-[11px] text-slate-500 leading-normal">{n.message}</p>
+                                                <span className="text-[9px] text-slate-400 font-semibold">
                                                     {new Date(n.created_at).toLocaleDateString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                                                 </span>
                                             </div>
                                         ))
                                     )}
                                 </div>
-                                <DropdownMenuSeparator className="my-1" />
-                                <Button
-                                    asChild
-                                    variant="ghost"
-                                    className="w-full text-center text-xs font-bold text-[#378179] hover:bg-[#378179]/5 rounded-lg py-1.5 h-auto cursor-pointer border-0"
+                                <DropdownMenuSeparator className="my-1 bg-slate-100" />
+                                <Link
+                                    href="/settings/notification-settings"
+                                    className="w-full text-center text-xs font-bold text-[#35877D] hover:bg-[#35877D]/5 rounded-xl py-1.5 block cursor-pointer transition-colors"
                                 >
-                                    <Link href="/notifications">View all notifications</Link>
-                                </Button>
+                                    View all notifications
+                                </Link>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
                         <div className="h-4 w-px bg-slate-200" />
 
-                        {/* User Profile dropdown menu */}
+                        {/* User Profile Header Dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-50 border border-transparent transition-all focus:outline-none cursor-pointer group">
-                                    <div className="h-8 w-8 rounded-full bg-[#378179] text-white flex items-center justify-center font-extrabold text-xs shadow-xs transition-transform duration-200 group-hover:scale-102">
+                                <button className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all focus:outline-none cursor-pointer">
+                                    <div className="h-7 w-7 rounded-full bg-[#35877D] text-white flex items-center justify-center font-extrabold text-xs shrink-0">
                                         {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                                     </div>
-                                    <span className="hidden md:inline-block text-xs font-medium text-slate-800 group-hover:text-slate-900 truncate max-w-[100px]">
+                                    <span className="hidden md:inline-block text-xs font-bold text-slate-800 truncate max-w-28">
                                         {user?.name || "User"}
                                     </span>
-                                    <svg className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                    </svg>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
-                                className="w-56 p-1.5 border border-slate-200 bg-white rounded-xl shadow-lg animate-in fade-in-50 slide-in-from-top-2 z-50"
-                                side="bottom"
                                 align="end"
-                                sideOffset={8}
+                                className="w-56 p-1.5 border border-slate-200 bg-white text-slate-800 rounded-2xl shadow-xl font-sans"
                             >
                                 <DropdownMenuLabel className="px-2 py-1.5">
-                                    <p className="text-[9px] font-medium text-slate-400 tracking-wider uppercase">Logged in as</p>
-                                    <p className="text-xs font-semibold text-slate-900 mt-0.5 truncate">{user?.name || "User"}</p>
-                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{user?.email || ""}</p>
+                                    <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                                        Workspace Account
+                                    </p>
+                                    <p className="text-xs font-bold text-slate-900 truncate mt-0.5">
+                                        {user?.name || "User"}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                        {user?.email || ""}
+                                    </p>
                                 </DropdownMenuLabel>
-                                <DropdownMenuSeparator className="my-1 bg-slate-100" />
+                                <DropdownMenuSeparator className="bg-slate-100" />
                                 <DropdownMenuGroup>
-                                    <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 cursor-pointer transition-colors">
-                                        <Link href="/settings/company-profile" className="flex items-center gap-2 w-full">
+                                    <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer font-semibold">
+                                        <Link href="/settings/company-profile" className="flex items-center gap-2">
                                             <Settings size={14} />
                                             <span>Account Settings</span>
                                         </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 cursor-pointer transition-colors">
-                                        <Link href="/integrations/whatsapp" className="flex items-center gap-2 w-full">
+                                    <DropdownMenuItem asChild className="rounded-lg px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900 cursor-pointer font-semibold">
+                                        <Link href="/integrations/whatsapp" className="flex items-center gap-2">
                                             <Plug size={14} />
-                                            <span>WhatsApp Integration</span>
+                                            <span>WhatsApp Setup</span>
                                         </Link>
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>
-                                <DropdownMenuSeparator className="my-1 bg-slate-100" />
+                                <DropdownMenuSeparator className="bg-slate-100" />
                                 <DropdownMenuItem
                                     onClick={logout}
-                                    className="rounded-lg px-2 py-1.5 text-xs text-red-600 focus:bg-red-50 focus:text-red-600 hover:bg-red-50 hover:text-red-600 cursor-pointer font-semibold transition-colors flex items-center gap-2"
+                                    className="rounded-lg px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 cursor-pointer font-bold flex items-center gap-2"
                                 >
                                     <LogOut size={14} />
-                                    <span>Sign out</span>
+                                    <span>Sign Out</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 </header>
 
-                {/* 3. SIDEBAR AND CONTENT LAYER */}
-                <div className="flex flex-grow w-full overflow-hidden relative">
-                    <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white shrink-0 h-full z-30 transition-all duration-200">
-                        {/* Sidebar Navigation */}
-                        <SidebarContent className="py-2 space-y-0.5 overflow-y-auto">
-                            <SidebarNav pathname={pathname} />
-                        </SidebarContent>
-
-                        <SidebarFooter className="p-3 border-t border-slate-100 bg-white shrink-0 group-data-[state=collapsed]:hidden">
-                            <CreditBalance variant="widget" />
-                        </SidebarFooter>
-
-                    </Sidebar>
-
-                    {/* Main Content Area */}
-                    <main className="flex-grow flex flex-col min-w-0 overflow-hidden bg-slate-50">
-                        {/* We dynamically apply padding so Inbox pages get 100% width/height without any spacing, while other pages have standard padding */}
-                        <div className={`flex-1 w-full h-full overflow-auto ${isInboxPage ? "p-0" : "p-3 sm:p-4 md:p-5 text-xs sm:text-sm text-slate-800"}`}>
-                            {isInboxPage ? (
-                                children
-                            ) : (
-                                <div className="max-w-7xl mx-auto w-full flex flex-col gap-5">
-                                    {children}
-                                </div>
-                            )}
-                        </div>
-                    </main>
-                </div>
+                {/* SCROLLABLE FULL-VIEWPORT MAIN CONTENT */}
+                <main className={`flex-1 overflow-y-auto w-full min-w-0 ${isInboxPage ? "p-0" : "p-4 sm:p-6 md:p-8 lg:p-10 space-y-6"}`}>
+                    {children}
+                </main>
             </div>
-        </SidebarProvider>
+        </div>
     );
 }

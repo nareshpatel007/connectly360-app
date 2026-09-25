@@ -63,7 +63,10 @@ export default function RootLayout({
             className={`${jost.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
             suppressHydrationWarning
         >
-            <body className="min-h-full bg-background text-foreground flex flex-col font-sans">
+            <body
+                suppressHydrationWarning
+                className="min-h-full bg-background text-foreground flex flex-col font-sans"
+            >
                 <Providers>
                     <AuthProvider>
                         {children}
