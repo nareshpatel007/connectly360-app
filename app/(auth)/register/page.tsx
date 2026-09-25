@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Loader2, Info, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2, Info, Eye, EyeOff, Wand2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { OtpVerification } from "@/components/auth/OtpVerification";
 import { useAuth } from "@/lib/auth-context";
 import { useRegistrationSession } from "@/hooks/useRegistrationSession";
+import { notify } from "@/lib/notifications";
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com";
 
@@ -33,6 +34,35 @@ function RegisterContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isCheckingInvite, setIsCheckingInvite] = useState(false);
+
+    const generateStrongPassword = () => {
+        const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const lowercase = "abcdefghijkmnopqrstuvwxyz";
+        const numbers = "23456789";
+        const symbols = "!@#$%^&*()_+-=";
+        const allChars = uppercase + lowercase + numbers + symbols;
+
+        let newPassword = [
+            uppercase[Math.floor(Math.random() * uppercase.length)],
+            lowercase[Math.floor(Math.random() * lowercase.length)],
+            numbers[Math.floor(Math.random() * numbers.length)],
+            symbols[Math.floor(Math.random() * symbols.length)],
+        ];
+
+        for (let i = 0; i < 12; i++) {
+            newPassword.push(allChars[Math.floor(Math.random() * allChars.length)]);
+        }
+
+        for (let i = newPassword.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newPassword[i], newPassword[j]] = [newPassword[j], newPassword[i]];
+        }
+
+        const generated = newPassword.join("");
+        setPassword(generated);
+        setShowPassword(true);
+        notify.info("Generated a strong password", { description: "Password has been automatically unmasked for easy copying." });
+    };
 
     // If an active registration challenge is pending in browser session, redirect to /verify-email
     useEffect(() => {
@@ -259,9 +289,18 @@ function RegisterContent() {
 
                                 {/* Password with Toggle & Strength Meter */}
                                 <div className="space-y-1">
-                                    <label htmlFor="password" className="text-xs font-bold text-slate-800">
-                                        Password <span className="text-rose-500">*</span>
-                                    </label>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="password" className="text-xs font-bold text-slate-800">
+                                            Password <span className="text-rose-500">*</span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={generateStrongPassword}
+                                            className="text-[11px] font-semibold text-[#35877D] hover:text-[#2c6e66] hover:underline inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                        >
+                                            <Wand2 size={12} /> Generate Strong Password
+                                        </button>
+                                    </div>
                                     <div className="relative">
                                         <Input
                                             id="password"
