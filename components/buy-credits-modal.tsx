@@ -56,7 +56,7 @@ interface BuyCreditsModalProps {
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000, 10000];
 
 export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCreditsModalProps) {
-    const { token, login } = useAuth();
+    const { token, login, refreshUser } = useAuth();
     const [mode, setMode] = useState<"packages" | "custom">("packages");
 
     // Package mode states
@@ -191,6 +191,10 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                     if (verifyData.data?.access_token) {
                         login(verifyData.data.access_token);
                     }
+                    await refreshUser();
+                    if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                    }
                     onOpenChange(false);
                 } else {
                     toast.error(verifyData.message || "Payment verification failed.");
@@ -228,6 +232,10 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                             if (verifyData.data?.access_token) {
                                 login(verifyData.data.access_token);
                             }
+                            await refreshUser();
+                            if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                            }
                             onOpenChange(false);
                         } else {
                             toast.error(verifyData.message || "Payment verification failed.");
@@ -248,6 +256,7 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                 }
             };
 
+            onOpenChange(false);
             const rzp = new window.Razorpay(options);
             rzp.open();
 
@@ -304,6 +313,10 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                     if (verifyData.data?.access_token) {
                         login(verifyData.data.access_token);
                     }
+                    await refreshUser();
+                    if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                    }
                     onOpenChange(false);
                 } else {
                     toast.error(verifyData.message || "Payment verification failed.");
@@ -341,6 +354,10 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                             if (verifyData.data?.access_token) {
                                 login(verifyData.data.access_token);
                             }
+                            await refreshUser();
+                            if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                            }
                             onOpenChange(false);
                         } else {
                             toast.error(verifyData.message || "Payment verification failed.");
@@ -361,6 +378,7 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
                 }
             };
 
+            onOpenChange(false);
             const rzp = new window.Razorpay(options);
             rzp.open();
 

@@ -64,9 +64,18 @@ export default function BillingOverviewPage() {
         if (token) {
             fetchSummary();
         }
+
+        const handleCreditsUpdated = () => {
+            if (token) fetchSummary();
+        };
+
+        window.addEventListener("creditsUpdated", handleCreditsUpdated);
+        return () => {
+            window.removeEventListener("creditsUpdated", handleCreditsUpdated);
+        };
     }, [token]);
 
-    const balance = summary ? summary.balance : Number(user?.credits || 0);
+    const balance = user?.credits !== undefined ? Number(user.credits) : (summary ? summary.balance : 0);
     const isZeroCredits = balance <= 0;
     const isLowCredits = balance > 0 && balance <= 100;
 

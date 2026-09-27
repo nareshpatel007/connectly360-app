@@ -45,7 +45,7 @@ const DEFAULT_PACKAGES: CreditPack[] = [
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000, 10000];
 
 export default function RechargeCreditsPage() {
-    const { user, token, login } = useAuth();
+    const { user, token, login, refreshUser } = useAuth();
     const [packs, setPacks] = useState<CreditPack[]>(DEFAULT_PACKAGES);
     const [loadingPack, setLoadingPack] = useState<number | null>(null);
 
@@ -189,6 +189,10 @@ export default function RechargeCreditsPage() {
                     if (verifyData.data?.access_token) {
                         login(verifyData.data.access_token);
                     }
+                    await refreshUser();
+                    if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                    }
                 } else {
                     toast.error(verifyData.message || "Payment verification failed.");
                 }
@@ -224,6 +228,10 @@ export default function RechargeCreditsPage() {
                             toast.success(`Payment verified! Added ${(pkg.total_credits || pkg.credits).toLocaleString()} credits.`);
                             if (verifyData.data?.access_token) {
                                 login(verifyData.data.access_token);
+                            }
+                            await refreshUser();
+                            if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("creditsUpdated"));
                             }
                         } else {
                             toast.error(verifyData.message || "Verification failed.");
@@ -294,6 +302,10 @@ export default function RechargeCreditsPage() {
                     if (verifyData.data?.access_token) {
                         login(verifyData.data.access_token);
                     }
+                    await refreshUser();
+                    if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("creditsUpdated"));
+                    }
                 } else {
                     toast.error(verifyData.message || "Payment verification failed.");
                 }
@@ -329,6 +341,10 @@ export default function RechargeCreditsPage() {
                             toast.success(`Payment verified! Added ${orderData.total_credits.toLocaleString()} credits.`);
                             if (verifyData.data?.access_token) {
                                 login(verifyData.data.access_token);
+                            }
+                            await refreshUser();
+                            if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("creditsUpdated"));
                             }
                         } else {
                             toast.error(verifyData.message || "Verification failed.");

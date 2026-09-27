@@ -24,6 +24,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (token: string, targetPath?: string) => void;
     logout: () => void;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -182,6 +183,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [token, user, pathname, isLoading, router]);
 
+    const refreshUser = useCallback(async () => {
+        const storedToken = token || (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
+        if (storedToken) {
+            await fetchProfile(storedToken);
+        }
+    }, [token, fetchProfile]);
+
     const login = (newToken: string, targetPath?: string) => {
         localStorage.setItem("auth_token", newToken);
         setToken(newToken);
@@ -203,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isLoading,
                 login,
                 logout,
+                refreshUser,
             }}
         >
             {children}
