@@ -172,29 +172,29 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 font-sans selection:bg-[#35877D] selection:text-white dashboard-theme">
+        <div className="flex h-screen w-screen overflow-hidden bg-slate-50/70 text-slate-900 font-sans selection:bg-[#35877D] selection:text-white dashboard-theme">
             {/* Command Palette Component (Cmd + K) */}
             <AppCommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
 
             {/* Mobile Backdrop */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden transition-opacity"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
 
             {/* SIDEBAR APPLICATION PANEL */}
             <aside
-                className={`fixed lg:static top-0 left-0 bottom-0 bg-white border-r border-slate-200 flex flex-col z-50 transition-all duration-300 ease-in-out shrink-0 ${
+                className={`fixed lg:static top-0 left-0 bottom-0 bg-white border-r border-slate-200/80 flex flex-col z-50 transition-all duration-300 ease-in-out shrink-0 shadow-sm ${
                     mobileOpen
                         ? "translate-x-0 w-64"
-                        : "-translate-x-full lg:translate-x-0 " + (collapsed ? "w-[72px]" : "w-64")
+                        : "-translate-x-full lg:translate-x-0 " + (collapsed ? "w-[76px]" : "w-64")
                 }`}
             >
                 {/* Brand Header */}
                 <div
-                    className={`h-16 px-4 flex items-center border-b border-slate-200 bg-white shrink-0 ${
+                    className={`h-16 px-4 flex items-center border-b border-slate-200/80 bg-white shrink-0 ${
                         collapsed ? "justify-center" : "justify-between"
                     }`}
                 >
@@ -240,7 +240,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         return (
                             <div key={sIdx} className="space-y-1">
                                 {!collapsed ? (
-                                    <div className="px-3 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest truncate">
+                                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">
                                         {section.section}
                                     </div>
                                 ) : (
@@ -263,10 +263,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                 onClick={() => setMobileOpen(false)}
                                                 className={`flex items-center ${
                                                     collapsed ? "justify-center px-2" : "justify-between px-3.5"
-                                                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                                                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                                                     isActive
-                                                        ? "bg-[#35877D] text-white shadow-xs font-bold"
-                                                        : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
+                                                        ? "bg-[#35877D] text-white shadow-md shadow-[#35877D]/20 font-bold"
+                                                        : "text-slate-600 hover:bg-teal-50/60 hover:text-[#35877D]"
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
@@ -275,7 +275,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                 </div>
 
                                                 {!collapsed && item.href === "/conversations" && unreadCount > 0 && (
-                                                    <span className="px-2 py-0.5 text-[10px] font-extrabold bg-rose-500 text-white rounded-full shadow-2xs">
+                                                    <span className="px-2 py-0.5 text-[10px] font-black bg-rose-500 text-white rounded-full shadow-2xs">
                                                         {unreadCount}
                                                     </span>
                                                 )}
@@ -320,10 +320,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                 <button
                                                     className={`w-full flex items-center ${
                                                         collapsed ? "justify-center px-2" : "justify-between px-3.5"
-                                                    } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                                                    } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                                                         isActive
                                                             ? "bg-[#35877D]/10 text-[#35877D] font-bold"
-                                                            : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
+                                                            : "text-slate-600 hover:bg-teal-50/60 hover:text-[#35877D]"
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-3 min-w-0">
@@ -390,15 +390,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </nav>
 
                 {/* Sidebar Footer User Info */}
-                <div className="p-3 border-t border-slate-200 bg-slate-50/70">
+                <div className="p-3 border-t border-slate-200/80 bg-slate-50/60">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button
                                 className={`w-full flex items-center ${
                                     collapsed ? "justify-center p-2" : "gap-3 p-2.5"
-                                } rounded-xl bg-white border border-slate-200 shadow-2xs hover:bg-slate-50 transition-colors text-left focus:outline-none cursor-pointer`}
+                                } rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-[#35877D]/40 hover:bg-slate-50 transition-all text-left focus:outline-none cursor-pointer`}
                             >
-                                <div className="h-8 w-8 rounded-full bg-[#35877D] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                                <div className="h-8 w-8 rounded-full bg-[#35877D] text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
                                     {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                                 </div>
                                 {!collapsed && (
@@ -406,14 +406,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                         <p className="text-xs font-bold text-slate-900 truncate">
                                             {user?.name || "Workspace User"}
                                         </p>
-                                        <p className="text-[10px] text-slate-500 truncate capitalize font-medium">
+                                        <p className="text-[10px] text-slate-500 truncate capitalize font-semibold">
                                             {user?.role ? user.role.replace("_", " ") : "Member"}
                                         </p>
                                     </div>
                                 )}
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent side="top" align="start" className="w-56 p-1.5 font-sans">
+                        <DropdownMenuContent side="top" align="start" className="w-56 p-1.5 font-sans shadow-xl rounded-xl">
                             <DropdownMenuLabel className="text-xs font-bold text-slate-900">My Account</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
@@ -441,7 +441,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* MAIN CONTENT AREA & GLOBAL HEADER */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Global Header Bar */}
-                <header className="h-16 border-b border-slate-200 bg-white px-4 lg:px-6 flex items-center justify-between gap-4 shrink-0 z-30">
+                <header className="h-16 border-b border-slate-200/80 bg-white px-4 lg:px-6 flex items-center justify-between gap-4 shrink-0 z-30 shadow-2xs">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setMobileOpen(true)}
@@ -463,13 +463,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {/* Global Search Button (Cmd + K) */}
                         <button
                             onClick={() => setCommandOpen(true)}
-                            className="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 transition-all cursor-pointer w-64 md:w-80 justify-between"
+                            className="hidden sm:flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 transition-all cursor-pointer w-64 md:w-80 justify-between group focus:ring-2 focus:ring-[#35877D]/20"
                         >
                             <div className="flex items-center gap-2">
-                                <Search size={15} className="text-[#35877D]" />
+                                <Search size={15} className="text-[#35877D] group-hover:scale-110 transition-transform" />
                                 <span>Search contacts, leads, campaigns...</span>
                             </div>
-                            <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-md shadow-2xs">
+                            <kbd className="px-1.5 py-0.5 text-[10px] font-black text-slate-400 bg-white border border-slate-200 rounded-md shadow-2xs">
                                 Ctrl+K
                             </kbd>
                         </button>
@@ -479,13 +479,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {/* Quick Create Dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer">
+                                <button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#35877D] hover:bg-[#2b6e66] text-white font-bold text-xs rounded-xl shadow-md shadow-[#35877D]/20 transition-all cursor-pointer">
                                     <Plus size={16} />
                                     <span className="hidden sm:inline">Quick Create</span>
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52 p-1.5 font-sans">
-                                <DropdownMenuLabel className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                            <DropdownMenuContent align="end" className="w-52 p-1.5 font-sans shadow-xl rounded-xl">
+                                <DropdownMenuLabel className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
                                     New Workspace Item
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -558,7 +558,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </header>
 
                 {/* Page Content Render Area */}
-                <main className="flex-1 overflow-y-auto bg-slate-50">{children}</main>
+                <main className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8">{children}</main>
             </div>
         </div>
     );
