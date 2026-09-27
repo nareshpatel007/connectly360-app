@@ -167,59 +167,59 @@ export default function DashboardPage() {
             ) : null}
 
             {/* HERO WORKSPACE & WALLET CONTROL CARD */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-[#0f2d29] p-6 sm:p-8 text-white shadow-xl border border-slate-800">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-50/90 via-emerald-50/50 to-white p-6 sm:p-8 text-slate-900 shadow-sm border border-[#35877D]/20 font-sans">
                 {/* Subtle Background Glows */}
-                <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#35877D]/20 blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#35877D]/10 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#35877D] to-[#25635b] text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-[#35877D]/30 shrink-0 border border-teal-400/30">
+                        <div className="h-14 w-14 rounded-2xl bg-[#35877D] text-white flex items-center justify-center font-black text-2xl shadow-md shadow-[#35877D]/25 shrink-0 border border-teal-600/30">
                             {user?.name ? user.name.charAt(0).toUpperCase() : "C"}
                         </div>
                         <div className="space-y-1.5">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <h2 className="font-black text-white text-xl tracking-tight leading-none">
+                                <h2 className="font-black text-slate-900 text-xl tracking-tight leading-none">
                                     {user?.name ? `${user.name}'s Workspace` : "My Workspace"}
                                 </h2>
-                                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 uppercase tracking-widest">
+                                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-[#35877D]/10 text-[#35877D] border border-[#35877D]/25 uppercase tracking-widest">
                                     PAY AS YOU GO
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-slate-300 font-medium">
+                            <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
                                 <span>Company ID:</span>
-                                <span className="font-mono text-[11px] text-teal-200 bg-slate-800/80 px-2.5 py-0.5 rounded-md border border-slate-700 select-all font-bold">
+                                <span className="font-mono text-[11px] text-[#35877D] bg-white px-2.5 py-0.5 rounded-md border border-slate-200 select-all font-bold shadow-2xs">
                                     {user?.company_id || "6a40a10a3d471f6bc17f5ffa"}
                                 </span>
                                 <button
                                     onClick={copyCompanyId}
-                                    className="hover:text-teal-400 hover:bg-slate-800 rounded p-1 transition-colors cursor-pointer"
+                                    className="hover:text-[#35877D] hover:bg-slate-100 rounded p-1 transition-colors cursor-pointer text-slate-400"
                                     title="Copy Company ID"
                                 >
-                                    {copied ? <Check size={13} className="text-teal-400" /> : <Copy size={13} />}
+                                    {copied ? <Check size={13} className="text-[#35877D]" /> : <Copy size={13} />}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 self-start md:self-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-800 w-full md:w-auto">
+                    <div className="flex flex-wrap items-center gap-4 self-start md:self-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-200/80 w-full md:w-auto">
                         <div className="flex flex-col items-start md:items-end w-full sm:w-auto">
                             <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Available Credits</span>
                             <div className="flex items-center gap-2.5 mt-1.5">
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-800/90 text-teal-300 border border-slate-700/80 font-black text-xl shadow-inner">
-                                    <Zap size={18} className="fill-teal-400 text-teal-400" />
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white text-[#35877D] border border-slate-200 font-black text-xl shadow-2xs">
+                                    <Zap size={18} className="fill-[#35877D] text-[#35877D]" />
                                     <span>{credits.toLocaleString()}</span>
                                 </div>
                                 <Button
                                     onClick={() => setIsBuyCreditsOpen(true)}
-                                    className="text-xs font-bold text-white bg-[#35877D] hover:bg-[#2b6e66] transition-all px-4 py-2 rounded-2xl shadow-lg shadow-[#35877D]/25 h-10 cursor-pointer border-0"
+                                    className="text-xs font-bold text-white bg-[#35877D] hover:bg-[#2b6e66] transition-all px-4 py-2 rounded-2xl shadow-md shadow-[#35877D]/20 h-10 cursor-pointer border-0"
                                 >
                                     Buy Credits
                                 </Button>
                                 <Button
                                     variant="outline"
                                     asChild
-                                    className="text-xs font-bold text-slate-300 hover:text-white border-slate-700 bg-slate-800/60 hover:bg-slate-800 h-10 rounded-2xl cursor-pointer"
+                                    className="text-xs font-bold text-slate-700 hover:text-slate-900 border-slate-200 bg-white/80 hover:bg-white h-10 rounded-2xl cursor-pointer shadow-2xs"
                                 >
                                     <Link href="/billing">History</Link>
                                 </Button>
