@@ -223,37 +223,48 @@ export default function WhatsAppIntegrationPage() {
         }
     };
 
+    const handleExchangeCode = useCallback((code: string) => {
+        const redirectUri = typeof window !== "undefined"
+            ? (window.location.origin + window.location.pathname)
+            : "https://connectly360.sandboxtechnology.in/integrations/whatsapp";
+
+        setIsConnecting(true);
+        exchangeToken.mutate(
+            {
+                data: {
+                    code,
+                    redirect_uri: redirectUri,
+                },
+            },
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+                    toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                    setIsConnecting(false);
+                    if (typeof window !== "undefined") {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                },
+                onError: (err: any) => {
+                    toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
+                    setIsConnecting(false);
+                    if (typeof window !== "undefined") {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                },
+            }
+        );
+    }, [exchangeToken, queryClient, toast]);
+
     // Auto-process code parameter from Meta OAuth redirect callback
     useEffect(() => {
         if (typeof window === "undefined") return;
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
         if (code) {
-            const redirectUri = window.location.origin + window.location.pathname;
-            setIsConnecting(true);
-            exchangeToken.mutate(
-                {
-                    data: {
-                        code,
-                        redirect_uri: redirectUri,
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
-                        toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
-                        setIsConnecting(false);
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    },
-                    onError: (err: any) => {
-                        toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
-                        setIsConnecting(false);
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    },
-                }
-            );
+            handleExchangeCode(code);
         }
-    }, [exchangeToken, queryClient, toast]);
+    }, [handleExchangeCode]);
 
     function launchEmbeddedSignup() {
         if (!metaConfig?.appId || !metaConfig?.configId) {
@@ -265,49 +276,77 @@ export default function WhatsAppIntegrationPage() {
             return;
         }
 
-        setIsConnecting(true);
-
         const redirectUri = typeof window !== "undefined"
             ? (window.location.origin + window.location.pathname)
             : "https://connectly360.sandboxtechnology.in/integrations/whatsapp";
 
         const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?client_id=${metaConfig.appId}&redirect_uri=${encodeURIComponent(redirectUri)}&config_id=${metaConfig.configId}&response_type=code&override_default_response_type=true`;
 
-        // Check if running on non-HTTPS origin (Meta FB SDK enforces HTTPS for window.FB.login except on HTTPS)
         const isHttp = typeof window !== "undefined" && window.location.protocol === "http:";
 
-        if (isHttp || !window.FB) {
-            toast({
-                title: "Launching Meta Authorization",
-                description: "Redirecting to Meta WhatsApp authorization flow.",
-            });
-            window.location.href = oauthUrl;
+        if (isHttp) {
+            setIsConnecting(true);
+            const width = 600;
+            const height = 700;
+            const left = window.screen.width / 2 - width / 2;
+            const top = window.screen.height / 2 - height / 2;
+
+            const popup = window.open(
+                oauthUrl,
+                "MetaWhatsAppAuth",
+                `toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no,width=${width},height=${height},top=${top},left=${left}`
+            );
+
+            if (!popup) {
+                toast({
+                    title: "Popup Blocked",
+                    description: "Please allow popups for this site or use 'Enter OAuth Code'.",
+                    variant: "destructive",
+                });
+                setIsConnecting(false);
+                return;
+            }
+
+            const pollTimer = setInterval(() => {
+                try {
+                    if (!popup || popup.closed) {
+                        clearInterval(pollTimer);
+                        setIsConnecting(false);
+                        return;
+                    }
+                    if (popup.location.href && popup.location.href.includes("code=")) {
+                        const urlParams = new URLSearchParams(popup.location.search);
+                        const code = urlParams.get("code");
+                        if (code) {
+                            clearInterval(pollTimer);
+                            popup.close();
+                            handleExchangeCode(code);
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cross-origin exceptions while popup is on facebook.com
+                }
+            }, 500);
+
             return;
         }
+
+        if (!window.FB) {
+            toast({
+                title: "SDK initializing...",
+                description: "Facebook SDK is still loading. Please wait a moment and click again.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsConnecting(true);
 
         try {
             window.FB.login(
                 (response) => {
                     if (response.authResponse?.code) {
-                        exchangeToken.mutate(
-                            {
-                                data: {
-                                    code: response.authResponse.code,
-                                    redirect_uri: redirectUri,
-                                },
-                            },
-                            {
-                                onSuccess: () => {
-                                    queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
-                                    toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
-                                    setIsConnecting(false);
-                                },
-                                onError: (err: any) => {
-                                    toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
-                                    setIsConnecting(false);
-                                },
-                            }
-                        );
+                        handleExchangeCode(response.authResponse.code);
                     } else {
                         toast({ title: "Signup cancelled", description: "WhatsApp connection was not completed.", variant: "destructive" });
                         setIsConnecting(false);
@@ -321,12 +360,13 @@ export default function WhatsAppIntegrationPage() {
                 }
             );
         } catch (err: any) {
-            console.warn("FB.login failed (HTTP/SDK restriction), redirecting to Meta OAuth Dialog:", err);
+            console.error("FB.login popover failed:", err);
             toast({
-                title: "Launching Meta Authorization",
-                description: "Opening Meta authorization page directly.",
+                title: "Meta Popup Error",
+                description: "Could not launch Meta login popover. You can use 'Enter OAuth Code' to manually paste your code.",
+                variant: "destructive",
             });
-            window.location.href = oauthUrl;
+            setIsConnecting(false);
         }
     }
 
