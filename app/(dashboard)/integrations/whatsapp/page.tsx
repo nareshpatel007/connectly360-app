@@ -50,7 +50,8 @@ import {
     ArrowUpRight,
     Send,
     Activity,
-    ShieldCheck
+    ShieldCheck,
+    Key
 } from "lucide-react";
 
 declare global {
@@ -122,6 +123,10 @@ export default function WhatsAppIntegrationPage() {
     const [testPhone, setTestPhone] = useState("");
     const [testBody, setTestBody] = useState("Hello from Connectly360! This is a test WhatsApp message.");
     const [isSendingTest, setIsSendingTest] = useState(false);
+
+    // Manual authorization code dialog state
+    const [manualCodeOpen, setManualCodeOpen] = useState(false);
+    const [manualCodeInput, setManualCodeInput] = useState("");
 
     // Form inputs for creating automation rule
     const [ruleName, setRuleName] = useState("");
@@ -218,12 +223,39 @@ export default function WhatsAppIntegrationPage() {
         }
     };
 
-    function launchEmbeddedSignup() {
-        if (!window.FB) {
-            toast({ title: "Facebook SDK not loaded", description: "Please wait a moment and try again.", variant: "destructive" });
-            return;
+    // Auto-process code parameter from Meta OAuth redirect callback
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get("code");
+        if (code) {
+            const redirectUri = window.location.origin + window.location.pathname;
+            setIsConnecting(true);
+            exchangeToken.mutate(
+                {
+                    data: {
+                        code,
+                        redirect_uri: redirectUri,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+                        toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                        setIsConnecting(false);
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    },
+                    onError: (err: any) => {
+                        toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
+                        setIsConnecting(false);
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    },
+                }
+            );
         }
+    }, [exchangeToken, queryClient, toast]);
 
+    function launchEmbeddedSignup() {
         if (!metaConfig?.appId || !metaConfig?.configId) {
             toast({
                 title: "Configuration missing",
@@ -235,41 +267,96 @@ export default function WhatsAppIntegrationPage() {
 
         setIsConnecting(true);
 
-        window.FB.login(
-            (response) => {
-                if (response.authResponse?.code) {
-                    exchangeToken.mutate(
-                        {
-                            data: {
-                                code: response.authResponse.code,
-                                redirect_uri: typeof window !== "undefined" ? window.location.href : "https://connectly360.sandboxtechnology.in/integrations/whatsapp",
+        const redirectUri = typeof window !== "undefined"
+            ? (window.location.origin + window.location.pathname)
+            : "https://connectly360.sandboxtechnology.in/integrations/whatsapp";
+
+        const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?client_id=${metaConfig.appId}&redirect_uri=${encodeURIComponent(redirectUri)}&config_id=${metaConfig.configId}&response_type=code&override_default_response_type=true`;
+
+        // Check if running on non-HTTPS origin (Meta FB SDK enforces HTTPS for window.FB.login except on HTTPS)
+        const isHttp = typeof window !== "undefined" && window.location.protocol === "http:";
+
+        if (isHttp || !window.FB) {
+            toast({
+                title: "Launching Meta Authorization",
+                description: "Redirecting to Meta WhatsApp authorization flow.",
+            });
+            window.location.href = oauthUrl;
+            return;
+        }
+
+        try {
+            window.FB.login(
+                (response) => {
+                    if (response.authResponse?.code) {
+                        exchangeToken.mutate(
+                            {
+                                data: {
+                                    code: response.authResponse.code,
+                                    redirect_uri: redirectUri,
+                                },
                             },
-                        },
-                        {
-                            onSuccess: () => {
-                                queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
-                                toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
-                                setIsConnecting(false);
-                            },
-                            onError: (err) => {
-                                toast({ title: "Connection failed", description: String(err), variant: "destructive" });
-                                setIsConnecting(false);
-                            },
-                        }
-                    );
-                } else {
-                    toast({ title: "Signup cancelled", description: "WhatsApp connection was not completed.", variant: "destructive" });
-                    setIsConnecting(false);
+                            {
+                                onSuccess: () => {
+                                    queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+                                    toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                                    setIsConnecting(false);
+                                },
+                                onError: (err: any) => {
+                                    toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
+                                    setIsConnecting(false);
+                                },
+                            }
+                        );
+                    } else {
+                        toast({ title: "Signup cancelled", description: "WhatsApp connection was not completed.", variant: "destructive" });
+                        setIsConnecting(false);
+                    }
+                },
+                {
+                    config_id: metaConfig.configId,
+                    response_type: "code",
+                    override_default_response_type: true,
+                    extras: { setup: {}, featureType: "", sessionInfoVersion: "3" },
                 }
+            );
+        } catch (err: any) {
+            console.warn("FB.login failed (HTTP/SDK restriction), redirecting to Meta OAuth Dialog:", err);
+            toast({
+                title: "Launching Meta Authorization",
+                description: "Opening Meta authorization page directly.",
+            });
+            window.location.href = oauthUrl;
+        }
+    }
+
+    const handleManualCodeSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!manualCodeInput.trim()) return;
+        const redirectUri = typeof window !== "undefined" ? (window.location.origin + window.location.pathname) : "";
+        setIsConnecting(true);
+        exchangeToken.mutate(
+            {
+                data: {
+                    code: manualCodeInput.trim(),
+                    redirect_uri: redirectUri,
+                },
             },
             {
-                config_id: metaConfig.configId,
-                response_type: "code",
-                override_default_response_type: true,
-                extras: { setup: {}, featureType: "", sessionInfoVersion: "3" },
+                onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+                    toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                    setIsConnecting(false);
+                    setManualCodeOpen(false);
+                    setManualCodeInput("");
+                },
+                onError: (err: any) => {
+                    toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
+                    setIsConnecting(false);
+                },
             }
         );
-    }
+    };
 
     function handleDisconnect() {
         disconnect.mutate(undefined, {
@@ -528,7 +615,7 @@ export default function WhatsAppIntegrationPage() {
                                     <div className="flex flex-wrap items-center gap-3">
                                         <Button
                                             onClick={launchEmbeddedSignup}
-                                            disabled={!sdkLoaded || isConnecting || exchangeToken.isPending || !configReady || isLoadingConfig}
+                                            disabled={isConnecting || exchangeToken.isPending || !configReady || isLoadingConfig}
                                             className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-semibold text-xs h-10 px-5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0"
                                         >
                                             {isConnecting || exchangeToken.isPending ? (
@@ -548,6 +635,55 @@ export default function WhatsAppIntegrationPage() {
                                                 </>
                                             )}
                                         </Button>
+
+                                        <Dialog open={manualCodeOpen} onOpenChange={setManualCodeOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className="border-slate-200 text-slate-600 hover:bg-slate-50 text-xs h-10 px-4 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                >
+                                                    <Key size={14} />
+                                                    Enter OAuth Code
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-md">
+                                                <DialogHeader>
+                                                    <DialogTitle className="text-base font-bold text-[#0B2E1E]">Manual Authorization Code</DialogTitle>
+                                                    <DialogDescription className="text-xs text-slate-500">
+                                                        Paste an authorization code obtained from Meta Embedded Signup to link your WABA account.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <form onSubmit={handleManualCodeSubmit} className="space-y-4 pt-2">
+                                                    <div>
+                                                        <Label className="text-xs text-slate-600 mb-1 block font-semibold">Meta Authorization Code</Label>
+                                                        <Input
+                                                            value={manualCodeInput}
+                                                            onChange={(e) => setManualCodeInput(e.target.value)}
+                                                            placeholder="AQD..."
+                                                            className="h-10 text-xs font-mono"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <DialogFooter className="gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            onClick={() => setManualCodeOpen(false)}
+                                                            className="text-xs h-9"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            type="submit"
+                                                            disabled={exchangeToken.isPending || !manualCodeInput.trim()}
+                                                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg cursor-pointer"
+                                                        >
+                                                            {exchangeToken.isPending ? "Exchanging..." : "Exchange & Connect"}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </form>
+                                            </DialogContent>
+                                        </Dialog>
 
                                         {isConnected && (
                                             <>
