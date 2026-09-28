@@ -21,6 +21,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
     CheckCircle2,
@@ -34,12 +43,14 @@ import {
     Hash,
     Plus,
     Trash2,
-    Key,
     Loader2,
     Zap,
     HelpCircle,
     AlertCircle,
-    ArrowUpRight
+    ArrowUpRight,
+    Send,
+    Activity,
+    ShieldCheck
 } from "lucide-react";
 
 declare global {
@@ -89,7 +100,7 @@ function useFacebookSdk(appId: string | null | undefined) {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-            window.FB?.init({ appId, cookie: true, xfbml: true, version: "v19.0" });
+            window.FB?.init({ appId, cookie: true, xfbml: true, version: "v23.0" });
             setLoaded(true);
         };
         document.body.appendChild(script);
@@ -102,7 +113,15 @@ export default function WhatsAppIntegrationPage() {
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [isConnecting, setIsConnecting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
     const [activeTab, setActiveTab] = useState("settings");
+
+    // Test message dialog state
+    const [testDialogOpen, setTestDialogOpen] = useState(false);
+    const [testPhone, setTestPhone] = useState("");
+    const [testBody, setTestBody] = useState("Hello from Connectly360! This is a test WhatsApp message.");
+    const [isSendingTest, setIsSendingTest] = useState(false);
 
     // Form inputs for creating automation rule
     const [ruleName, setRuleName] = useState("");
@@ -129,6 +148,76 @@ export default function WhatsAppIntegrationPage() {
         toast({ title: "Refreshed", description: "Integration status and rules reloaded." });
     }, [queryClient, refetchAutomations, toast]);
 
+    const handleSyncAccount = async () => {
+        setIsSyncing(true);
+        try {
+            const res = await fetch("/api/whatsapp/sync", { method: "POST" });
+            const data = await res.json();
+            if (data.success) {
+                toast({ title: "Account Synchronized", description: "WhatsApp WABA metrics updated successfully." });
+                queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+            } else {
+                toast({ title: "Sync Failed", description: data.message || "Failed to sync metrics.", variant: "destructive" });
+            }
+        } catch (e: any) {
+            toast({ title: "Sync Error", description: String(e), variant: "destructive" });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleTestConnection = async () => {
+        setIsTesting(true);
+        try {
+            const res = await fetch("/api/whatsapp/test-connection", { method: "POST" });
+            const data = await res.json();
+            if (data.success) {
+                toast({ title: "Connection Healthy", description: data.message || "WhatsApp Cloud API connection is active." });
+                queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+            } else {
+                toast({ title: "Connection Warning", description: data.message || "Health check returned warning.", variant: "destructive" });
+            }
+        } catch (e: any) {
+            toast({ title: "Connection Error", description: String(e), variant: "destructive" });
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
+    const handleSendTestMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!testPhone.trim() || !testBody.trim()) {
+            toast({ title: "Validation Error", description: "Recipient phone and message body are required.", variant: "destructive" });
+            return;
+        }
+
+        setIsSendingTest(true);
+        try {
+            const res = await fetch("/api/whatsapp/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    to: testPhone.trim(),
+                    body: testBody.trim(),
+                    type: "text",
+                    source: "test"
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast({ title: "Message Sent!", description: `Test message dispatched to ${testPhone}.` });
+                setTestDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+            } else {
+                toast({ title: "Send Failed", description: data.message || "Could not send message.", variant: "destructive" });
+            }
+        } catch (e: any) {
+            toast({ title: "Send Error", description: String(e), variant: "destructive" });
+        } finally {
+            setIsSendingTest(false);
+        }
+    };
+
     function launchEmbeddedSignup() {
         if (!window.FB) {
             toast({ title: "Facebook SDK not loaded", description: "Please wait a moment and try again.", variant: "destructive" });
@@ -153,7 +242,7 @@ export default function WhatsAppIntegrationPage() {
                         {
                             data: {
                                 code: response.authResponse.code,
-                                redirect_uri: "https://connectly360.sandboxtechnology.in/integrations/whatsapp",
+                                redirect_uri: typeof window !== "undefined" ? window.location.href : "https://connectly360.sandboxtechnology.in/integrations/whatsapp",
                             },
                         },
                         {
@@ -280,8 +369,9 @@ export default function WhatsAppIntegrationPage() {
                         className="border-[#EAE6DF] hover:bg-slate-100/80 rounded-xl flex items-center gap-2 text-xs font-semibold cursor-pointer h-9 px-4"
                     >
                         <RefreshCcw size={13} className={isLoadingStatus ? "animate-spin text-[#35877D]" : "text-slate-500"} />
-                        Sync Status
+                        Refresh Status
                     </Button>
+
                     {isConnected && (
                         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-[#35877D] text-xs font-medium border border-emerald-100 shadow-xs">
                             <span className="relative flex h-2 w-2">
@@ -315,7 +405,7 @@ export default function WhatsAppIntegrationPage() {
                         value="settings"
                         className="rounded-lg text-xs font-medium px-4 py-2 cursor-pointer transition-all data-[state=active]:bg-white data-[state=active]:text-[#35877D] data-[state=active]:shadow-xs text-slate-600 hover:text-[#35877D]"
                     >
-                        Connection & Webhooks
+                        Connection &amp; Webhooks
                     </TabsTrigger>
                     <TabsTrigger
                         value="rules"
@@ -335,18 +425,44 @@ export default function WhatsAppIntegrationPage() {
                             {/* Connection Status Card */}
                             <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
                                 <CardHeader className="border-b border-[#FAF8F5] pb-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                                            {isConnected ? (
-                                                <Wifi className="text-[#35877D]" size={18} />
-                                            ) : (
-                                                <WifiOff className="text-slate-400" size={18} />
-                                            )}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                                                {isConnected ? (
+                                                    <Wifi className="text-[#35877D]" size={18} />
+                                                ) : (
+                                                    <WifiOff className="text-slate-400" size={18} />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-sm font-bold text-[#0B2E1E]">Embedded Connection Status</CardTitle>
+                                                <CardDescription className="text-xs text-slate-400">Manage Meta Business credentials mapping.</CardDescription>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <CardTitle className="text-sm font-bold text-[#0B2E1E]">Embedded Connection Status</CardTitle>
-                                            <CardDescription className="text-xs text-slate-400">Manage Meta Business credentials mapping.</CardDescription>
-                                        </div>
+                                        {isConnected && (
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleSyncAccount}
+                                                    disabled={isSyncing}
+                                                    className="h-8 text-[11px] font-semibold rounded-lg border-slate-200"
+                                                >
+                                                    <RefreshCcw size={12} className={isSyncing ? "animate-spin mr-1" : "mr-1"} />
+                                                    Sync
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleTestConnection}
+                                                    disabled={isTesting}
+                                                    className="h-8 text-[11px] font-semibold rounded-lg border-slate-200"
+                                                >
+                                                    <Activity size={12} className={isTesting ? "animate-spin mr-1" : "mr-1"} />
+                                                    Test Health
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-6 space-y-5">
@@ -370,7 +486,12 @@ export default function WhatsAppIntegrationPage() {
                                                     {account.displayName && <InfoRow icon={Building2} label="Business Name" value={account.displayName} />}
                                                     {account.phoneNumber && <InfoRow icon={PhoneCall} label="Phone Number" value={account.phoneNumber} />}
                                                     {account.wabaId && <InfoRow icon={Hash} label="WABA ID" value={account.wabaId} />}
-                                                    {account.businessId && <InfoRow icon={Building2} label="Business ID" value={account.businessId} />}
+                                                    {(account as any).qualityRating && (
+                                                        <InfoRow icon={ShieldCheck} label="Quality Rating" value={(account as any).qualityRating} />
+                                                    )}
+                                                    {(account as any).messagingLimit && (
+                                                        <InfoRow icon={Zap} label="Messaging Limit" value={(account as any).messagingLimit} />
+                                                    )}
                                                     {account.connectedAt && (
                                                         <InfoRow icon={CheckCircle2} label="Connected On" value={new Date(account.connectedAt).toLocaleString("en-IN")} />
                                                     )}
@@ -429,24 +550,95 @@ export default function WhatsAppIntegrationPage() {
                                         </Button>
 
                                         {isConnected && (
-                                            <Button
-                                                variant="outline"
-                                                onClick={handleDisconnect}
-                                                disabled={disconnect.isPending}
-                                                className="border-red-200 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs h-10 px-5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
-                                            >
-                                                {disconnect.isPending ? (
-                                                    <>
-                                                        <Loader2 className="animate-spin" size={14} />
-                                                        Disconnecting...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <WifiOff size={14} />
-                                                        Disconnect Account
-                                                    </>
-                                                )}
-                                            </Button>
+                                            <>
+                                                <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+                                                    <DialogTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="border-[#35877D]/30 text-[#35877D] hover:bg-[#35877D]/5 text-xs h-10 px-4 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <Send size={14} />
+                                                            Send Test Message
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="sm:max-w-md">
+                                                        <DialogHeader>
+                                                            <DialogTitle className="text-base font-bold text-[#0B2E1E]">Send Test WhatsApp Message</DialogTitle>
+                                                            <DialogDescription className="text-xs text-slate-500">
+                                                                Test your Meta Cloud API connection by sending a real WhatsApp message to a phone number.
+                                                            </DialogDescription>
+                                                        </DialogHeader>
+                                                        <form onSubmit={handleSendTestMessage} className="space-y-4 py-2">
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs font-semibold text-slate-700">Recipient Phone Number</Label>
+                                                                <Input
+                                                                    placeholder="e.g. +919876543210"
+                                                                    value={testPhone}
+                                                                    onChange={(e) => setTestPhone(e.target.value)}
+                                                                    required
+                                                                    className="text-xs"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs font-semibold text-slate-700">Message Body</Label>
+                                                                <Textarea
+                                                                    rows={3}
+                                                                    value={testBody}
+                                                                    onChange={(e) => setTestBody(e.target.value)}
+                                                                    required
+                                                                    className="text-xs resize-none"
+                                                                />
+                                                            </div>
+                                                            <DialogFooter>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    onClick={() => setTestDialogOpen(false)}
+                                                                    className="text-xs"
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    type="submit"
+                                                                    disabled={isSendingTest}
+                                                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs font-semibold"
+                                                                >
+                                                                    {isSendingTest ? (
+                                                                        <>
+                                                                            <Loader2 className="animate-spin mr-1" size={13} />
+                                                                            Sending...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Send className="mr-1" size={13} />
+                                                                            Send Message
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            </DialogFooter>
+                                                        </form>
+                                                    </DialogContent>
+                                                </Dialog>
+
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={handleDisconnect}
+                                                    disabled={disconnect.isPending}
+                                                    className="border-red-200 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs h-10 px-5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                >
+                                                    {disconnect.isPending ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin" size={14} />
+                                                            Disconnecting...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <WifiOff size={14} />
+                                                            Disconnect Account
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </>
                                         )}
                                     </div>
 
@@ -455,7 +647,6 @@ export default function WhatsAppIntegrationPage() {
                                     )}
                                 </CardContent>
                             </Card>
-
 
                         </div>
 
@@ -483,7 +674,6 @@ export default function WhatsAppIntegrationPage() {
                                             "Configure the Callback URL & Verify Token inside Meta Console webhook settings.",
                                         ].map((step, i) => (
                                             <div key={i} className="relative flex items-start">
-                                                {/* Timeline circle indicator */}
                                                 <span className="absolute left-[-34px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#35877D] text-white text-xs font-medium border-2 border-white shadow-sm shrink-0">
                                                     {i + 1}
                                                 </span>
@@ -693,5 +883,3 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
         </div>
     );
 }
-
-
