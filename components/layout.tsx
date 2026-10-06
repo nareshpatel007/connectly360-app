@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -56,23 +57,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState<boolean>(false);
     const [commandOpen, setCommandOpen] = useState<boolean>(false);
 
-    // Permission checker based on workspace RBAC
+    const { can, isOwner } = usePermissions();
+
+    // Permission checker based on dynamic Spatie RBAC
     const isAllowed = (item: MenuItem | SubMenuItem) => {
         if (!item.permission) return true;
-        if (!user?.role) return true;
-        const normalizedRole = user.role.toLowerCase();
-        if (["owner", "admin", "super_admin"].includes(normalizedRole)) return true;
-
-        if (normalizedRole === "manager") {
-            return !["workspace.roles.view", "billing.view"].includes(item.permission);
-        }
-        if (normalizedRole === "agent") {
-            return ["inbox.view", "contacts.view", "leads.view", "tasks.view", "templates.view", "dashboard.view"].includes(item.permission);
-        }
-        if (normalizedRole === "developer") {
-            return ["developer.view", "integrations.view", "whatsapp.view", "dashboard.view"].includes(item.permission);
-        }
-        return true;
+        return isOwner || can(item.permission);
     };
 
     // Centralized active navigation resolution (guarantees exactly 1 leaf item is active)

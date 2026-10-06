@@ -169,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             pathname === "/register" ||
             pathname === "/forgot-password" ||
             pathname.startsWith("/verify") ||
+            pathname.startsWith("/invite") ||
             pathname.startsWith("/auth/google");
 
         const isAuthPage =
