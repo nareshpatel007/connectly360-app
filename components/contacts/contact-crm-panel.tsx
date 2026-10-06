@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
     X, Phone, MapPin, Calendar, ExternalLink, MessageCircle,
-    ChevronRight, Plus, Trash2, Loader2, Check, Tag
+    ChevronRight, Plus, Trash2, Loader2, Check, Tag, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -346,11 +346,18 @@ export function ContactCrmPanel({
                         className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#35877D] text-white text-xs font-semibold hover:bg-[#2c6761] transition-colors"
                     >
                         <MessageCircle size={13} />
-                        Open Inbox
+                        Inbox
+                    </Link>
+                    <Link
+                        href={contact ? `/tasks?action=new&contact_id=${contact.id}&contact_name=${encodeURIComponent(contact.name || contact.phone)}` : "#"}
+                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition-colors"
+                    >
+                        <CheckSquare size={13} className="text-[#35877D]" />
+                        Task
                     </Link>
                     <button
                         onClick={onClose}
-                        className="h-9 px-4 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer bg-white"
+                        className="h-9 px-3.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer bg-white"
                     >
                         Close
                     </button>
