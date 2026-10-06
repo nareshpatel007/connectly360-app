@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
     useGetWhatsappStatus,
     useExchangeMetaToken,
@@ -51,7 +51,15 @@ import {
     Send,
     Activity,
     ShieldCheck,
-    Key
+    Key,
+    Sliders,
+    ShieldAlert,
+    AlertTriangle,
+    ExternalLink,
+    Check,
+    Copy,
+    Terminal,
+    ChevronRight
 } from "lucide-react";
 
 declare global {
@@ -71,6 +79,25 @@ declare global {
     }
 }
 
+interface MetaConfigData {
+    appId: string | null;
+    configId: string | null;
+    graphApiVersion: string | null;
+    redirectUri: string | null;
+    verifyToken: string | null;
+    debug: boolean;
+}
+
+interface SessionInfoData {
+    waba_id?: string;
+    phone_number_id?: string;
+    business_id?: string;
+    event?: string;
+    current_step?: string;
+    error_message?: string;
+    raw?: any;
+}
+
 const STATUS_CONFIG = {
     connected: { label: "Connected", icon: CheckCircle2, color: "text-[#35877D]", badge: "bg-emerald-50 text-[#35877D] border-emerald-100" },
     pending: { label: "Pending", icon: Clock, color: "text-amber-600", badge: "bg-amber-50 text-amber-800 border-amber-100" },
@@ -79,7 +106,7 @@ const STATUS_CONFIG = {
 };
 
 function useMetaConfig() {
-    return useQuery<{ appId: string | null; configId: string | null; verifyToken: string | null }>({
+    return useQuery<MetaConfigData>({
         queryKey: ["metaConfig"],
         queryFn: async () => {
             const res = await fetch("/api/meta/config");
@@ -89,7 +116,7 @@ function useMetaConfig() {
     });
 }
 
-function useFacebookSdk(appId: string | null | undefined) {
+function useFacebookSdk(appId: string | null | undefined, version: string = "v22.0") {
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
@@ -101,11 +128,11 @@ function useFacebookSdk(appId: string | null | undefined) {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-            window.FB?.init({ appId, cookie: true, xfbml: true, version: "v23.0" });
+            window.FB?.init({ appId, cookie: true, xfbml: true, version: version || "v22.0" });
             setLoaded(true);
         };
         document.body.appendChild(script);
-    }, [appId]);
+    }, [appId, version]);
 
     return loaded;
 }
@@ -134,7 +161,21 @@ export default function WhatsAppIntegrationPage() {
     const [ruleReply, setRuleReply] = useState("");
 
     const { data: metaConfig, isLoading: isLoadingConfig } = useMetaConfig();
-    const sdkLoaded = useFacebookSdk(metaConfig?.appId);
+    const sdkLoaded = useFacebookSdk(metaConfig?.appId, metaConfig?.graphApiVersion || "v22.0");
+
+    const sessionInfoRef = useRef<SessionInfoData | null>(null);
+    const [diagnosticLogs, setDiagnosticLogs] = useState<Array<{ time: string; msg: string; type?: string }>>([]);
+    const [metaErrorModalOpen, setMetaErrorModalOpen] = useState(false);
+    const [metaErrorDetails, setMetaErrorDetails] = useState<any>(null);
+    const [diagnosticsModalOpen, setDiagnosticsModalOpen] = useState(false);
+
+    const logDebug = useCallback((msg: string, type: "info" | "warn" | "error" = "info") => {
+        const time = new Date().toLocaleTimeString();
+        if (metaConfig?.debug || process.env.NODE_ENV === "development") {
+            console.log(`[Meta WhatsApp SDK ${time}]`, msg);
+        }
+        setDiagnosticLogs(prev => [...prev.slice(-30), { time, msg, type }]);
+    }, [metaConfig?.debug]);
 
     const { data: account, isLoading: isLoadingStatus } = useGetWhatsappStatus({
         query: { queryKey: getGetWhatsappStatusQueryKey() },
@@ -223,21 +264,23 @@ export default function WhatsAppIntegrationPage() {
         }
     };
 
-    const handleExchangeCode = useCallback((code: string) => {
-        const redirectUri = typeof window !== "undefined"
-            ? (window.location.origin + window.location.pathname)
-            : "https://connectly360.sandboxtechnology.in/integrations/whatsapp";
-
+    const handleExchangeCode = useCallback((code: string, sessionInfo?: SessionInfoData | null) => {
         setIsConnecting(true);
+        logDebug(`Exchanging authorization code with backend. WABA: ${sessionInfo?.waba_id ? "YES" : "NO"}, Phone: ${sessionInfo?.phone_number_id ? "YES" : "NO"}`);
+
         exchangeToken.mutate(
             {
                 data: {
                     code,
-                    redirect_uri: redirectUri,
-                },
+                    redirect_uri: "", // Omit redirect_uri for Facebook JS SDK popup flow to avoid Meta Error 191
+                    waba_id: sessionInfo?.waba_id,
+                    phone_number_id: sessionInfo?.phone_number_id,
+                    business_id: sessionInfo?.business_id,
+                } as any,
             },
             {
                 onSuccess: () => {
+                    logDebug("WhatsApp account connected successfully.");
                     queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
                     toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
                     setIsConnecting(false);
@@ -246,6 +289,7 @@ export default function WhatsAppIntegrationPage() {
                     }
                 },
                 onError: (err: any) => {
+                    logDebug(`Token exchange error: ${String(err?.message || err)}`, "error");
                     toast({ title: "Connection failed", description: String(err?.message || err), variant: "destructive" });
                     setIsConnecting(false);
                     if (typeof window !== "undefined") {
@@ -254,7 +298,7 @@ export default function WhatsAppIntegrationPage() {
                 },
             }
         );
-    }, [exchangeToken, queryClient, toast]);
+    }, [exchangeToken, queryClient, toast, logDebug]);
 
     // Auto-process code parameter from Meta OAuth redirect callback
     useEffect(() => {
@@ -262,7 +306,7 @@ export default function WhatsAppIntegrationPage() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
         if (code) {
-            handleExchangeCode(code);
+            handleExchangeCode(code, sessionInfoRef.current);
         }
     }, [handleExchangeCode]);
 
@@ -373,13 +417,12 @@ export default function WhatsAppIntegrationPage() {
     const handleManualCodeSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!manualCodeInput.trim()) return;
-        const redirectUri = typeof window !== "undefined" ? (window.location.origin + window.location.pathname) : "";
         setIsConnecting(true);
         exchangeToken.mutate(
             {
                 data: {
                     code: manualCodeInput.trim(),
-                    redirect_uri: redirectUri,
+                    redirect_uri: "",
                 },
             },
             {
@@ -816,11 +859,241 @@ export default function WhatsAppIntegrationPage() {
                                                 </Button>
                                             </>
                                         )}
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setDiagnosticsModalOpen(true)}
+                                            className="border-slate-200 text-slate-600 hover:bg-slate-50 text-xs h-10 px-3.5 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <Sliders size={13} />
+                                            Connection Diagnostics
+                                        </Button>
                                     </div>
 
                                     {configReady && !sdkLoaded && (
                                         <p className="text-xs text-slate-400 animate-pulse">Initializing Facebook Client JavaScript SDK...</p>
                                     )}
+
+                                    {/* Meta Error Diagnostic Modal */}
+                                    <Dialog open={metaErrorModalOpen} onOpenChange={setMetaErrorModalOpen}>
+                                        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <div className="flex items-center gap-2 text-red-600 mb-1">
+                                                    <ShieldAlert size={20} />
+                                                    <DialogTitle className="text-base font-bold text-slate-900">
+                                                        WhatsApp Connection Could Not Be Started
+                                                    </DialogTitle>
+                                                </div>
+                                                <DialogDescription className="text-xs text-slate-600 leading-relaxed">
+                                                    Meta rejected the Facebook Login / Embedded Signup popup before onboarding could complete.
+                                                </DialogDescription>
+                                            </DialogHeader>
+
+                                            <div className="space-y-4 pt-2 text-xs">
+                                                <div className="rounded-xl border border-red-200 bg-red-50/70 p-3.5 space-y-1.5">
+                                                    <div className="font-semibold text-red-900 flex items-center gap-2">
+                                                        <AlertTriangle size={15} className="text-red-600" />
+                                                        Meta Error: "Feature unavailable"
+                                                    </div>
+                                                    <p className="text-red-800 text-[11.5px] leading-relaxed">
+                                                        &ldquo;Facebook Login is currently unavailable for this app as we are updating additional details for this app. Please try again later.&rdquo;
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <span className="font-bold text-slate-800 block text-xs">Why Meta Rejects This App / Configuration:</span>
+                                                    <div className="space-y-2 text-slate-700">
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+                                                            <strong className="text-slate-900 block font-semibold">1. App Mode & Unauthorized User</strong>
+                                                            <p className="text-[11.5px] text-slate-600">
+                                                                If the Meta App is in <strong>Development Mode</strong>, only registered App Admins, Developers, and Testers can log in. The logged-in Facebook account must be added under <strong>App Roles &gt; Roles</strong>.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+                                                            <strong className="text-slate-900 block font-semibold">2. App Domains & Allowed Domains Missing</strong>
+                                                            <p className="text-[11.5px] text-slate-600">
+                                                                The active domain (<code className="font-mono bg-white px-1 py-0.5 border rounded">app.connectly360.com</code>) must be configured in Meta App Settings &gt; Basic (&quot;App Domains&quot;) and under Facebook Login for Business &gt; Settings (&quot;Allowed Domains for JavaScript SDK&quot;).
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+                                                            <strong className="text-slate-900 block font-semibold">3. Standard vs Advanced Access for Permissions</strong>
+                                                            <p className="text-[11.5px] text-slate-600">
+                                                                In Live mode, Meta blocks login unless <code className="font-mono bg-white px-1 py-0.5 border rounded">public_profile</code> and <code className="font-mono bg-white px-1 py-0.5 border rounded">whatsapp_business_management</code> have <strong>Advanced Access</strong>.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+                                                            <strong className="text-slate-900 block font-semibold">4. Facebook Login for Business Configuration (v4)</strong>
+                                                            <p className="text-[11.5px] text-slate-600">
+                                                                The Configuration ID (<code className="font-mono bg-white px-1 py-0.5 border rounded">{metaErrorDetails?.configIdMasked || '44152437****'}</code>) must be an active, approved Embedded Signup v4 configuration created inside the Meta Developer Dashboard.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+                                                            <strong className="text-slate-900 block font-semibold">5. Data Use Checkup (DUC) or Business Verification</strong>
+                                                            <p className="text-[11.5px] text-slate-600">
+                                                                Meta requires an annual Data Use Checkup in the Developer Dashboard and Meta Business Verification for partner onboarding.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="border border-slate-200 rounded-xl p-3 bg-slate-900 text-slate-200 space-y-2">
+                                                    <div className="flex items-center justify-between text-[11px] font-mono text-emerald-400">
+                                                        <span>ADMIN TECHNICAL DIAGNOSTICS</span>
+                                                        <span>Graph API: {metaErrorDetails?.graphApiVersion || "v22.0"}</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                                        <div>App ID: {metaErrorDetails?.appIdMasked || "N/A"}</div>
+                                                        <div>Config ID: {metaErrorDetails?.configIdMasked || "N/A"}</div>
+                                                        <div>Origin: {metaErrorDetails?.origin || "N/A"}</div>
+                                                        <div>Last Event: {metaErrorDetails?.lastSessionEvent || "N/A"}</div>
+                                                    </div>
+                                                    {metaErrorDetails?.sdkResponse && (
+                                                        <div className="text-[10px] font-mono bg-black/40 p-2 rounded overflow-x-auto text-slate-400">
+                                                            {JSON.stringify(metaErrorDetails.sdkResponse)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <DialogFooter className="gap-2 pt-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setMetaErrorModalOpen(false)}
+                                                    className="text-xs h-9"
+                                                >
+                                                    Dismiss
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        setMetaErrorModalOpen(false);
+                                                        setDiagnosticsModalOpen(true);
+                                                    }}
+                                                    className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9 px-4 rounded-lg"
+                                                >
+                                                    View Full Checklist
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        setMetaErrorModalOpen(false);
+                                                        launchEmbeddedSignup();
+                                                    }}
+                                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg"
+                                                >
+                                                    Retry Connection
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    {/* Full Meta Developer Checklist Modal */}
+                                    <Dialog open={diagnosticsModalOpen} onOpenChange={setDiagnosticsModalOpen}>
+                                        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <div className="flex items-center gap-2 text-[#35877D] mb-1">
+                                                    <Sliders size={20} />
+                                                    <DialogTitle className="text-base font-bold text-slate-900">
+                                                        Meta Embedded Signup v4 Checklist &amp; Diagnostics
+                                                    </DialogTitle>
+                                                </div>
+                                                <DialogDescription className="text-xs text-slate-600">
+                                                    Complete configuration status and checklist for WhatsApp Cloud API &amp; Embedded Signup v4.
+                                                </DialogDescription>
+                                            </DialogHeader>
+
+                                            <div className="space-y-4 pt-2 text-xs">
+                                                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
+                                                    <span className="font-semibold text-slate-800 block text-xs">Environment &amp; Meta Credentials Status</span>
+                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11.5px] text-slate-700">
+                                                        <div>
+                                                            <span className="text-slate-500">App ID:</span>{" "}
+                                                            <strong className="font-mono text-slate-900">{metaConfig?.appId ? `${metaConfig.appId.slice(0, 4)}****${metaConfig.appId.slice(-4)}` : "Missing"}</strong>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-500">Config ID:</span>{" "}
+                                                            <strong className="font-mono text-slate-900">{metaConfig?.configId ? `${metaConfig.configId.slice(0, 4)}****${metaConfig.configId.slice(-4)}` : "Missing"}</strong>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-500">Graph API Version:</span>{" "}
+                                                            <strong className="font-mono text-slate-900">{metaConfig?.graphApiVersion || "v22.0"}</strong>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-500">Redirect URI:</span>{" "}
+                                                            <strong className="font-mono text-slate-900">{metaConfig?.redirectUri || "https://app.connectly360.com/integrations/whatsapp"}</strong>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-500">Webhook Token:</span>{" "}
+                                                            <strong className="font-mono text-slate-900">{metaConfig?.verifyToken ? "Configured" : "Missing"}</strong>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-500">Debug Mode:</span>{" "}
+                                                            <strong className="font-mono text-emerald-700">{metaConfig?.debug ? "Enabled" : "Disabled"}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <span className="font-bold text-slate-800 block text-xs">Exact Meta Dashboard Setup Checklist:</span>
+                                                    <div className="space-y-2 text-slate-700">
+                                                        {[
+                                                            { num: 1, title: "App Mode (Development vs Live)", desc: "If in Development mode, ensure your logged-in Facebook user account is added under App Roles > Roles as an Administrator, Developer, or Tester. In Live mode, ensure business verification is complete." },
+                                                            { num: 2, title: "App Domains (Settings > Basic)", desc: "Add 'connectly360.com' and 'app.connectly360.com' to App Domains. Set Privacy Policy URL and Terms of Service URL." },
+                                                            { num: 3, title: "Facebook Login for Business Product", desc: "Ensure 'Facebook Login for Business' is added as a product to your app. Under Settings, add 'https://app.connectly360.com' to Allowed Domains for JavaScript SDK." },
+                                                            { num: 4, title: "Configurations (Login for Business / WhatsApp)", desc: "Verify configuration ID '4415243742081393' exists in your App Dashboard under Facebook Login for Business > Configurations or WhatsApp > Embedded Signup Builder. Ensure it uses v4 parameters." },
+                                                            { num: 5, title: "Required Permissions & Advanced Access", desc: "Ensure 'whatsapp_business_management' and 'whatsapp_business_messaging' are selected in the configuration. For Live mode, grant Advanced Access under App Review > Permissions and Features." },
+                                                            { num: 6, title: "Webhooks (WhatsApp)", desc: "Callback URL: 'https://api.connectly360.com/api/whatsapp/webhook', Verify Token: 'connectly360_verify_token_secure_9ae7b3', subscribed fields: 'messages'." }
+                                                        ].map(item => (
+                                                            <div key={item.num} className="p-3 rounded-lg border border-slate-200 bg-white space-y-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="h-5 w-5 rounded-full bg-[#35877D] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                                                                        {item.num}
+                                                                    </span>
+                                                                    <strong className="text-slate-900 font-semibold text-xs">{item.title}</strong>
+                                                                </div>
+                                                                <p className="text-[11.5px] text-slate-600 pl-7 leading-relaxed">{item.desc}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {diagnosticLogs.length > 0 && (
+                                                    <div className="border border-slate-200 rounded-xl p-3 bg-slate-950 text-slate-300 space-y-1.5">
+                                                        <span className="text-[11px] font-mono text-emerald-400 block font-semibold">CLIENT SDK EVENT LOG STREAM:</span>
+                                                        <div className="max-h-28 overflow-y-auto space-y-1 font-mono text-[10.5px]">
+                                                            {diagnosticLogs.map((log, idx) => (
+                                                                <div key={idx} className={log.type === "error" ? "text-red-400" : log.type === "warn" ? "text-amber-400" : "text-slate-300"}>
+                                                                    [{log.time}] {log.msg}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <DialogFooter className="gap-2 pt-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setDiagnosticsModalOpen(false)}
+                                                    className="text-xs h-9"
+                                                >
+                                                    Close
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        setDiagnosticsModalOpen(false);
+                                                        launchEmbeddedSignup();
+                                                    }}
+                                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg"
+                                                >
+                                                    Launch Meta Signup
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
                                 </CardContent>
                             </Card>
 
