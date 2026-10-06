@@ -23,16 +23,14 @@ export async function handleApiProxy(
 
         const allowedOrigins = [
             SITE_URL,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "https://connectly360.sandboxtechnology.in"
-        ];
+            process.env.NEXT_PUBLIC_APP_URL
+        ].filter((url): url is string => Boolean(url));
 
         const isValidOrigin =
             !origin && !referer
                 ? true
                 : process.env.NODE_ENV === "development" ||
-                  allowedOrigins.some(allowed => origin === allowed || (referer && referer.startsWith(allowed)));
+                allowedOrigins.some(allowed => origin === allowed || (referer && referer.startsWith(allowed)));
 
         if (!isValidOrigin) {
             return NextResponse.json(
