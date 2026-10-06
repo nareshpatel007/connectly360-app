@@ -19,7 +19,7 @@ import { PageHeader } from "@/components/page-header";
 
 export default function IntegrationsPage() {
     return (
-        <div className="space-y-6 max-w-7xl mx-auto font-sans">
+        <div className="space-y-6">
             {/* Page Header */}
             <PageHeader
                 icon={Plug}

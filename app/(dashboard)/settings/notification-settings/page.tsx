@@ -71,7 +71,7 @@ export default function NotificationSettingsPage() {
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+        <div className="space-y-6">
             <PageHeader
                 icon={BellRing}
                 title="Notification Settings"

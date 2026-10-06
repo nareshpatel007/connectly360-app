@@ -50,7 +50,7 @@ export default function ApiLogsPage() {
     );
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto font-sans">
+        <div className="space-y-6">
             <PageHeader
                 icon={Terminal}
                 title="API Request Logs"

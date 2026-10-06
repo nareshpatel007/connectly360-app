@@ -28,12 +28,12 @@ const ROLES = [
 
 export default function RolesPermissionsPage() {
     return (
-        <UpgradeGuard 
-            allowedPlans={["growth", "business", "enterprise"]} 
-            featureName="Roles & Permissions" 
+        <UpgradeGuard
+            allowedPlans={["growth", "business", "enterprise"]}
+            featureName="Roles & Permissions"
             description="Delegate workspace administration, configure security levels, and manage role assignments."
         >
-            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+            <div className="space-y-6">
                 <PageHeader
                     icon={Shield}
                     title="Roles & Permissions"

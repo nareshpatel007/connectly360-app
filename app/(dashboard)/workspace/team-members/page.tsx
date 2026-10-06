@@ -30,12 +30,12 @@ interface Invitation {
 
 export default function TeamMembersPage() {
     const { token, user } = useAuth();
-    
+
     const [members, setMembers] = useState<Member[]>([]);
     const [invitations, setInvitations] = useState<Invitation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    
+
     // Invite Modal states
     const [isOpen, setIsOpen] = useState(false);
     const [email, setEmail] = useState("");
@@ -188,18 +188,18 @@ export default function TeamMembersPage() {
             .toUpperCase();
     };
 
-    const filteredMembers = members.filter(m => 
-        (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredMembers = members.filter(m =>
+        (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (m.email || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredInvitations = invitations.filter(i => 
+    const filteredInvitations = invitations.filter(i =>
         (i.email || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
-            
+        <div className="space-y-6">
+
             <PageHeader
                 icon={Users}
                 title="Team Members"

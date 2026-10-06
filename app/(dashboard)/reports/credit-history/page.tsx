@@ -63,8 +63,8 @@ export default function CreditHistoryPage() {
     // Filtering logic
     const filteredHistory = history.filter((log) => {
         // 1. Search filter
-        const matchesSearch = log.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             log.action.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = log.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            log.action.toLowerCase().includes(searchQuery.toLowerCase());
 
         // 2. Type filter
         const isAddition = log.action === "credit_purchase" || log.action === "select_plan" || log.action === "subscription_purchase" || (log.credits !== null && log.credits > 0);
@@ -110,7 +110,7 @@ export default function CreditHistoryPage() {
     const currentItems = filteredHistory.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+        <div className="space-y-6">
             <PageHeader
                 icon={Receipt}
                 title="Credit History"
@@ -145,7 +145,7 @@ export default function CreditHistoryPage() {
                         className="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#35877D] focus:border-[#35877D]"
                     />
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1.5">
                         <SlidersHorizontal size={13} className="text-slate-400" />
@@ -277,11 +277,10 @@ export default function CreditHistoryPage() {
                                 <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
-                                    className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${
-                                        currentPage === page
+                                    className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${currentPage === page
                                             ? "bg-[#35877D] text-white shadow-xs"
                                             : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                    }`}
+                                        }`}
                                 >
                                     {page}
                                 </button>

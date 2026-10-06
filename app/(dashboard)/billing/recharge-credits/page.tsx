@@ -537,7 +537,7 @@ export default function RechargeCreditsPage() {
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto py-2 pb-12 font-sans">
+        <div className="space-y-6 pb-12">
             <PageHeader
                 icon={Zap}
                 title="Recharge Credits"

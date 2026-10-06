@@ -76,7 +76,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl font-sans">
+        <div className="space-y-6">
             <PageHeader
                 icon={Building2}
                 title="Business Settings"

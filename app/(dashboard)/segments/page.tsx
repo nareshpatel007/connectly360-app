@@ -155,7 +155,7 @@ export default function SegmentsPage() {
     );
 
     return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
+        <div className="space-y-6">
             {/* Header */}
             <PageHeader
                 icon={Filter}

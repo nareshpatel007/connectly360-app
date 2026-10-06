@@ -80,7 +80,7 @@ export default function BillingOverviewPage() {
     const isLowCredits = balance > 0 && balance <= 100;
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+        <div className="space-y-6">
             {/* Standard PageHeader */}
             <PageHeader
                 icon={Wallet}

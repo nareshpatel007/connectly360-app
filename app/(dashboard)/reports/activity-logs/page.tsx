@@ -60,7 +60,7 @@ export default function ActivityLogsPage() {
     const filteredLogs = logs.filter((log) => {
         // 1. Search filter
         const matchesSearch = log.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                             log.action.toLowerCase().includes(searchQuery.toLowerCase());
+            log.action.toLowerCase().includes(searchQuery.toLowerCase());
 
         // 2. Action filter
         let matchesAction = true;
@@ -103,7 +103,7 @@ export default function ActivityLogsPage() {
     const currentItems = filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+        <div className="space-y-6">
             <PageHeader
                 icon={Activity}
                 title="Activity Logs"
@@ -188,13 +188,12 @@ export default function ActivityLogsPage() {
                             {currentItems.map((log) => (
                                 <div key={log.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50/30 transition-colors">
                                     <div className="col-span-3">
-                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider ${
-                                            log.action === "login"
+                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider ${log.action === "login"
                                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                                 : log.action === "subscription_purchase" || log.action === "credit_purchase"
-                                                ? "bg-purple-50 text-purple-700 border border-purple-100"
-                                                : "bg-blue-50 text-blue-700 border border-blue-100"
-                                        }`}>
+                                                    ? "bg-purple-50 text-purple-700 border border-purple-100"
+                                                    : "bg-blue-50 text-blue-700 border border-blue-100"
+                                            }`}>
                                             {log.action.replace("_", " ")}
                                         </span>
                                     </div>
@@ -246,11 +245,10 @@ export default function ActivityLogsPage() {
                                 <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
-                                    className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${
-                                        currentPage === page
+                                    className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${currentPage === page
                                             ? "bg-[#35877D] text-white shadow-xs"
                                             : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                    }`}
+                                        }`}
                                 >
                                     {page}
                                 </button>

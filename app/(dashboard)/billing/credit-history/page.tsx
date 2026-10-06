@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-    History, ArrowUpRight, ArrowDownLeft, Search, 
-    RefreshCw, ChevronLeft, ChevronRight 
+import {
+    History, ArrowUpRight, ArrowDownLeft, Search,
+    RefreshCw, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -79,14 +79,14 @@ export default function CreditHistoryPage() {
     });
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-4">
+        <div className="space-y-6">
             {/* Header */}
             <PageHeader
                 icon={History}
                 title="Credit History"
                 description="Full audit trail of credit purchases, welcome bonuses, and action-by-action usage."
                 actions={
-                    <Button 
+                    <Button
                         variant="outline"
                         onClick={() => fetchHistory(currentPage, filterType)}
                         className="h-9 text-xs font-semibold rounded-xl border-slate-200 cursor-pointer"
@@ -100,7 +100,7 @@ export default function CreditHistoryPage() {
             {/* Filter Toolbar */}
             <Card className="p-4 rounded-2xl bg-white border border-[#EAE6DF] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button 
+                    <Button
                         size="sm"
                         variant={filterType === "all" ? "default" : "outline"}
                         onClick={() => handleFilterChange("all")}
@@ -108,7 +108,7 @@ export default function CreditHistoryPage() {
                     >
                         All Transactions
                     </Button>
-                    <Button 
+                    <Button
                         size="sm"
                         variant={filterType === "credit" ? "default" : "outline"}
                         onClick={() => handleFilterChange("credit")}
@@ -116,7 +116,7 @@ export default function CreditHistoryPage() {
                     >
                         Credits Added (+)
                     </Button>
-                    <Button 
+                    <Button
                         size="sm"
                         variant={filterType === "debit" ? "default" : "outline"}
                         onClick={() => handleFilterChange("debit")}
@@ -128,7 +128,7 @@ export default function CreditHistoryPage() {
 
                 <div className="w-full sm:w-64 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                    <Input 
+                    <Input
                         placeholder="Search description..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -172,11 +172,10 @@ export default function CreditHistoryPage() {
                                                 {new Date(tx.created_at).toLocaleString("en-IN")}
                                             </td>
                                             <td className="px-6 py-3.5 whitespace-nowrap">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                                                    isAddition 
-                                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${isAddition
+                                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                                         : "bg-slate-50 text-slate-600 border border-slate-200"
-                                                }`}>
+                                                    }`}>
                                                     {isAddition ? (
                                                         <ArrowDownLeft size={12} className="text-emerald-600" />
                                                     ) : (
