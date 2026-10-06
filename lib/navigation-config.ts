@@ -144,12 +144,29 @@ export const CLIENT_NAV_SECTIONS: NavSection[] = [
                 permission: "templates.view"
             },
             {
-                id: "automations",
+                id: "automations-group",
                 label: "Automations",
                 icon: Zap,
                 href: "/automations",
-                patterns: ["/automations/**"],
-                permission: "automations.view"
+                permission: "automations.view",
+                subItems: [
+                    {
+                        id: "automations-workflows",
+                        label: "Workflows",
+                        icon: Zap,
+                        href: "/automations",
+                        exact: true,
+                        permission: "automations.view"
+                    },
+                    {
+                        id: "automations-auto-replies",
+                        label: "Auto-Reply Rules",
+                        icon: MessageSquare,
+                        href: "/automations/auto-replies",
+                        patterns: ["/automations/auto-replies/**"],
+                        permission: "automations.view"
+                    }
+                ]
             }
         ]
     },

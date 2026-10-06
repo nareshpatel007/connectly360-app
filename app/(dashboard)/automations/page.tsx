@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useListAutomations, useCreateAutomation, useUpdateAutomation, useDeleteAutomation, AutomationRule } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -25,6 +26,8 @@ import {
     Zap,
     ToggleLeft,
     Activity,
+    MessageSquare,
+    ArrowRight
 } from "lucide-react";
 
 export default function AutomationsPage() {
@@ -174,19 +177,52 @@ export default function AutomationsPage() {
             {/* Page Header */}
             <PageHeader
                 icon={Zap}
-                title="Automations"
-                description="Create keyword rules that trigger automated WhatsApp replies."
-                breadcrumbs={[{ label: "Engagement" }, { label: "Automations" }]}
+                title="Automations & Workflows"
+                description="Manage trigger workflows, automated actions, and customer conversation routines."
+                breadcrumbs={[
+                    { label: "Home", href: "/dashboard" },
+                    { label: "Automations", href: "/automations" },
+                    { label: "Workflows" }
+                ]}
                 actions={
-                    <Button
-                        onClick={openCreateDialog}
-                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Create Rule
-                    </Button>
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href="/automations/auto-replies"
+                            className="border border-[#35877D]/30 bg-[#35877D]/5 hover:bg-[#35877D]/10 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
+                        >
+                            <MessageSquare size={13} />
+                            <span>Auto-Reply Rules</span>
+                        </Link>
+                        <Button
+                            onClick={openCreateDialog}
+                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer h-9 px-4 text-xs font-semibold"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Rule
+                        </Button>
+                    </div>
                 }
             />
+
+            {/* Quick Navigation Banner for WhatsApp Auto-Replies */}
+            <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/40 to-white border border-teal-200/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                    <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center shrink-0 shadow-2xs">
+                        <MessageSquare size={19} />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-bold text-[#0B2E1E]">WhatsApp Keyword Auto-Reply Rules</h4>
+                        <p className="text-[11px] text-slate-500">Configure instant keyword matching, match types, priority ordering, and live simulation.</p>
+                    </div>
+                </div>
+                <Link
+                    href="/automations/auto-replies"
+                    className="px-3.5 py-1.5 bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors shadow-2xs w-fit"
+                >
+                    <span>Manage Auto-Replies</span>
+                    <ArrowRight size={13} />
+                </Link>
+            </div>
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">

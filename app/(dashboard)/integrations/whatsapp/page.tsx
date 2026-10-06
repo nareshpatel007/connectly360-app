@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
     useGetWhatsappStatus,
     useExchangeMetaToken,
     useDisconnectWhatsapp,
-    getGetWhatsappStatusQueryKey,
-    useListAutomations,
-    useCreateAutomation,
-    useDeleteAutomation,
-    useUpdateAutomation
+    getGetWhatsappStatusQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,7 +18,6 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import {
     Dialog,
@@ -141,12 +138,22 @@ function useFacebookSdk(appId: string | null | undefined, version: string = "v22
 }
 
 export default function WhatsAppIntegrationPage() {
+    const router = useRouter();
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const [isConnecting, setIsConnecting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
-    const [activeTab, setActiveTab] = useState("settings");
+
+    // Redirect legacy URL parameter '?tab=auto-reply' or '?tab=rules' to the dedicated page
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get("tab");
+        if (tab === "auto-reply" || tab === "rules") {
+            router.replace("/automations/auto-replies");
+        }
+    }, [router]);
 
     // Test message dialog state
     const [testDialogOpen, setTestDialogOpen] = useState(false);
@@ -168,11 +175,6 @@ export default function WhatsAppIntegrationPage() {
     const [manualCodeOpen, setManualCodeOpen] = useState(false);
     const [manualCodeInput, setManualCodeInput] = useState("");
 
-    // Form inputs for creating automation rule
-    const [ruleName, setRuleName] = useState("");
-    const [ruleKeyword, setRuleKeyword] = useState("");
-    const [ruleReply, setRuleReply] = useState("");
-
     const { data: metaConfig, isLoading: isLoadingConfig } = useMetaConfig();
     const sdkLoaded = useFacebookSdk(metaConfig?.appId, metaConfig?.graphApiVersion || "v22.0");
 
@@ -193,19 +195,14 @@ export default function WhatsAppIntegrationPage() {
     const { data: account, isLoading: isLoadingStatus } = useGetWhatsappStatus({
         query: { queryKey: getGetWhatsappStatusQueryKey() },
     });
-    const { data: automations, isLoading: isLoadingAutomations, refetch: refetchAutomations } = useListAutomations();
 
     const exchangeToken = useExchangeMetaToken();
     const disconnect = useDisconnectWhatsapp();
-    const createAutomation = useCreateAutomation();
-    const deleteAutomation = useDeleteAutomation();
-    const updateAutomation = useUpdateAutomation();
 
     const refreshStatus = useCallback(() => {
         queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
-        refetchAutomations();
-        toast({ title: "Refreshed", description: "Integration status and rules reloaded." });
-    }, [queryClient, refetchAutomations, toast]);
+        toast({ title: "Refreshed", description: "WhatsApp integration status reloaded." });
+    }, [queryClient, toast]);
 
     const handleSyncAccount = async () => {
         setIsSyncing(true);
@@ -539,73 +536,6 @@ export default function WhatsAppIntegrationPage() {
         });
     }
 
-    function handleCreateRule(e: React.FormEvent) {
-        e.preventDefault();
-        if (!ruleKeyword.trim() || !ruleReply.trim()) {
-            toast({ title: "Validation Error", description: "Please specify both trigger keyword and reply message.", variant: "destructive" });
-            return;
-        }
-
-        createAutomation.mutate(
-            {
-                data: {
-                    name: ruleName.trim() || `${ruleKeyword.trim()} Auto-reply`,
-                    keyword: ruleKeyword.trim(),
-                    reply: ruleReply.trim(),
-                    trigger_type: "New WhatsApp message is received",
-                    action_type: "Send message",
-                    status: true
-                }
-            },
-            {
-                onSuccess: () => {
-                    toast({ title: "Rule Created", description: "Auto-reply automation added successfully." });
-                    setRuleName("");
-                    setRuleKeyword("");
-                    setRuleReply("");
-                    refetchAutomations();
-                },
-                onError: (err) => {
-                    toast({ title: "Creation Failed", description: String(err), variant: "destructive" });
-                }
-            }
-        );
-    }
-
-    function handleDeleteRule(id: number) {
-        deleteAutomation.mutate(
-            { id },
-            {
-                onSuccess: () => {
-                    toast({ title: "Rule Deleted", description: "Automation rule removed successfully." });
-                    refetchAutomations();
-                },
-                onError: (err) => {
-                    toast({ title: "Deletion Failed", description: String(err), variant: "destructive" });
-                }
-            }
-        );
-    }
-
-    function handleToggleStatus(id: number, currentStatus: number | boolean) {
-        const nextStatus = (currentStatus === 1 || currentStatus === true) ? 0 : 1;
-        updateAutomation.mutate(
-            {
-                id,
-                data: { status: nextStatus }
-            },
-            {
-                onSuccess: () => {
-                    toast({ title: "Status Updated", description: `Rule status updated successfully.` });
-                    refetchAutomations();
-                },
-                onError: (err) => {
-                    toast({ title: "Update Failed", description: String(err), variant: "destructive" });
-                }
-            }
-        );
-    }
-
     const statusKey = (account?.status ?? "disconnected") as keyof typeof STATUS_CONFIG;
     const statusCfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.disconnected;
     const StatusIcon = statusCfg.icon;
@@ -623,7 +553,7 @@ export default function WhatsAppIntegrationPage() {
             <PageHeader
                 icon={MessageCircle}
                 title="WhatsApp Integration"
-                description="Connect your WhatsApp Business API and configure automated auto-replies for incoming conversations."
+                description="Connect and manage your WhatsApp Business API, phone numbers, webhooks and messaging configuration."
                 breadcrumbs={[
                     { label: "Channels & Integrations", href: "/integrations" },
                     { label: "WhatsApp" }
@@ -631,6 +561,14 @@ export default function WhatsAppIntegrationPage() {
                 badge={isConnected ? "Active WABA" : undefined}
                 actions={
                     <div className="flex items-center gap-3">
+                        <Link
+                            href="/automations/auto-replies"
+                            className="border border-[#35877D]/30 bg-[#35877D]/5 hover:bg-[#35877D]/10 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
+                        >
+                            <span>Auto-Reply Rules</span>
+                            <ArrowUpRight size={13} />
+                        </Link>
+
                         <Button
                             variant="outline"
                             size="sm"
@@ -668,26 +606,9 @@ export default function WhatsAppIntegrationPage() {
                 </div>
             )}
 
-            {/* Radix Tabs Wrapper */}
-            <Tabs defaultValue="settings" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-slate-100/80 p-1 rounded-xl mb-6 flex w-fit gap-1 border border-slate-200/50">
-                    <TabsTrigger
-                        value="settings"
-                        className="rounded-lg text-xs font-medium px-4 py-2 cursor-pointer transition-all data-[state=active]:bg-white data-[state=active]:text-[#35877D] data-[state=active]:shadow-xs text-slate-600 hover:text-[#35877D]"
-                    >
-                        Connection &amp; Webhooks
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="rules"
-                        className="rounded-lg text-xs font-medium px-4 py-2 cursor-pointer transition-all data-[state=active]:bg-white data-[state=active]:text-[#35877D] data-[state=active]:shadow-xs text-slate-600 hover:text-[#35877D]"
-                    >
-                        Auto-Reply Rules
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* TAB 1: CONNECTION & WEBHOOKS */}
-                <TabsContent value="settings" className="space-y-6 animate-in fade-in duration-200">
-                    <div className="grid gap-6 lg:grid-cols-12 items-start">
+            {/* Main Connection & Webhooks Interface */}
+            <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="grid gap-6 lg:grid-cols-12 items-start">
 
                         {/* Left Side: status card */}
                         <div className="lg:col-span-7 space-y-6">
@@ -1536,179 +1457,8 @@ export default function WhatsAppIntegrationPage() {
                         </div>
 
                     </div>
-                </TabsContent>
-
-                {/* TAB 2: AUTO-REPLY RULES */}
-                <TabsContent value="rules" className="space-y-6 animate-in fade-in duration-200">
-                    <div className="grid gap-6 lg:grid-cols-12 items-start">
-
-                        {/* Left Column: Automation Rules list */}
-                        <div className="lg:col-span-8 space-y-6">
-                            <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
-                                <CardHeader className="border-b border-[#FAF8F5] pb-4 flex flex-row items-center justify-between gap-4">
-                                    <div>
-                                        <CardTitle className="text-sm font-bold text-[#0B2E1E]">Active Auto-Reply Rules</CardTitle>
-                                        <CardDescription className="text-xs text-slate-400">Trigger automatic responses on incoming keyword matches.</CardDescription>
-                                    </div>
-                                    <Badge className="bg-[#35877D]/10 text-[#35877D] font-bold border-none text-xs rounded-lg px-2.5 py-0.5">
-                                        {automations ? automations.length : 0} Rules
-                                    </Badge>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    {isLoadingAutomations ? (
-                                        <div className="space-y-4">
-                                            <Skeleton className="h-16 w-full rounded-xl" />
-                                            <Skeleton className="h-16 w-full rounded-xl" />
-                                            <Skeleton className="h-16 w-full rounded-xl" />
-                                        </div>
-                                    ) : !automations || automations.length === 0 ? (
-                                        <div className="text-center py-10 px-4 flex flex-col items-center">
-                                            <div className="h-12 w-12 rounded-2xl bg-[#35877D]/8 text-[#35877D] flex items-center justify-center mb-4">
-                                                <Zap size={22} />
-                                            </div>
-                                            <h3 className="text-xs font-medium text-[#0B2E1E]">No auto-reply rules configured</h3>
-                                            <p className="text-slate-400 text-xs mt-1 max-w-sm leading-normal">
-                                                Add keywords to match incoming user messages and define automated replies (e.g. Price matching or greeting alerts).
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {automations.map((rule) => {
-                                                const ruleActive = rule.status === 1 || rule.status === true;
-                                                return (
-                                                    <div
-                                                        key={rule.id}
-                                                        className={`border rounded-xl p-4 transition-all duration-200 bg-white ${ruleActive ? "border-[#35877D]/30 shadow-[0_2px_6px_-3px_rgba(53,135,125,0.06)]" : "border-slate-200 bg-slate-50/40 opacity-70"}`}
-                                                    >
-                                                        <div className="flex items-start justify-between gap-4">
-                                                            <div className="space-y-1.5">
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    <h4 className="text-xs font-medium text-[#0B2E1E]">
-                                                                        {rule.name || "Auto-Reply Rule"}
-                                                                    </h4>
-                                                                    <Badge className="bg-[#35877D]/8 text-[#35877D] border-0 text-xs font-semibold rounded px-2 py-0.5">
-                                                                        Keyword: "{rule.keyword}"
-                                                                    </Badge>
-                                                                </div>
-                                                                <p className="text-xs text-slate-600 leading-normal font-medium max-w-prose">
-                                                                    {rule.reply}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Actions column */}
-                                                            <div className="flex items-center gap-3 shrink-0">
-                                                                <Switch
-                                                                    checked={ruleActive}
-                                                                    onCheckedChange={() => handleToggleStatus(rule.id, rule.status)}
-                                                                    className="cursor-pointer"
-                                                                />
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={() => handleDeleteRule(rule.id)}
-                                                                    disabled={deleteAutomation.isPending}
-                                                                    className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50/50 rounded-lg cursor-pointer transition-colors"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Bottom Rule Metrics */}
-                                                        <div className="mt-3.5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-semibold">
-                                                            <span className="flex items-center gap-1 text-slate-500">
-                                                                <Zap size={11} className="text-[#35877D]" />
-                                                                Executed {rule.executed_count || 0} times
-                                                            </span>
-                                                            <span>
-                                                                Created {new Date(rule.created_at).toLocaleDateString("en-IN")}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Right Column: Creation form */}
-                        <div className="lg:col-span-4 space-y-6">
-                            <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
-                                <CardHeader className="border-b border-[#FAF8F5] pb-4">
-                                    <CardTitle className="text-sm font-bold text-[#0B2E1E]">Add Auto-Reply Rule</CardTitle>
-                                    <CardDescription className="text-xs text-slate-400">Configure new keyword triggers.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <form onSubmit={handleCreateRule} className="space-y-4">
-                                        <div className="space-y-1">
-                                            <Label htmlFor="ruleName" className="text-xs font-medium text-slate-500">Rule Name (Optional)</Label>
-                                            <Input
-                                                id="ruleName"
-                                                type="text"
-                                                placeholder="e.g., Pricing Inquiry"
-                                                value={ruleName}
-                                                onChange={(e) => setRuleName(e.target.value)}
-                                                className="border-[#EAE6DF] hover:border-slate-300 focus:border-[#35877D] rounded-lg text-xs"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <Label htmlFor="ruleKeyword" className="text-xs font-medium text-slate-500 flex items-center justify-between">
-                                                <span>Match Keyword</span>
-                                                <span className="text-[9.5px] font-medium text-slate-400 font-sans">Case-insensitive match</span>
-                                            </Label>
-                                            <Input
-                                                id="ruleKeyword"
-                                                type="text"
-                                                placeholder="e.g., price, cost, product"
-                                                value={ruleKeyword}
-                                                onChange={(e) => setRuleKeyword(e.target.value)}
-                                                required
-                                                className="border-[#EAE6DF] hover:border-slate-300 focus:border-[#35877D] rounded-lg text-xs"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <Label htmlFor="ruleReply" className="text-xs font-medium text-slate-500">Reply Message</Label>
-                                            <Textarea
-                                                id="ruleReply"
-                                                rows={4}
-                                                placeholder="Write your automated WhatsApp response text here..."
-                                                value={ruleReply}
-                                                onChange={(e) => setRuleReply(e.target.value)}
-                                                required
-                                                className="border-[#EAE6DF] hover:border-slate-300 focus:border-[#35877D] rounded-lg text-xs resize-none"
-                                            />
-                                        </div>
-
-                                        <Button
-                                            type="submit"
-                                            disabled={createAutomation.isPending || !ruleKeyword || !ruleReply}
-                                            className="w-full bg-[#35877D] hover:bg-[#2c6f66] text-white font-semibold text-xs h-9 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 mt-2 cursor-pointer border-0"
-                                        >
-                                            {createAutomation.isPending ? (
-                                                <>
-                                                    <Loader2 className="animate-spin" size={13} />
-                                                    Creating...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Plus size={14} />
-                                                    Add Rule
-                                                </>
-                                            )}
-                                        </Button>
-                                    </form>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                    </div>
-                </TabsContent>
-            </Tabs>
-        </div>
+                </div>
+            </div>
     );
 }
 
