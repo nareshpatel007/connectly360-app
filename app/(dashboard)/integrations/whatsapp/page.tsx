@@ -102,6 +102,7 @@ interface SessionInfoData {
 
 const STATUS_CONFIG = {
     connected: { label: "Connected", icon: CheckCircle2, color: "text-[#35877D]", badge: "bg-emerald-50 text-[#35877D] border-emerald-100" },
+    pending_registration: { label: "Pending Registration", icon: Clock, color: "text-amber-600", badge: "bg-amber-50 text-amber-800 border-amber-200" },
     pending: { label: "Pending", icon: Clock, color: "text-amber-600", badge: "bg-amber-50 text-amber-800 border-amber-100" },
     failed: { label: "Failed", icon: XCircle, color: "text-red-600", badge: "bg-red-50 text-red-800 border-red-100" },
     disconnected: { label: "Disconnected", icon: WifiOff, color: "text-slate-400", badge: "bg-slate-50 text-slate-500 border-slate-200" },
@@ -151,7 +152,17 @@ export default function WhatsAppIntegrationPage() {
     const [testDialogOpen, setTestDialogOpen] = useState(false);
     const [testPhone, setTestPhone] = useState("");
     const [testBody, setTestBody] = useState("Hello from Connectly360! This is a test WhatsApp message.");
+    const [testMessageType, setTestMessageType] = useState<"template" | "text">("template");
     const [isSendingTest, setIsSendingTest] = useState(false);
+
+    // Phone registration state (Meta 6-digit PIN 2-step verification)
+    const [isRegisteringPhone, setIsRegisteringPhone] = useState(false);
+    const [registerPin, setRegisterPin] = useState("");
+    const [registerPinConfirm, setRegisterPinConfirm] = useState("");
+    const [pinError, setPinError] = useState("");
+    const [currentRegistrationStep, setCurrentRegistrationStep] = useState(3);
+    const [showDiagnostics, setShowDiagnostics] = useState(false);
+    const [retryMode, setRetryMode] = useState(false);
 
     // Manual authorization code dialog state
     const [manualCodeOpen, setManualCodeOpen] = useState(false);
@@ -234,26 +245,38 @@ export default function WhatsAppIntegrationPage() {
 
     const handleSendTestMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!testPhone.trim() || !testBody.trim()) {
-            toast({ title: "Validation Error", description: "Recipient phone and message body are required.", variant: "destructive" });
+        if (!testPhone.trim()) {
+            toast({ title: "Validation Error", description: "Recipient phone number is required.", variant: "destructive" });
+            return;
+        }
+        if (testMessageType === "text" && !testBody.trim()) {
+            toast({ title: "Validation Error", description: "Message body is required for text messages.", variant: "destructive" });
             return;
         }
 
         setIsSendingTest(true);
         try {
+            const payload: any = {
+                to: testPhone.trim(),
+                source: "test"
+            };
+            if (testMessageType === "template") {
+                payload.type = "template";
+                payload.template_name = "hello_world";
+                payload.language = "en_US";
+            } else {
+                payload.type = "text";
+                payload.body = testBody.trim();
+            }
+
             const res = await fetch("/api/whatsapp/send", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to: testPhone.trim(),
-                    body: testBody.trim(),
-                    type: "text",
-                    source: "test"
-                })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (data.success) {
-                toast({ title: "Message Sent!", description: `Test message dispatched to ${testPhone}.` });
+                toast({ title: "Message Dispatched!", description: `Meta message sent to ${testPhone}. Delivery updates via webhook.` });
                 setTestDialogOpen(false);
                 queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
             } else {
@@ -263,6 +286,63 @@ export default function WhatsAppIntegrationPage() {
             toast({ title: "Send Error", description: String(e), variant: "destructive" });
         } finally {
             setIsSendingTest(false);
+        }
+    };
+
+    const handleRegisterPhone = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!registerPin || registerPin.length !== 6 || !/^\d{6}$/.test(registerPin)) {
+            setPinError("PIN must be exactly 6 digits (numbers only).");
+            return;
+        }
+        if (registerPin !== registerPinConfirm) {
+            setPinError("PIN confirmation does not match.");
+            return;
+        }
+        setPinError("");
+        setIsRegisteringPhone(true);
+        setCurrentRegistrationStep(3); // Step 3: Registering phone number
+
+        try {
+            const res = await fetch("/api/whatsapp/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pin: registerPin,
+                    pin_confirmation: registerPinConfirm,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCurrentRegistrationStep(4); // Step 4: Connecting webhooks
+                setTimeout(() => {
+                    setCurrentRegistrationStep(5); // Step 5: Ready
+                    toast({
+                        title: "Registration Complete!",
+                        description: "Your WhatsApp phone number has been registered with Meta and webhooks are active.",
+                    });
+                    queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+                    setIsRegisteringPhone(false);
+                    setRegisterPin("");
+                    setRegisterPinConfirm("");
+                    setRetryMode(false);
+                }, 700);
+            } else {
+                setIsRegisteringPhone(false);
+                toast({
+                    title: "Registration Failed",
+                    description: data.message || "Meta could not register this phone number.",
+                    variant: "destructive",
+                });
+                queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
+            }
+        } catch (err: any) {
+            setIsRegisteringPhone(false);
+            toast({
+                title: "Registration Error",
+                description: String(err),
+                variant: "destructive",
+            });
         }
     };
 
@@ -281,10 +361,17 @@ export default function WhatsAppIntegrationPage() {
                 } as any,
             },
             {
-                onSuccess: () => {
-                    logDebug("WhatsApp account connected successfully.");
+                onSuccess: (res: any) => {
+                    logDebug("WhatsApp account authorization exchanged.");
                     queryClient.invalidateQueries({ queryKey: getGetWhatsappStatusQueryKey() });
-                    toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                    if (res?.registration_required || res?.status === "pending_registration") {
+                        toast({
+                            title: "Authorization Verified",
+                            description: "Phone number discovered. Please complete the 6-digit PIN registration below.",
+                        });
+                    } else {
+                        toast({ title: "WhatsApp connected", description: "Your WhatsApp Business account has been connected successfully." });
+                    }
                     setIsConnecting(false);
                     if (typeof window !== "undefined") {
                         window.history.replaceState({}, document.title, window.location.pathname);
@@ -524,6 +611,11 @@ export default function WhatsAppIntegrationPage() {
     const StatusIcon = statusCfg.icon;
     const isConnected = account?.status === "connected";
     const configReady = !!metaConfig?.appId && !!metaConfig?.configId;
+    const regStatus = (account as any)?.registration_status;
+    const isRegistrationPending = (account as any)?.registration_required || account?.status === "pending_registration" || regStatus === "REGISTRATION_PENDING" || (regStatus === "NOT_REGISTERED" && !!account?.phoneNumber);
+    const isRegistrationFailed = regStatus === "REGISTRATION_FAILED";
+    const isRegistrationSuccess = regStatus === "REGISTERED" || regStatus === "CONNECTED" || isConnected;
+    const isExpired = !!(account as any)?.is_expired;
 
     return (
         <div className="space-y-6 w-full">
@@ -599,6 +691,259 @@ export default function WhatsAppIntegrationPage() {
 
                         {/* Left Side: status card */}
                         <div className="lg:col-span-7 space-y-6">
+
+                            {/* WhatsApp Phone Registration Stage Card (Meta Embedded Signup 2-Step Verification) */}
+                            {(isRegistrationPending || isRegistrationFailed || isExpired || isRegisteringPhone) && (
+                                <Card className="bg-white border-2 border-[#35877D]/30 shadow-md rounded-2xl overflow-hidden animate-in fade-in duration-300">
+                                    <CardHeader className="bg-gradient-to-r from-emerald-50/50 via-[#FAF8F5] to-emerald-50/30 border-b border-emerald-100/60 pb-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="p-2 rounded-xl bg-[#35877D]/10 text-[#35877D]">
+                                                    <ShieldCheck size={20} />
+                                                </div>
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold text-[#0B2E1E]">WhatsApp Phone Registration</CardTitle>
+                                                    <CardDescription className="text-xs text-slate-500">
+                                                        {isRegisteringPhone ? "Registering your WhatsApp number with Meta..." : "Register your phone number with Meta Cloud API to activate live messaging."}
+                                                    </CardDescription>
+                                                </div>
+                                            </div>
+                                            <Badge className={
+                                                isRegistrationFailed ? "bg-red-50 text-red-700 border-red-200 uppercase tracking-wider text-[10px]" :
+                                                isRegisteringPhone ? "bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-wider text-[10px]" :
+                                                "bg-amber-50 text-amber-800 border-amber-200 uppercase tracking-wider text-[10px]"
+                                            }>
+                                                {isRegistrationFailed ? "Registration Failed" : isRegisteringPhone ? "Registering..." : "Pending PIN"}
+                                            </Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-6 space-y-6">
+                                        {/* 5-Step Process Pipeline */}
+                                        <div className="bg-slate-50/90 rounded-xl p-4 border border-slate-200/70">
+                                            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+                                                {/* Step 1 */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs shadow-2xs">✓</div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-800 text-[11px]">Step 1</div>
+                                                        <div className="text-[11px] text-emerald-700 font-medium">Account connected</div>
+                                                    </div>
+                                                </div>
+                                                {/* Step 2 */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs shadow-2xs">✓</div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-800 text-[11px]">Step 2</div>
+                                                        <div className="text-[11px] text-emerald-700 font-medium">Phone verified</div>
+                                                    </div>
+                                                </div>
+                                                {/* Step 3 */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-bold text-xs shadow-2xs ${
+                                                        isRegistrationSuccess ? "bg-emerald-100 text-emerald-700" :
+                                                        isRegistrationFailed ? "bg-red-100 text-red-700" :
+                                                        isRegisteringPhone && currentRegistrationStep === 3 ? "bg-blue-500 text-white animate-pulse" :
+                                                        "bg-amber-500 text-white"
+                                                    }`}>
+                                                        {isRegistrationSuccess ? "✓" : isRegistrationFailed ? "✕" : "●"}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-800 text-[11px]">Step 3</div>
+                                                        <div className={`text-[11px] font-medium ${
+                                                            isRegistrationSuccess ? "text-emerald-700" :
+                                                            isRegistrationFailed ? "text-red-700 font-bold" :
+                                                            isRegisteringPhone ? "text-blue-700 font-bold" : "text-amber-800 font-bold"
+                                                        }`}>
+                                                            {isRegistrationSuccess ? "Phone registered" : isRegisteringPhone ? "Registering phone..." : "Register phone"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Step 4 */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-bold text-xs shadow-2xs ${
+                                                        (account as any)?.webhook_status === "SUBSCRIBED" || isRegistrationSuccess ? "bg-emerald-100 text-emerald-700" :
+                                                        isRegisteringPhone && currentRegistrationStep >= 4 ? "bg-blue-500 text-white animate-pulse" :
+                                                        "bg-slate-200 text-slate-500"
+                                                    }`}>
+                                                        {(account as any)?.webhook_status === "SUBSCRIBED" || isRegistrationSuccess ? "✓" : isRegisteringPhone && currentRegistrationStep >= 4 ? "●" : "4"}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-800 text-[11px]">Step 4</div>
+                                                        <div className="text-[11px] text-slate-500 font-medium">
+                                                            {(account as any)?.webhook_status === "SUBSCRIBED" ? "Webhooks active" : "Connecting webhooks"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Step 5 */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 font-bold text-xs shadow-2xs ${
+                                                        isConnected ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
+                                                    }`}>
+                                                        {isConnected ? "✓" : "5"}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-800 text-[11px]">Step 5</div>
+                                                        <div className="text-[11px] text-slate-500 font-medium">
+                                                            {isConnected ? "Ready & Live" : "Ready"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 14-day rule expiration notice */}
+                                        {isExpired && (
+                                            <div className="rounded-xl border border-red-200 bg-red-50/90 p-4 text-xs text-red-800 space-y-2">
+                                                <div className="flex items-center gap-2 font-bold text-red-900">
+                                                    <AlertTriangle size={16} />
+                                                    WhatsApp onboarding has expired. Please reconnect your WhatsApp account.
+                                                </div>
+                                                <p className="text-red-700 leading-relaxed">
+                                                    Meta requires phone registration to be completed within 14 days of Embedded Signup. Because this timeframe has expired, please reconnect your WhatsApp account.
+                                                </p>
+                                                <Button onClick={launchEmbeddedSignup} size="sm" className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs h-8 rounded-lg cursor-pointer">
+                                                    Reconnect WhatsApp Account
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* Registration Failed View */}
+                                        {isRegistrationFailed && !isExpired && !retryMode && (
+                                            <div className="rounded-xl border border-red-200 bg-red-50/70 p-4 space-y-3">
+                                                <div className="flex items-start gap-2.5">
+                                                    <XCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                                                    <div className="space-y-1">
+                                                        <h4 className="font-bold text-sm text-red-900">WhatsApp number registration failed.</h4>
+                                                        <p className="text-xs text-red-700 leading-relaxed">
+                                                            Meta could not register this phone number. {(account as any)?.last_registration_error?.message || "Please verify your 6-digit PIN and ensure Meta WhatsApp business verification is complete."}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 pt-1">
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => { setPinError(""); setRetryMode(true); }}
+                                                        className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs h-8 px-3 rounded-lg cursor-pointer"
+                                                    >
+                                                        Retry Registration
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={refreshStatus}
+                                                        className="border-red-200 text-red-700 hover:bg-red-100/50 text-xs h-8 px-3 rounded-lg cursor-pointer"
+                                                    >
+                                                        <RefreshCcw size={12} className="mr-1.5" />
+                                                        Refresh Status
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setShowDiagnostics(!showDiagnostics)}
+                                                        className="text-xs text-slate-500 hover:text-slate-800 h-8 ml-auto"
+                                                    >
+                                                        <Terminal size={12} className="mr-1" />
+                                                        {showDiagnostics ? "Hide Diagnostics" : "Technical Diagnostics"}
+                                                    </Button>
+                                                </div>
+
+                                                {/* Technical Diagnostics */}
+                                                {showDiagnostics && (account as any)?.last_registration_error && (
+                                                    <div className="mt-3 p-3 bg-slate-900 text-slate-100 rounded-lg font-mono text-[11px] space-y-1 overflow-x-auto">
+                                                        <div>Meta Error Code: {(account as any)?.last_registration_error?.code ?? "N/A"}</div>
+                                                        <div>Meta Error Message: {(account as any)?.last_registration_error?.message ?? "N/A"}</div>
+                                                        <div>FB Trace ID: {(account as any)?.last_registration_error?.fbtrace_id ?? "N/A"}</div>
+                                                        <div>HTTP Status: {(account as any)?.last_registration_error?.http_status ?? "N/A"}</div>
+                                                        <div>Request ID: {(account as any)?.last_registration_error?.request_id ?? "N/A"}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Secure 6-Digit PIN Registration Form */}
+                                        {(!isRegistrationFailed || retryMode) && !isExpired && !isRegistrationSuccess && (
+                                            <form onSubmit={handleRegisterPhone} className="space-y-4 pt-1">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-xs font-bold text-slate-800">Register WhatsApp Number</h4>
+                                                    <p className="text-xs text-slate-500">
+                                                        Create a 6-digit WhatsApp registration PIN.
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold text-slate-700">PIN</Label>
+                                                        <Input
+                                                            type="password"
+                                                            inputMode="numeric"
+                                                            maxLength={6}
+                                                            placeholder="• • • • • •"
+                                                            value={registerPin}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                                                setRegisterPin(val);
+                                                                setPinError("");
+                                                            }}
+                                                            disabled={isRegisteringPhone}
+                                                            className="h-10 text-center tracking-widest font-mono text-base bg-white"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold text-slate-700">Confirm PIN</Label>
+                                                        <Input
+                                                            type="password"
+                                                            inputMode="numeric"
+                                                            maxLength={6}
+                                                            placeholder="• • • • • •"
+                                                            value={registerPinConfirm}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                                                setRegisterPinConfirm(val);
+                                                                setPinError("");
+                                                            }}
+                                                            disabled={isRegisteringPhone}
+                                                            className="h-10 text-center tracking-widest font-mono text-base bg-white"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {pinError && (
+                                                    <p className="text-xs font-medium text-red-600">{pinError}</p>
+                                                )}
+
+                                                <div className="rounded-xl bg-emerald-50/70 border border-emerald-200/60 p-3 text-xs text-emerald-900 flex items-start gap-2">
+                                                    <ShieldCheck size={16} className="text-[#35877D] shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <span className="font-semibold">Security Notice: </span>
+                                                        This PIN is used for WhatsApp two-step verification. Store it securely.
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    disabled={isRegisteringPhone || registerPin.length !== 6 || registerPinConfirm.length !== 6}
+                                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-semibold text-xs h-10 px-6 rounded-xl cursor-pointer w-full sm:w-auto shadow-xs"
+                                                >
+                                                    {isRegisteringPhone ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin mr-2" size={14} />
+                                                            Registering your WhatsApp number...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ShieldCheck className="mr-2" size={14} />
+                                                            Register Number
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </form>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             {/* Connection Status Card */}
                             <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
@@ -797,25 +1142,65 @@ export default function WhatsAppIntegrationPage() {
                                                         </DialogHeader>
                                                         <form onSubmit={handleSendTestMessage} className="space-y-4 py-2">
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-xs font-semibold text-slate-700">Recipient Phone Number</Label>
+                                                                <Label className="text-xs font-semibold text-slate-700">Message Type</Label>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setTestMessageType("template")}
+                                                                        className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+                                                                            testMessageType === "template"
+                                                                                ? "border-[#35877D] bg-emerald-50/50 text-[#35877D] shadow-2xs"
+                                                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                                        }`}
+                                                                    >
+                                                                        <div className="font-bold">hello_world Template</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">Pre-approved by Meta for testing</div>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setTestMessageType("text")}
+                                                                        className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+                                                                            testMessageType === "text"
+                                                                                ? "border-[#35877D] bg-emerald-50/50 text-[#35877D] shadow-2xs"
+                                                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                                        }`}
+                                                                    >
+                                                                        <div className="font-bold">Custom Text</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">Requires active 24h window</div>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs font-semibold text-slate-700">Recipient Phone Number (with Country Code)</Label>
                                                                 <Input
                                                                     placeholder="e.g. +919876543210"
                                                                     value={testPhone}
                                                                     onChange={(e) => setTestPhone(e.target.value)}
                                                                     required
-                                                                    className="text-xs"
+                                                                    className="text-xs font-mono"
                                                                 />
                                                             </div>
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs font-semibold text-slate-700">Message Body</Label>
-                                                                <Textarea
-                                                                    rows={3}
-                                                                    value={testBody}
-                                                                    onChange={(e) => setTestBody(e.target.value)}
-                                                                    required
-                                                                    className="text-xs resize-none"
-                                                                />
-                                                            </div>
+
+                                                            {testMessageType === "text" ? (
+                                                                <div className="space-y-1.5">
+                                                                    <Label className="text-xs font-semibold text-slate-700">Message Body</Label>
+                                                                    <Textarea
+                                                                        rows={3}
+                                                                        value={testBody}
+                                                                        onChange={(e) => setTestBody(e.target.value)}
+                                                                        required
+                                                                        className="text-xs resize-none"
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
+                                                                    <div className="font-semibold text-slate-800">Template Preview:</div>
+                                                                    <div className="italic bg-white p-2 rounded border border-slate-200 text-slate-700 font-sans">
+                                                                        "Hello World! Welcome and congratulations! This message confirms your WhatsApp Business Cloud API integration is connected and functioning."
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                             <DialogFooter>
                                                                 <Button
                                                                     type="button"
