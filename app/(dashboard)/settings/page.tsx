@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/page-header";
 import { Building2, Phone, Truck, Clock, Webhook, Copy, Check } from "lucide-react";
 
 const settingsSchema = z.object({
@@ -75,27 +76,19 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-3xl">
-            <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
-                        <Building2 className="w-6 h-6 text-white" />
-                    </div>
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">Settings</h1>
-                </div>
-                <p className="text-muted-foreground text-lg pl-14">Configure your business profile and auto-reply information.</p>
-            </div>
+        <div className="space-y-6 max-w-4xl font-sans">
+            <PageHeader
+                icon={Building2}
+                title="Business Settings"
+                description="Configure your business profile, operating hours, and customer auto-reply information."
+                breadcrumbs={[{ label: "Settings" }]}
+            />
 
-            <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardHeader className="space-y-1 pb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                            <Building2 className="w-5 h-5 text-white" />
-                        </div>
-                        <CardTitle className="text-2xl">Business Profile</CardTitle>
-                    </div>
-                    <CardDescription className="text-base pl-10">
-                        This information is used by the AI assistant when responding to customer queries.
+            <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
+                <CardHeader className="border-b border-slate-100 pb-4">
+                    <CardTitle className="text-base font-bold text-slate-900">Business Profile</CardTitle>
+                    <CardDescription className="text-xs text-slate-500">
+                        This information is referenced by your AI assistant when responding to customer queries.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -195,7 +188,7 @@ export default function SettingsPage() {
                                 />
                                 <Button
                                     type="submit"
-                                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                                    className="w-full h-11 text-sm font-bold bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs transition-colors cursor-pointer"
                                     disabled={updateSettings.isPending}
                                     data-testid="button-save-settings"
                                 >

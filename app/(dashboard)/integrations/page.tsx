@@ -15,20 +15,18 @@ import {
     ShieldCheck,
     Cpu
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 export default function IntegrationsPage() {
     return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
+        <div className="space-y-6 max-w-7xl mx-auto font-sans">
             {/* Page Header */}
-            <div className="border-b border-slate-200 pb-5">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                    <Plug className="h-6 w-6 text-[#35877D]" />
-                    Channels & Integrations Hub
-                </h1>
-                <p className="text-sm text-slate-500 mt-1">
-                    Connect official channels, REST APIs, webhooks, and third-party tools to automate your messaging workflow.
-                </p>
-            </div>
+            <PageHeader
+                icon={Plug}
+                title="Channels & Integrations"
+                description="Connect official channels, REST APIs, webhooks, and third-party tools to automate your messaging workflow."
+                breadcrumbs={[{ label: "Channels & Integrations" }]}
+            />
 
             {/* Channels & Integrations Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -45,6 +45,7 @@ import {
     TemplateSampleValues,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -566,36 +567,32 @@ export default function TemplatesPage() {
     return (
         <div className="flex flex-col gap-6">
             {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 flex items-center justify-center">
-                        <FileText size={20} className="text-[#35877D]" />
+            <PageHeader
+                icon={FileText}
+                title="Message Templates"
+                description="Create, customize and sync WhatsApp message templates with Meta."
+                breadcrumbs={[{ label: "Engagement" }, { label: "Templates" }]}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={handleSyncFromMeta}
+                            disabled={syncMutation.isPending}
+                            className="border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 rounded-xl cursor-pointer"
+                        >
+                            <RefreshCw size={14} className={syncMutation.isPending ? "animate-spin" : ""} />
+                            {syncMutation.isPending ? "Syncing..." : "Sync from Meta"}
+                        </Button>
+                        <Button
+                            onClick={openCreate}
+                            className="bg-[#35877D] hover:bg-[#2c7169] text-white flex items-center gap-1.5 font-medium shadow-xs rounded-xl border-0 cursor-pointer"
+                        >
+                            <Plus size={16} />
+                            Create Template
+                        </Button>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Message Templates</h1>
-                        <p className="text-sm text-slate-500">Create, customize and sync message templates with Meta</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handleSyncFromMeta}
-                        disabled={syncMutation.isPending}
-                        className="border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
-                    >
-                        <RefreshCw size={14} className={syncMutation.isPending ? "animate-spin" : ""} />
-                        {syncMutation.isPending ? "Syncing..." : "Sync from Meta"}
-                    </Button>
-                    <Button
-                        onClick={openCreate}
-                        className="bg-[#35877D] hover:bg-[#2c7169] text-white flex items-center gap-1.5 font-medium shadow-sm border-0"
-                    >
-                        <Plus size={16} />
-                        Create Template
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Search and Filters */}
             <div className="flex items-center gap-2 max-w-md">

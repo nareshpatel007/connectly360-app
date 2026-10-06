@@ -43,7 +43,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { CreditBalance } from "@/components/credit-balance";
 import { AppCommandPalette } from "@/components/app-command-palette";
-import { CLIENT_NAV_SECTIONS, MenuItem, SubMenuItem } from "@/lib/navigation-config";
+import { resolveActiveNavigation } from "@/lib/navigation-matcher";
+import { CLIENT_NAV_SECTIONS, type MenuItem, type SubMenuItem } from "@/lib/navigation-config";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -74,30 +75,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         return true;
     };
 
-    // Sub-menu active state detector
-    const checkActiveSub = (sub: SubMenuItem) => {
-        return (
-            pathname === sub.href ||
-            (sub.href !== "/dashboard" && sub.href !== "/billing" && pathname.startsWith(sub.href + "/"))
-        );
-    };
-
-    const initialActiveParent = CLIENT_NAV_SECTIONS
-        .flatMap((s) => s.items)
-        .find((item) => item.subItems?.some(checkActiveSub));
+    // Centralized active navigation resolution (guarantees exactly 1 leaf item is active)
+    const activeNav = React.useMemo(
+        () => resolveActiveNavigation(pathname, CLIENT_NAV_SECTIONS),
+        [pathname]
+    );
 
     const [openMenuHref, setOpenMenuHref] = useState<string | null>(
-        initialActiveParent ? initialActiveParent.href : null
+        activeNav.expandedGroupId
     );
 
     useEffect(() => {
-        const currentActiveParent = CLIENT_NAV_SECTIONS
-            .flatMap((s) => s.items)
-            .find((item) => item.subItems?.some(checkActiveSub));
-        if (currentActiveParent) {
-            setOpenMenuHref(currentActiveParent.href);
+        if (activeNav.expandedGroupId) {
+            setOpenMenuHref(activeNav.expandedGroupId);
         }
-    }, [pathname]);
+    }, [activeNav.expandedGroupId]);
 
     // Notifications state
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -250,27 +242,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 {accessibleItems.map((item) => {
                                     const Icon = item.icon;
                                     const hasSubItems = item.subItems && item.subItems.length > 0;
-                                    const isActive =
-                                        pathname === item.href ||
-                                        (item.href !== "/dashboard" && item.href !== "/billing" && pathname.startsWith(item.href + "/")) ||
-                                        (hasSubItems && item.subItems!.some(checkActiveSub));
+                                    const isLeafActive = !hasSubItems && activeNav.activeLeafId === (item.id || item.href);
 
                                     if (!hasSubItems) {
                                         const navLink = (
                                             <Link
-                                                key={item.href}
-                                                href={item.href}
+                                                key={item.href || item.id}
+                                                href={item.href || "#"}
                                                 onClick={() => setMobileOpen(false)}
                                                 className={`flex items-center ${
                                                     collapsed ? "justify-center px-2" : "justify-between px-3.5"
                                                 } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                                                    isActive
+                                                    isLeafActive
                                                         ? "bg-[#35877D] text-white shadow-md shadow-[#35877D]/20 font-bold"
                                                         : "text-slate-600 hover:bg-teal-50/60 hover:text-[#35877D]"
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <Icon size={18} className={isActive ? "text-white" : "text-slate-500"} />
+                                                    <Icon size={18} className={isLeafActive ? "text-white" : "text-slate-500"} />
                                                     {!collapsed && <span className="truncate">{item.label}</span>}
                                                 </div>
 
@@ -280,15 +269,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                     </span>
                                                 )}
 
-                                                {!collapsed && isActive && item.href !== "/conversations" && (
+                                                {!collapsed && isLeafActive && item.href !== "/conversations" && (
                                                     <ChevronRight size={14} className="text-white/80 shrink-0" />
-                                                )}
+                                                    )}
                                             </Link>
                                         );
 
                                         if (collapsed) {
                                             return (
-                                                <Tooltip key={item.href} delayDuration={100}>
+                                                <Tooltip key={item.id || item.href} delayDuration={100}>
                                                     <TooltipTrigger asChild>{navLink}</TooltipTrigger>
                                                     <TooltipContent
                                                         side="right"
@@ -304,15 +293,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     }
 
                                     // Collapsible Group Item
-                                    const isOpen = openMenuHref === item.href;
+                                    const groupId = item.id || item.label || item.href;
+                                    const isOpen = openMenuHref === groupId;
                                     const filteredSubItems = item.subItems!.filter(isAllowed);
 
                                     const parentLink = (
                                         <Collapsible
-                                            key={item.href}
+                                            key={groupId}
                                             open={isOpen}
                                             onOpenChange={(nextOpen) => {
-                                                setOpenMenuHref(nextOpen ? item.href : null);
+                                                setOpenMenuHref(nextOpen ? (groupId || null) : null);
                                             }}
                                             className="w-full"
                                         >
@@ -321,13 +311,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                     className={`w-full flex items-center ${
                                                         collapsed ? "justify-center px-2" : "justify-between px-3.5"
                                                     } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                                                        isActive
-                                                            ? "bg-[#35877D]/10 text-[#35877D] font-bold"
+                                                        isOpen
+                                                            ? "bg-slate-100/80 text-slate-800 font-bold"
                                                             : "text-slate-600 hover:bg-teal-50/60 hover:text-[#35877D]"
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-3 min-w-0">
-                                                        <Icon size={18} className={isActive ? "text-[#35877D]" : "text-slate-500"} />
+                                                        <Icon size={18} className={isOpen ? "text-[#35877D]" : "text-slate-500"} />
                                                         {!collapsed && <span className="truncate">{item.label}</span>}
                                                     </div>
                                                     {!collapsed && (
@@ -345,11 +335,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                 <CollapsibleContent className="pl-4 pr-1 pt-1 space-y-0.5 border-l border-slate-100 my-1 ml-4">
                                                     {filteredSubItems.map((sub) => {
                                                         const SubIcon = sub.icon;
-                                                        const isSubActive = checkActiveSub(sub);
+                                                        const isSubActive = activeNav.activeLeafId === (sub.id || sub.href);
 
                                                         return (
                                                             <Link
-                                                                key={sub.href}
+                                                                key={sub.id || sub.href}
                                                                 href={sub.href}
                                                                 onClick={() => setMobileOpen(false)}
                                                                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
@@ -370,7 +360,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
                                     if (collapsed) {
                                         return (
-                                            <Tooltip key={item.href} delayDuration={100}>
+                                            <Tooltip key={groupId} delayDuration={100}>
                                                 <TooltipTrigger asChild>{parentLink}</TooltipTrigger>
                                                 <TooltipContent
                                                     side="right"

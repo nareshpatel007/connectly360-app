@@ -11,6 +11,8 @@ import {
     Clock,
     ArrowUpRight
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 
 interface ApiLogItem {
     id: string;
@@ -48,25 +50,26 @@ export default function ApiLogsPage() {
     );
 
     return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <Terminal className="h-6 w-6 text-[#35877D]" />
-                        API Request Logs
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Realtime HTTP request logs, payload diagnostics, and status code telemetry.
-                    </p>
-                </div>
-                <button
-                    onClick={handleRefresh}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
-                >
-                    <RefreshCw size={14} className={isRefreshing ? "animate-spin text-[#35877D]" : ""} />
-                    Refresh Logs
-                </button>
-            </div>
+        <div className="space-y-6 max-w-7xl mx-auto font-sans">
+            <PageHeader
+                icon={Terminal}
+                title="API Request Logs"
+                description="Realtime HTTP request logs, payload diagnostics, and status code telemetry."
+                breadcrumbs={[
+                    { label: "Developer", href: "/developer" },
+                    { label: "API Logs" }
+                ]}
+                actions={
+                    <Button
+                        variant="outline"
+                        onClick={handleRefresh}
+                        className="rounded-xl border-slate-200 text-xs font-semibold cursor-pointer h-9 px-4"
+                    >
+                        <RefreshCw size={14} className={`mr-1.5 ${isRefreshing ? "animate-spin text-[#35877D]" : "text-slate-500"}`} />
+                        Refresh Logs
+                    </Button>
+                }
+            />
 
             <div className="flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">

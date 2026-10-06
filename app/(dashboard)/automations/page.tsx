@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import {
     Plus,
@@ -170,22 +171,22 @@ export default function AutomationsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Automations</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Create keyword rules that trigger automated WhatsApp replies.
-                    </p>
-                </div>
-                <Button
-                    onClick={openCreateDialog}
-                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-sm flex items-center gap-2"
-                >
-                    <Plus className="h-4 w-4" />
-                    Create Rule
-                </Button>
-            </div>
+            {/* Page Header */}
+            <PageHeader
+                icon={Zap}
+                title="Automations"
+                description="Create keyword rules that trigger automated WhatsApp replies."
+                breadcrumbs={[{ label: "Engagement" }, { label: "Automations" }]}
+                actions={
+                    <Button
+                        onClick={openCreateDialog}
+                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Create Rule
+                    </Button>
+                }
+            />
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">

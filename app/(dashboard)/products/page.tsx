@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -111,19 +112,20 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products & Pricing</h1>
-          <p className="text-muted-foreground">Manage your oil variants and current market prices.</p>
-        </div>
+      <PageHeader
+        icon={Package}
+        title="Products & Pricing"
+        description="Manage your catalogue items, packaging variants, and prices."
+        breadcrumbs={[{ label: "Products" }]}
+        actions={
+          <Button onClick={openCreate} className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer">
+            <Plus className="h-4 w-4" /> Add Product
+          </Button>
+        }
+      />
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" /> Add Product
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
             </DialogHeader>
@@ -186,7 +188,6 @@ export default function ProductsPage() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (

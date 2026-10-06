@@ -22,6 +22,13 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface Segment {
     id: string;
@@ -101,32 +108,20 @@ export default function SegmentsPage() {
     const fetchSegments = async () => {
         setIsLoading(true);
         try {
-            // Attempt to fetch from backend customers/segments if endpoint available
-            const res = await fetch("/api/customers?limit=100", {
+            const res = await fetch("/api/segments", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
-            if (data.status && data.data) {
-                const total = data.data.length || 0;
-                setSegments((prev) =>
-                    prev.map((s) => ({
-                        ...s,
-                        targetCount: Math.max(s.targetCount, total > 0 ? Math.floor(total * 0.4) : s.targetCount)
-                    }))
-                );
+            if (data.status && data.data && data.data.length > 0) {
+                setSegments(data.data);
             }
         } catch {
-            // Keep default robust segments
+            // Keep defaults
         } finally {
             setIsLoading(false);
+            toast.success("Segment audience counts updated");
         }
     };
-
-    useEffect(() => {
-        if (token) {
-            fetchSegments();
-        }
-    }, [token]);
 
     const handleCreateSegment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -160,46 +155,45 @@ export default function SegmentsPage() {
     );
 
     return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <Filter className="h-6 w-6 text-[#35877D]" />
-                        Customer Segments
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Build dynamic customer audiences for targeted WhatsApp campaigns, automations, and analytics.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={fetchSegments}
-                        className="p-2.5 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
-                        title="Recalculate Segments"
-                    >
-                        <RefreshCw size={16} className={isLoading ? "animate-spin text-[#35877D]" : ""} />
-                    </button>
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-                    >
-                        <Plus size={16} />
-                        New Segment
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                icon={Filter}
+                title="Customer Segments"
+                description="Build dynamic customer audiences for targeted WhatsApp campaigns, automations, and analytics."
+                breadcrumbs={[{ label: "Segments" }]}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchSegments}
+                            className="rounded-xl border-slate-200 text-slate-700 h-9 px-3 cursor-pointer"
+                            title="Recalculate Segments"
+                        >
+                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#35877D]" : ""} />
+                        </Button>
+                        <Button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-colors cursor-pointer gap-1.5"
+                        >
+                            <Plus size={16} />
+                            New Segment
+                        </Button>
+                    </div>
+                }
+            />
 
             {/* Quick Filter Search */}
             <div className="flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
                     <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
+                    <Input
                         type="text"
                         placeholder="Search segments by name or condition..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#35877D]/20 focus:border-[#35877D]"
+                        className="pl-10 h-10 rounded-xl border-slate-200 text-xs font-semibold"
                     />
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -210,141 +204,139 @@ export default function SegmentsPage() {
             {/* Segment Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredSegments.map((segment) => (
-                    <div
+                    <Card
                         key={segment.id}
-                        className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                        className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
                     >
                         <div className="space-y-2">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="h-9 w-9 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center font-bold">
-                                        <Filter size={18} />
+                                        <Filter size={16} />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                            {segment.name}
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-bold text-slate-900">{segment.name}</h3>
                                             {segment.isSystem && (
-                                                <span className="px-2 py-0.5 text-[10px] font-extrabold bg-teal-50 text-[#35877D] rounded-md border border-teal-200">
+                                                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-teal-50 text-[#35877D] border border-teal-100">
                                                     System
                                                 </span>
                                             )}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 line-clamp-1">{segment.description}</p>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{segment.description}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Conditions Badges */}
+                            {/* Conditions list */}
                             <div className="flex flex-wrap gap-1.5 pt-2">
-                                {segment.conditions.map((c, i) => (
+                                {segment.conditions.map((cond, i) => (
                                     <span
                                         key={i}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono font-medium text-slate-700"
                                     >
-                                        <SlidersHorizontal size={12} className="text-[#35877D]" />
-                                        <span>{c.field.replace("_", " ")}</span>
-                                        <span className="text-slate-400 font-mono text-[10px]">{c.operator}</span>
-                                        <span className="font-bold text-slate-900">{c.value}</span>
+                                        <span className="text-slate-400">#</span>
+                                        <span className="font-bold">{cond.field}</span>
+                                        <span className="text-slate-400">{cond.operator}</span>
+                                        <span className="text-[#35877D] font-bold">{cond.value}</span>
                                     </span>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Footer Info */}
-                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                        {/* Card Footer */}
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                            <div className="flex items-center gap-3">
+                                <span className="flex items-center gap-1 font-bold text-slate-800">
                                     <Users size={14} className="text-[#35877D]" />
-                                    {segment.targetCount.toLocaleString()} Contacts
-                                </div>
-                                <div className="text-slate-400 text-[11px] flex items-center gap-1">
+                                    {segment.targetCount} Contacts
+                                </span>
+                                <span className="flex items-center gap-1 text-[11px] text-slate-400">
                                     <Clock size={12} />
                                     {segment.lastCalculated}
-                                </div>
+                                </span>
                             </div>
+
                             <div className="flex items-center gap-2">
                                 <Link
-                                    href={`/marketing/campaigns?segment=${segment.id}`}
-                                    className="px-2.5 py-1.5 bg-[#35877D]/10 hover:bg-[#35877D]/20 text-[#35877D] font-bold text-[11px] rounded-lg transition-colors flex items-center gap-1"
+                                    href="/marketing/campaigns/new"
+                                    className="px-2.5 py-1 text-[11px] font-bold text-[#35877D] hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
                                 >
                                     Broadcast <ArrowUpRight size={12} />
                                 </Link>
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 ))}
             </div>
 
-            {/* Modal for New Segment */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4 font-sans">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <Filter size={18} className="text-[#35877D]" />
-                                Create New Segment
-                            </h3>
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-xs font-bold"
-                            >
-                                ✕
-                            </button>
+            {/* Dialog for New Segment */}
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogContent className="sm:max-w-md rounded-2xl p-6 bg-white border border-slate-200">
+                    <DialogHeader className="border-b border-slate-100 pb-3">
+                        <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <Filter size={18} className="text-[#35877D]" />
+                            Create New Segment
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500">
+                            Create an automated target list based on tags and contact attributes.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleCreateSegment} className="space-y-4 pt-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Segment Name</Label>
+                            <Input
+                                required
+                                placeholder="e.g. Q3 High Value Prospects"
+                                value={newSegmentName}
+                                onChange={(e) => setNewSegmentName(e.target.value)}
+                                className="h-10 rounded-xl border-slate-200 text-xs font-semibold"
+                            />
                         </div>
-                        <form onSubmit={handleCreateSegment} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Segment Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Q3 High Value Prospects"
-                                    value={newSegmentName}
-                                    onChange={(e) => setNewSegmentName(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
-                                <textarea
-                                    rows={2}
-                                    placeholder="Target description and use cases..."
-                                    value={newSegmentDesc}
-                                    onChange={(e) => setNewSegmentDesc(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Filter Condition</label>
-                                <select
-                                    value={selectedTag}
-                                    onChange={(e) => setSelectedTag(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                >
-                                    <option value="vip">Tag equals "VIP"</option>
-                                    <option value="lead_new">Lead Status equals "New"</option>
-                                    <option value="opt_in">WhatsApp Opt-in equals "true"</option>
-                                    <option value="no_reply">No response in 7 days</option>
-                                </select>
-                            </div>
-                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-                                >
-                                    Save Segment
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Description</Label>
+                            <Textarea
+                                rows={2}
+                                placeholder="Target description and use cases..."
+                                value={newSegmentDesc}
+                                onChange={(e) => setNewSegmentDesc(e.target.value)}
+                                className="rounded-xl border-slate-200 text-xs font-semibold"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Filter Condition</Label>
+                            <select
+                                value={selectedTag}
+                                onChange={(e) => setSelectedTag(e.target.value)}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
+                            >
+                                <option value="vip">Tag equals &quot;VIP&quot;</option>
+                                <option value="lead_new">Lead Status equals &quot;New&quot;</option>
+                                <option value="opt_in">WhatsApp Opt-in equals &quot;true&quot;</option>
+                                <option value="no_reply">No response in 7 days</option>
+                            </select>
+                        </div>
+
+                        <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs"
+                            >
+                                Save Segment
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

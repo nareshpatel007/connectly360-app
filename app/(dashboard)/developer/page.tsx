@@ -14,9 +14,14 @@ import {
     ShieldCheck,
     ExternalLink,
     Activity,
-    Clock
+    Clock,
+    Zap
 } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
+import { Button } from "@/components/ui/button";
 
 export default function DeveloperPage() {
     const [copied, setCopied] = useState(false);
@@ -33,21 +38,18 @@ export default function DeveloperPage() {
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
             {/* Header */}
-            <div className="border-b border-slate-200 pb-5">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                    <Code2 className="h-6 w-6 text-[#35877D]" />
-                    Developer Platform
-                </h1>
-                <p className="text-sm text-slate-500 mt-1">
-                    API keys, webhook callbacks, request logging, and developer documentation.
-                </p>
-            </div>
+            <PageHeader
+                icon={Code2}
+                title="Developer Platform"
+                description="API keys, webhook callbacks, request logging, and developer documentation."
+                breadcrumbs={[{ label: "Developer" }]}
+            />
 
             {/* Sub-navigation Quick Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link
                     href="/integrations/api-keys"
-                    className="p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#35877D] hover:shadow-sm transition-all group flex items-start gap-4"
+                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-[#35877D] hover:shadow-xs transition-all group flex items-start gap-4"
                 >
                     <div className="h-10 w-10 rounded-xl bg-teal-50 text-[#35877D] flex items-center justify-center font-bold shrink-0">
                         <Key size={20} />
@@ -62,7 +64,7 @@ export default function DeveloperPage() {
 
                 <Link
                     href="/integrations/webhooks"
-                    className="p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#35877D] hover:shadow-sm transition-all group flex items-start gap-4"
+                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-[#35877D] hover:shadow-xs transition-all group flex items-start gap-4"
                 >
                     <div className="h-10 w-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold shrink-0">
                         <Webhook size={20} />
@@ -77,7 +79,7 @@ export default function DeveloperPage() {
 
                 <Link
                     href="/developer/api-logs"
-                    className="p-5 bg-white border border-slate-200 rounded-2xl hover:border-[#35877D] hover:shadow-sm transition-all group flex items-start gap-4"
+                    className="p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-[#35877D] hover:shadow-xs transition-all group flex items-start gap-4"
                 >
                     <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold shrink-0">
                         <Terminal size={20} />
@@ -119,27 +121,36 @@ export default function DeveloperPage() {
             </div>
 
             {/* Rate Limits & Status */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="space-y-3">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                     <Activity size={16} className="text-[#35877D]" />
                     Workspace Rate Limits & Status
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase">Rate Limit</p>
-                        <p className="text-lg font-black text-slate-900">1,000 req / min</p>
-                        <p className="text-[10px] text-slate-400">Standard Tier Limit</p>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase">Uptime Status</p>
-                        <p className="text-lg font-black text-emerald-600">99.98% Healthy</p>
-                        <p className="text-[10px] text-slate-400">All services operational</p>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase">Avg Response Time</p>
-                        <p className="text-lg font-black text-slate-900">142 ms</p>
-                        <p className="text-[10px] text-slate-400">Last 24 Hours</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <StatCard
+                        title="Rate Limit"
+                        value="1,000 / min"
+                        icon={Zap}
+                        change="STANDARD"
+                        changeType="neutral"
+                        subtitle="Workspace throttle limit"
+                    />
+                    <StatCard
+                        title="Uptime Status"
+                        value="99.98%"
+                        icon={Activity}
+                        change="HEALTHY"
+                        changeType="positive"
+                        subtitle="All services operational"
+                    />
+                    <StatCard
+                        title="Avg Response Time"
+                        value="142 ms"
+                        icon={Clock}
+                        change="OPTIMAL"
+                        changeType="positive"
+                        subtitle="Last 24 hours roundtrip"
+                    />
                 </div>
             </div>
         </div>

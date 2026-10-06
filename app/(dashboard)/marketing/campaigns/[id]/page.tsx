@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/table";
 import {
     ArrowLeft, Loader2, Users, Send, CheckCheck, Eye,
-    AlertCircle, MessageCircle, Download, Trash2,
+    AlertCircle, MessageCircle, Download, Trash2, Megaphone,
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import {
     useGetCampaign,
@@ -207,75 +208,58 @@ export default function CampaignDetailPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => router.push("/marketing/campaigns")} className="border-border">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-foreground">{campaign.name}</h1>
-                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusInfo.classes}`}>
-                                {statusInfo.pulse && (
-                                    <span className="relative flex h-1.5 w-1.5">
-                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
-                                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-yellow-400" />
-                                    </span>
-                                )}
-                                {statusInfo.label}
-                            </span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                            <span>
-                                Type: <strong className="text-foreground capitalize">{campaign.template_name === 'email' ? 'Email' : campaign.template_name === 'sms' ? 'SMS' : `WhatsApp (${campaign.template_name})`}</strong>
-                            </span>
-                            <span>·</span>
-                            <span>Created {new Date(campaign.created_at).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {/* Send button — only for draft/failed */}
-                    {(campaign.status === "draft" || campaign.status === "failed") && (
-                        <Button
-                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white"
-                            disabled={sending}
-                            onClick={handleSend}
-                        >
-                            {sending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                            {sending ? "Sending…" : "Send Now"}
-                        </Button>
-                    )}
-
-                    {/* Delete */}
-                    {confirmDelete ? (
-                        <div className="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm">
-                            <span className="text-red-400 text-xs">Delete this campaign?</span>
-                            <Button variant="outline" size="sm" className="h-7" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            {/* Page Header */}
+            <PageHeader
+                icon={Megaphone}
+                title={campaign.name}
+                description={`Type: ${campaign.template_name === 'email' ? 'Email' : campaign.template_name === 'sms' ? 'SMS' : `WhatsApp (${campaign.template_name})`} · Created ${new Date(campaign.created_at).toLocaleDateString()}`}
+                breadcrumbs={[
+                    { label: "Engagement" },
+                    { label: "Campaigns", href: "/marketing/campaigns" },
+                    { label: campaign.name },
+                ]}
+                badge={statusInfo.label}
+                actions={
+                    <div className="flex items-center gap-2">
+                        {/* Send button — only for draft/failed */}
+                        {(campaign.status === "draft" || campaign.status === "failed") && (
                             <Button
-                                size="sm"
-                                className="h-7 bg-red-600 text-white hover:bg-red-700"
-                                disabled={deleteMutation.isPending}
-                                onClick={handleDelete}
+                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs cursor-pointer"
+                                disabled={sending}
+                                onClick={handleSend}
                             >
-                                {deleteMutation.isPending ? "Deleting…" : "Confirm"}
+                                {sending ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Send className="h-4 w-4 mr-1.5" />}
+                                {sending ? "Sending…" : "Send Now"}
                             </Button>
-                        </div>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={campaign.status === "sending"}
-                            onClick={() => setConfirmDelete(true)}
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
-                        >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                        </Button>
-                    )}
-                </div>
-            </div>
+                        )}
+                        {/* Delete */}
+                        {confirmDelete ? (
+                            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-1 text-sm">
+                                <span className="text-red-700 text-xs font-semibold">Delete campaign?</span>
+                                <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                                <Button
+                                    size="sm"
+                                    className="h-7 text-xs bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                                    disabled={deleteMutation.isPending}
+                                    onClick={handleDelete}
+                                >
+                                    {deleteMutation.isPending ? "Deleting…" : "Confirm"}
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={campaign.status === "sending"}
+                                onClick={() => setConfirmDelete(true)}
+                                className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl h-9 cursor-pointer disabled:opacity-40"
+                            >
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Stats Cards */}
             <div className={`grid gap-3 ${

@@ -16,8 +16,10 @@ import {
     Download,
     Trash2,
     Edit2,
-    ShieldCheck
+    ShieldCheck,
+    Users
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Link from "next/link";
@@ -326,116 +328,131 @@ export default function CustomersPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-                        Contacts
-                        <span className="text-xl font-normal text-slate-500">
-                            ({filteredCustomers?.length ?? 0})
-                        </span>
-                    </h1>
-                    <p className="text-slate-600 text-sm mt-1">
-                        Contact list stores the list of numbers that you've interacted with. You can even manually export or import contacts.
-                    </p>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-medium cursor-pointer">
-                                <Plus size={14} />
-                                Add New
+            {/* Standard PageHeader */}
+            <PageHeader
+                icon={Users}
+                title="Contacts"
+                badge={filteredCustomers ? `${filteredCustomers.length}` : undefined}
+                description="Manage customer contact cards, conversational history, and pipeline CRM stages."
+                breadcrumbs={[{ label: "Contacts" }]}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
+                        >
+                            <Upload size={14} />
+                            Export
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleImport}
+                            className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
+                        >
+                            <Download size={14} />
+                            Import
+                        </Button>
+                        <Button
+                            onClick={() => setIsOpen(true)}
+                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-bold cursor-pointer shadow-xs"
+                        >
+                            <Plus size={15} />
+                            Add Contact
+                        </Button>
+                    </div>
+                }
+            />
+
+            {/* Create Contact Dialog */}
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
+                    <div className="bg-[#35877D]/10 border-b border-[#35877D]/20 px-6 py-4 flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-[#35877D]/20 flex items-center justify-center">
+                            <Plus size={16} className="text-[#35877D]" />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-base font-bold text-slate-800">Create New Contact</DialogTitle>
+                            <DialogDescription className="text-slate-600 text-xs mt-0.5">
+                                Add a contact manually to your database.
+                            </DialogDescription>
+                        </div>
+                    </div>
+                    <form onSubmit={handleCreateContact} className="p-6 space-y-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name" className="text-xs font-semibold text-slate-700">Name</Label>
+                            <Input
+                                id="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="e.g. John Doe"
+                                className="text-xs text-slate-700 h-9"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">
+                                Phone Number <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="phone"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="e.g. 919876543210"
+                                className="text-xs text-slate-700 h-9"
+                                required
+                            />
+                            <p className="text-[10px] text-slate-400">
+                                Include country code without + or spaces (e.g. 919876543210).
+                            </p>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="city" className="text-xs font-semibold text-slate-700">City</Label>
+                            <Input
+                                id="city"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                placeholder="e.g. Mumbai"
+                                className="text-xs text-slate-700 h-9"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="firstMessage" className="text-xs font-semibold text-slate-700">First Message (Optional)</Label>
+                            <Textarea
+                                id="firstMessage"
+                                value={firstMessage}
+                                onChange={(e) => setFirstMessage(e.target.value)}
+                                placeholder="Type a message to start conversation immediately..."
+                                className="min-h-[80px] text-xs text-slate-700 leading-relaxed resize-none"
+                            />
+                        </div>
+                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsOpen(false)}
+                                disabled={createCustomerMutation.isPending}
+                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
+                            >
+                                Cancel
                             </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                            <div className="bg-[#378179]/5 border-b border-[#378179]/10 px-6 py-4 flex items-center gap-2.5">
-                                <div className="h-8 w-8 rounded-full bg-[#378179]/10 flex items-center justify-center">
-                                    <Plus size={16} className="text-[#378179]" />
-                                </div>
-                                <div>
-                                    <DialogTitle className="text-base font-bold text-slate-800">Create New Contact</DialogTitle>
-                                    <DialogDescription className="text-slate-600 text-xs mt-0.5">
-                                        Add a contact manually to your database.
-                                    </DialogDescription>
-                                </div>
-                            </div>
-                            <form onSubmit={handleCreateContact} className="p-6 space-y-4">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="name" className="text-xs font-semibold text-slate-700">Name</Label>
-                                    <Input
-                                        id="name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="e.g. John Doe"
-                                        className="text-xs text-slate-700 h-9"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">
-                                        Phone Number <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="phone"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="e.g. 919876543210"
-                                        className="text-xs text-slate-700 h-9"
-                                        required
-                                    />
-                                    <p className="text-[10px] text-slate-505">
-                                        Include country code without + or spaces (e.g. 919876543210).
-                                    </p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="city" className="text-xs font-semibold text-slate-700">City</Label>
-                                    <Input
-                                        id="city"
-                                        value={city}
-                                        onChange={(e) => setCity(e.target.value)}
-                                        placeholder="e.g. Mumbai"
-                                        className="text-xs text-slate-700 h-9"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="firstMessage" className="text-xs font-semibold text-slate-700">First Message (Optional)</Label>
-                                    <Textarea
-                                        id="firstMessage"
-                                        value={firstMessage}
-                                        onChange={(e) => setFirstMessage(e.target.value)}
-                                        placeholder="Type a message to start conversation immediately..."
-                                        className="min-h-[80px] text-xs text-slate-700 leading-relaxed resize-none"
-                                    />
-                                </div>
-                                <DialogFooter className="pt-2 flex justify-end gap-2.5">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setIsOpen(false)}
-                                        disabled={createCustomerMutation.isPending}
-                                        className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
-                                        disabled={createCustomerMutation.isPending}
-                                    >
-                                        {createCustomerMutation.isPending ? (
-                                            <span className="flex items-center gap-1.5">
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                Creating...
-                                            </span>
-                                        ) : (
-                                            "Create Contact"
-                                        )}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
+                            <Button
+                                type="submit"
+                                className="bg-[#35877D] hover:bg-[#2c6761] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
+                                disabled={createCustomerMutation.isPending}
+                            >
+                                {createCustomerMutation.isPending ? (
+                                    <span className="flex items-center gap-1.5">
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        Creating...
+                                    </span>
+                                ) : (
+                                    "Create Contact"
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             {/* Filter and Action Bar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -465,34 +482,19 @@ export default function CustomersPage() {
                     </div>
                 </div>
 
-                {/* Right side actions */}
+                {/* Bulk Actions */}
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-lg flex items-center gap-1.5 bg-white font-medium hover:bg-slate-50 cursor-pointer"
-                    >
-                        <Upload size={13} />
-                        Export
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleImport}
-                        className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-lg flex items-center gap-1.5 bg-white font-medium hover:bg-slate-50 cursor-pointer"
-                    >
-                        <Download size={13} />
-                        Import
-                    </Button>
-                    <button
-                        onClick={handleBulkDelete}
-                        disabled={selectedIds.length === 0}
-                        className={`h-9 w-9 border flex items-center justify-center rounded-lg transition-colors bg-white cursor-pointer ${selectedIds.length > 0
-                            ? "border-red-205 text-red-500 hover:bg-red-50/50"
-                            : "border-slate-200 text-slate-400 opacity-60 cursor-not-allowed"
-                            }`}
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                    {selectedIds.length > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleBulkDelete}
+                            className="text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 font-bold cursor-pointer"
+                        >
+                            <Trash2 size={13} />
+                            Delete ({selectedIds.length})
+                        </Button>
+                    )}
                 </div>
             </div>
 

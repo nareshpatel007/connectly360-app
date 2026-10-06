@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useListTemplates, useListCustomers, useCreateCampaign, useSendCampaign, MessageTemplate } from "@/lib/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UpgradeGuard } from "@/components/upgrade-guard";
+import { PageHeader } from "@/components/page-header";
 import { CampaignCreditConfirmDialog } from "@/components/campaign-credit-confirm-dialog";
 
 // ─────────────────────────────────────────────────────────
@@ -637,15 +638,17 @@ export default function NewCampaignPage() {
             description="Send broadcast campaigns, target user segments, and schedule bulk notifications to your lists."
         >
             <div className="w-full space-y-6 pb-10">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Create Broadcast</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Design, target, and launch bulk message broadcasts.
-                        </p>
-                    </div>
-                </div>
+                {/* Page Header */}
+                <PageHeader
+                    icon={Megaphone}
+                    title="Create Broadcast"
+                    description="Design, target, and launch bulk message broadcasts."
+                    breadcrumbs={[
+                        { label: "Engagement" },
+                        { label: "Campaigns", href: "/marketing/campaigns" },
+                        { label: "New Campaign" },
+                    ]}
+                />
 
                 {/* Two Column Layout utilizing left and right space */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

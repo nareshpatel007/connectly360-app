@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/page-header";
 import {
     Dialog,
     DialogContent,
@@ -59,7 +60,8 @@ import {
     Check,
     Copy,
     Terminal,
-    ChevronRight
+    ChevronRight,
+    MessageCircle
 } from "lucide-react";
 
 declare global {
@@ -525,34 +527,40 @@ export default function WhatsAppIntegrationPage() {
 
     return (
         <div className="space-y-6 w-full">
-            {/* Top Header Greetings */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 pb-2 border-b border-[#EAE6DF]/60">
-                <div>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-[#0B2E1E]">WhatsApp Integration</h1>
-                    <p className="text-xs text-slate-500 mt-1">Connect your WhatsApp Business API and configure automated auto-replies for incoming conversations.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={refreshStatus}
-                        className="border-[#EAE6DF] hover:bg-slate-100/80 rounded-xl flex items-center gap-2 text-xs font-semibold cursor-pointer h-9 px-4"
-                    >
-                        <RefreshCcw size={13} className={isLoadingStatus ? "animate-spin text-[#35877D]" : "text-slate-500"} />
-                        Refresh Status
-                    </Button>
+            {/* Page Header */}
+            <PageHeader
+                icon={MessageCircle}
+                title="WhatsApp Integration"
+                description="Connect your WhatsApp Business API and configure automated auto-replies for incoming conversations."
+                breadcrumbs={[
+                    { label: "Channels & Integrations", href: "/integrations" },
+                    { label: "WhatsApp" }
+                ]}
+                badge={isConnected ? "Active WABA" : undefined}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={refreshStatus}
+                            className="border-slate-200 hover:bg-slate-50 rounded-xl flex items-center gap-2 text-xs font-semibold cursor-pointer h-9 px-4"
+                        >
+                            <RefreshCcw size={13} className={isLoadingStatus ? "animate-spin text-[#35877D]" : "text-slate-500"} />
+                            Refresh Status
+                        </Button>
 
-                    {isConnected && (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-[#35877D] text-xs font-medium border border-emerald-100 shadow-xs">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#35877D] opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#35877D]"></span>
+                        {isConnected && (
+                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-[#35877D] text-xs font-semibold border border-emerald-200 shadow-2xs">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#35877D] opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#35877D]"></span>
+                                </span>
+                                Connected
                             </span>
-                            Active
-                        </span>
-                    )}
-                </div>
-            </div>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Test Mode Banner */}
             {(account as any)?.is_test_mode && (

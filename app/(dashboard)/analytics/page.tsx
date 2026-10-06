@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useGetAnalyticsSummary, useGetMessageStats, useGetTopIntents } from "@workspace/api-client-react";
+import { BarChart3 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,10 +48,12 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground">Message trends, lead pipeline, and customer engagement metrics.</p>
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        title="Analytics"
+        description="Message trends, lead pipeline, and customer engagement metrics."
+        breadcrumbs={[{ label: "Analytics" }]}
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         {isLoadingSummary ? (

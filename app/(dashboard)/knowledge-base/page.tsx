@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PageHeader } from "@/components/page-header";
 import {
     ChevronDown,
     ChevronRight,
@@ -288,14 +289,12 @@ export default function KnowledgeBasePage() {
             description="Train a custom AI agent on your business files and automate customer replies 24/7."
         >
             <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-800">AI Knowledge Base</h1>
-                    <p className="text-slate-600 text-sm">
-                        Teach the AI about your business operations, customize instructions, and test answers.
-                    </p>
-                </div>
-            </div>
+                <PageHeader
+                    icon={BookOpen}
+                    title="Knowledge Base"
+                    description="Teach the AI about your business operations, customize instructions, and test answers."
+                    breadcrumbs={[{ label: "AI" }, { label: "Knowledge Base" }]}
+                />
 
             <div className="grid gap-6 md:grid-cols-12 items-start">
 

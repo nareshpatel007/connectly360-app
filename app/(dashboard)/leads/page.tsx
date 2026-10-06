@@ -6,8 +6,9 @@ import { PipelineBoard } from "@/components/pipelines/pipeline-board";
 import { PipelineAnalytics } from "@/components/pipelines/pipeline-analytics";
 import { DealForm } from "@/components/pipelines/deal-form";
 import { Button } from "@/components/ui/button";
-import { Plus, Users2 } from "lucide-react";
+import { Plus, Users2, GitBranch } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 export default function LeadsPage() {
     const { data: leads = [], isLoading, refetch } = useListLeads();
@@ -64,26 +65,21 @@ export default function LeadsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center">
-                        <Users2 size={20} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-extrabold text-slate-900">Leads Pipeline</h1>
-                        <p className="text-xs text-slate-500 font-semibold">Track, move and organize conversational pipeline deals.</p>
-                    </div>
-                </div>
-
-                <Button
-                    onClick={() => handleAddLead("new")}
-                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-10 px-4 rounded-xl gap-1.5 shadow-md transition-all cursor-pointer border-0"
-                >
-                    <Plus className="h-4 w-4" />
-                    Add Lead
-                </Button>
-            </div>
+            <PageHeader
+                icon={GitBranch}
+                title="Leads Pipeline"
+                description="Track, move and organize conversational pipeline deals."
+                breadcrumbs={[{ label: "Leads" }]}
+                actions={
+                    <Button
+                        onClick={() => handleAddLead("new")}
+                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-9 px-4 rounded-xl gap-1.5 shadow-xs transition-all cursor-pointer border-0"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Lead
+                    </Button>
+                }
+            />
 
             {/* Analytics */}
             <PipelineAnalytics leads={leads} />

@@ -3,7 +3,8 @@
 import { useGetCustomer, useGetCustomerConversations, useSendMessage } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Phone, MapPin, Calendar, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Phone, MapPin, Calendar, Send, Loader2, User } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -64,41 +65,24 @@ export default function CustomerDetailPage() {
 
     return (
         <div className="space-y-6 h-[calc(100vh-6rem)] flex flex-col">
-            <div>
-                <Link href="/customers" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to contacts
-                </Link>
-
-                {isLoadingCustomer ? (
-                    <div className="space-y-2">
-                        <Skeleton className="h-10 w-64" />
-                        <Skeleton className="h-5 w-48" />
-                    </div>
-                ) : (
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">{customer?.name || customer?.phone}</h1>
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-muted-foreground">
-                                <div className="flex items-center gap-1.5 text-sm">
-                                    <Phone className="h-4 w-4" />
-                                    {customer?.phone}
-                                </div>
-                                {customer?.city && (
-                                    <div className="flex items-center gap-1.5 text-sm">
-                                        <MapPin className="h-4 w-4" />
-                                        {customer.city}
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-1.5 text-sm">
-                                    <Calendar className="h-4 w-4" />
-                                    Added {customer?.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <PageHeader
+                icon={User}
+                title={customer?.name || customer?.phone || "Contact Details"}
+                description={`${customer?.phone || ""} ${customer?.city ? `· ${customer.city}` : ""} · Added ${customer?.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ""}`}
+                breadcrumbs={[
+                    { label: "Inbox & CRM" },
+                    { label: "Contacts", href: "/contacts" },
+                    { label: customer?.name || customer?.phone || "Details" }
+                ]}
+                actions={
+                    <Link href="/contacts">
+                        <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-xs font-semibold cursor-pointer">
+                            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                            Back to Contacts
+                        </Button>
+                    </Link>
+                }
+            />
 
             <Card className="flex-1 overflow-hidden flex flex-col">
                 <CardHeader className="py-4 border-b border-border bg-muted/20">

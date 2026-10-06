@@ -9,6 +9,7 @@ import {
     Calendar, Users, CheckCheck, AlertCircle, Trash2,
     Mail, MessageSquare, MessageCircle,
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { UpgradeGuard } from "@/components/upgrade-guard";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -110,22 +111,22 @@ export default function CampaignsPage() {
             description="Send broadcast campaigns, target user segments, and schedule bulk notifications to your lists."
         >
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Design, target, and launch WhatsApp bulk broadcast campaigns.
-                        </p>
-                    </div>
-                    <Button
-                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-sm flex items-center gap-2"
-                        onClick={() => router.push("/marketing/campaigns/new")}
-                    >
-                        <Plus className="h-4 w-4" />
-                        New Campaign
-                    </Button>
-                </div>
+                {/* Page Header */}
+                <PageHeader
+                    icon={Megaphone}
+                    title="Campaigns"
+                    description="Design, target, and launch WhatsApp bulk broadcast campaigns."
+                    breadcrumbs={[{ label: "Engagement" }, { label: "Campaigns" }]}
+                    actions={
+                        <Button
+                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
+                            onClick={() => router.push("/marketing/campaigns/new")}
+                        >
+                            <Plus className="h-4 w-4" />
+                            New Campaign
+                        </Button>
+                    }
+                />
 
                 {/* Stats Cards */}
                 <div className="grid gap-4 md:grid-cols-3">

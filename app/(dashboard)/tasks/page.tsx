@@ -18,6 +18,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface TaskItem {
     id: string;
@@ -86,23 +93,23 @@ export default function TasksPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    // Create Task Form State
+    // Form State
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
 
-    const handleToggleComplete = (taskId: string) => {
+    const handleToggleTask = (id: string) => {
         setTasks((prev) =>
             prev.map((t) => {
-                if (t.id === taskId) {
+                if (t.id === id) {
                     const nextStatus = t.status === "pending" ? "completed" : "pending";
-                    toast.success(nextStatus === "completed" ? "Task completed!" : "Task reopened");
-                    return {
-                        ...t,
-                        status: nextStatus,
-                        category: nextStatus === "completed" ? "completed" : "today"
-                    };
+                    toast.success(
+                        nextStatus === "completed"
+                            ? "Task marked as completed!"
+                            : "Task marked as pending"
+                    );
+                    return { ...t, status: nextStatus };
                 }
                 return t;
             })
@@ -152,24 +159,21 @@ export default function TasksPage() {
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <CheckSquare className="h-6 w-6 text-[#35877D]" />
-                        Workspace Tasks & Follow-ups
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Track sales follow-ups, customer service action items, and team assignments.
-                    </p>
-                </div>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
-                >
-                    <Plus size={16} />
-                    New Task
-                </button>
-            </div>
+            <PageHeader
+                icon={CheckSquare}
+                title="Workspace Tasks & Follow-ups"
+                description="Track sales follow-ups, customer service action items, and team assignments."
+                breadcrumbs={[{ label: "Tasks" }]}
+                actions={
+                    <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-colors cursor-pointer gap-2"
+                    >
+                        <Plus size={16} />
+                        New Task
+                    </Button>
+                }
+            />
 
             {/* Filter Tabs & Search */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -201,170 +205,173 @@ export default function TasksPage() {
 
                 <div className="relative w-full md:w-72">
                     <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
+                    <Input
                         type="text"
                         placeholder="Search tasks or contacts..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#35877D]"
+                        className="pl-10 h-10 rounded-xl border-slate-200 text-xs font-semibold"
                     />
                 </div>
             </div>
 
             {/* Tasks List */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden divide-y divide-slate-100">
+            <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden divide-y divide-slate-100">
                 {filteredTasks.length === 0 ? (
                     <div className="p-12 text-center space-y-3">
                         <CheckSquare className="mx-auto h-10 w-10 text-slate-300" />
                         <h3 className="text-sm font-bold text-slate-900">No tasks found</h3>
                         <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                            All caught up! Create a new task or adjust your filters to view scheduled follow-ups.
+                            No follow-up items under this filter. Create one to organize customer touchpoints.
                         </p>
                     </div>
                 ) : (
-                    filteredTasks.map((task) => (
-                        <div
-                            key={task.id}
-                            className={`p-4 transition-colors flex items-start gap-3.5 ${
-                                task.status === "completed" ? "bg-slate-50/70" : "hover:bg-slate-50/50"
-                            }`}
-                        >
-                            <button
-                                onClick={() => handleToggleComplete(task.id)}
-                                className={`mt-0.5 h-5 w-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
-                                    task.status === "completed"
-                                        ? "bg-[#35877D] border-[#35877D] text-white"
-                                        : "border-slate-300 hover:border-[#35877D] text-transparent"
+                    filteredTasks.map((task) => {
+                        const isDone = task.status === "completed";
+                        return (
+                            <div
+                                key={task.id}
+                                className={`p-4 flex items-start justify-between gap-4 hover:bg-slate-50/70 transition-colors ${
+                                    isDone ? "opacity-60 bg-slate-50/40" : ""
                                 }`}
                             >
-                                <CheckCircle2 size={14} className="stroke-[3]" />
-                            </button>
-
-                            <div className="flex-1 min-w-0 space-y-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h4
-                                        className={`text-xs font-bold text-slate-900 ${
-                                            task.status === "completed" ? "line-through text-slate-400" : ""
+                                <div className="flex items-start gap-3 min-w-0">
+                                    <button
+                                        onClick={() => handleToggleTask(task.id)}
+                                        className={`mt-0.5 h-5 w-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                                            isDone
+                                                ? "bg-[#35877D] border-[#35877D] text-white"
+                                                : "border-slate-300 hover:border-[#35877D] bg-white"
                                         }`}
                                     >
-                                        {task.title}
-                                    </h4>
-                                    <span
-                                        className={`px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-md border ${
-                                            task.priority === "high"
-                                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                                : task.priority === "medium"
-                                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                                : "bg-slate-100 text-slate-600 border-slate-200"
-                                        }`}
-                                    >
-                                        {task.priority}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-slate-500">{task.description}</p>
+                                        {isDone && <CheckCircle2 size={14} className="stroke-[3]" />}
+                                    </button>
 
-                                <div className="flex flex-wrap items-center gap-4 pt-1.5 text-[11px] text-slate-500">
-                                    <div className="flex items-center gap-1 font-semibold text-slate-700">
-                                        <UserCheck size={13} className="text-[#35877D]" />
-                                        {task.assignedTo}
-                                    </div>
-                                    <div className="flex items-center gap-1 font-semibold text-slate-600">
-                                        <Clock size={13} className={task.category === "overdue" ? "text-rose-500" : ""} />
-                                        {task.dueDate}
-                                    </div>
-                                    {task.relatedContact && (
-                                        <div className="flex items-center gap-1 text-slate-600">
-                                            <MessageSquare size={13} className="text-slate-400" />
-                                            {task.relatedContact}
+                                    <div className="space-y-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span
+                                                className={`text-sm font-bold text-slate-900 ${
+                                                    isDone ? "line-through text-slate-500" : ""
+                                                }`}
+                                            >
+                                                {task.title}
+                                            </span>
+                                            <span
+                                                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                    task.priority === "high"
+                                                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                                        : task.priority === "medium"
+                                                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                                        : "bg-slate-100 text-slate-600"
+                                                }`}
+                                            >
+                                                {task.priority}
+                                            </span>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
 
-            {/* Create Task Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4 font-sans">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <CheckSquare size={18} className="text-[#35877D]" />
-                                Create Follow-up Task
-                            </h3>
-                            <button
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-xs font-bold"
-                            >
-                                ✕
-                            </button>
+                                        <p className="text-xs text-slate-500 line-clamp-1">{task.description}</p>
+
+                                        <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium pt-1 flex-wrap">
+                                            <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                                                <UserCheck size={12} className="text-[#35877D]" />
+                                                {task.assignedTo}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Clock size={12} />
+                                                {task.dueDate}
+                                            </span>
+                                            {task.relatedContact && (
+                                                <span className="flex items-center gap-1 text-slate-500">
+                                                    <MessageSquare size={12} />
+                                                    {task.relatedContact}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </Card>
+
+            {/* Dialog for New Task */}
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogContent className="sm:max-w-md rounded-2xl p-6 bg-white border border-slate-200">
+                    <DialogHeader className="border-b border-slate-100 pb-3">
+                        <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <CheckSquare size={18} className="text-[#35877D]" />
+                            Create Workspace Follow-up Task
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500">
+                            Schedule a customer action item or team assignment.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleCreateTask} className="space-y-4 pt-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Task Title</Label>
+                            <Input
+                                required
+                                placeholder="e.g. Follow up on WhatsApp quotation"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="h-10 rounded-xl border-slate-200 text-xs font-semibold"
+                            />
                         </div>
-                        <form onSubmit={handleCreateTask} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Follow up on WhatsApp quotation"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Details</Label>
+                            <Textarea
+                                rows={2}
+                                placeholder="Add specifics or context..."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="rounded-xl border-slate-200 text-xs font-semibold"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-700">Due Date</Label>
+                                <Input
+                                    type="datetime-local"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="h-10 rounded-xl border-slate-200 text-xs font-semibold"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Details</label>
-                                <textarea
-                                    rows={2}
-                                    placeholder="Add specifics or context..."
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Due Date</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={dueDate}
-                                        onChange={(e) => setDueDate(e.target.value)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Priority</label>
-                                    <select
-                                        value={priority}
-                                        onChange={(e) => setPriority(e.target.value as any)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
-                                    >
-                                        <option value="high">High Priority</option>
-                                        <option value="medium">Medium Priority</option>
-                                        <option value="low">Low Priority</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-700">Priority</Label>
+                                <select
+                                    value={priority}
+                                    onChange={(e) => setPriority(e.target.value as any)}
+                                    className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#35877D]"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-                                >
-                                    Create Task
-                                </button>
+                                    <option value="high">High Priority</option>
+                                    <option value="medium">Medium Priority</option>
+                                    <option value="low">Low Priority</option>
+                                </select>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        </div>
+
+                        <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs rounded-xl h-9 px-4 shadow-xs"
+                            >
+                                Create Task
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
