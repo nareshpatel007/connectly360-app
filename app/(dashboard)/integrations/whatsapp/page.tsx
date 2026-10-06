@@ -612,7 +612,7 @@ export default function WhatsAppIntegrationPage() {
     const isConnected = account?.status === "connected";
     const configReady = !!metaConfig?.appId && !!metaConfig?.configId;
     const regStatus = (account as any)?.registration_status;
-    const isRegistrationPending = (account as any)?.registration_required || account?.status === "pending_registration" || regStatus === "REGISTRATION_PENDING" || (regStatus === "NOT_REGISTERED" && !!account?.phoneNumber);
+    const isRegistrationPending = (account as any)?.registration_required || (account as any)?.status === "pending_registration" || regStatus === "REGISTRATION_PENDING" || (regStatus === "NOT_REGISTERED" && !!account?.phoneNumber);
     const isRegistrationFailed = regStatus === "REGISTRATION_FAILED";
     const isRegistrationSuccess = regStatus === "REGISTERED" || regStatus === "CONNECTED" || isConnected;
     const isExpired = !!(account as any)?.is_expired;
