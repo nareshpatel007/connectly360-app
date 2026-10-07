@@ -51,7 +51,7 @@ export function useNotificationRealtime() {
 export const useRealtime = useNotificationRealtime;
 
 export function NotificationRealtimeProvider({ children }: { children: React.ReactNode }) {
-    const { user, token } = useAuth();
+    const { user, token, updateUserCredits } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -63,6 +63,7 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
     const activeCustomerIdRef = useRef<number | null>(null);
     const processedIdsRef = useRef<Set<number>>(new Set());
     const processedMsgIdsRef = useRef<Set<number>>(new Set());
+    const lastCreditTxIdRef = useRef<number>(0);
     const channelRef = useRef<BroadcastChannel | null>(null);
     const lastUnreadCountRef = useRef<number | null>(null);
     const lastSyncTimestampRef = useRef<string>(new Date().toISOString());
@@ -91,16 +92,33 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         if (typeof window !== "undefined" && "BroadcastChannel" in window) {
             channelRef.current = new BroadcastChannel("connectly360_realtime_coordination");
             channelRef.current.onmessage = (event) => {
-                const { notifId, msgId } = event.data || {};
+                const { notifId, msgId, creditBalance, txId } = event.data || {};
                 if (notifId) processedIdsRef.current.add(notifId);
                 if (msgId) processedMsgIdsRef.current.add(msgId);
+                if (typeof creditBalance === "number") {
+                    if (txId && lastCreditTxIdRef.current && txId < lastCreditTxIdRef.current) {
+                        return;
+                    }
+                    if (txId) {
+                        lastCreditTxIdRef.current = txId;
+                    }
+                    updateUserCredits(creditBalance);
+                    queryClient.setQueriesData(
+                        { queryKey: ["workspace", user?.tenant_id, "credits"] },
+                        (old: any) => (old ? { ...old, balance: creditBalance } : { balance: creditBalance })
+                    );
+                    queryClient.setQueriesData(
+                        { queryKey: ["credits-overview"] },
+                        (old: any) => (old ? { ...old, balance: creditBalance } : { balance: creditBalance })
+                    );
+                }
             };
         }
 
         return () => {
             channelRef.current?.close();
         };
-    }, []);
+    }, [updateUserCredits, queryClient, user?.tenant_id]);
 
     // Request browser permission
     const requestBrowserPermission = useCallback(async (): Promise<NotificationPermission | "unsupported"> => {
@@ -243,10 +261,32 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
                     );
                 });
             }
+
+            // Reconcile authoritative workspace credit balance upon reconnect / recovery
+            try {
+                const credRes = await fetch("/api/workspace/credits", { headers });
+                if (credRes.ok) {
+                    const credData = await credRes.json();
+                    if (credData.status && credData.data && typeof credData.data.balance === "number") {
+                        const authoritativeBalance = Number(credData.data.balance);
+                        updateUserCredits(authoritativeBalance);
+                        queryClient.setQueriesData(
+                            { queryKey: ["workspace", user.tenant_id, "credits"] },
+                            (old: any) => (old ? { ...old, balance: authoritativeBalance } : { balance: authoritativeBalance })
+                        );
+                        queryClient.setQueriesData(
+                            { queryKey: ["credits-overview"] },
+                            (old: any) => (old ? { ...old, balance: authoritativeBalance } : { balance: authoritativeBalance })
+                        );
+                    }
+                }
+            } catch {
+                // silent fallback
+            }
         } catch (err) {
             console.warn("[RealtimeProvider] Missed events sync failed:", err);
         }
-    }, [token, user, queryClient]);
+    }, [token, user, queryClient, updateUserCredits]);
 
     // Setup Laravel Echo listener with Pusher Channels
     useEffect(() => {
@@ -507,6 +547,53 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
         };
 
+        // 7. Handle Realtime Credit Balance Updated
+        const onCreditBalanceUpdated = (payload: any) => {
+            const data = payload?.data || payload;
+            const balance = Number(data.balance);
+            const txId = Number(data.transaction_id || 0);
+            const wid = Number(data.workspace_id || data.tenant_id);
+
+            // Workspace isolation safety check
+            if (wid && user?.tenant_id && wid !== Number(user.tenant_id)) {
+                return;
+            }
+
+            if (isNaN(balance)) return;
+
+            // Out-of-order check: prevent older events from overriding newer known balance
+            if (txId && lastCreditTxIdRef.current && txId < lastCreditTxIdRef.current) {
+                return;
+            }
+            if (txId) {
+                lastCreditTxIdRef.current = txId;
+            }
+
+            // 1. Update AuthContext user credits immediately (updates Header, Badges, Modals)
+            updateUserCredits(balance);
+
+            // 2. Multi-tab coordination: Broadcast to other open browser tabs
+            channelRef.current?.postMessage({ creditBalance: balance, txId });
+
+            // 3. Authoritative TanStack React Query cache updates without full page refresh
+            queryClient.setQueriesData(
+                { queryKey: ["workspace", user?.tenant_id, "credits"] },
+                (old: any) => (old ? { ...old, balance } : { balance })
+            );
+            queryClient.setQueriesData(
+                { queryKey: ["credits-overview"] },
+                (old: any) => (old ? { ...old, balance } : { balance })
+            );
+            queryClient.setQueriesData(
+                { queryKey: ["billing/usage-summary"] },
+                (old: any) => (old ? { ...old, balance } : old)
+            );
+
+            // Refresh transaction history queries in background if active
+            queryClient.invalidateQueries({ queryKey: ["credit-transactions"] });
+            queryClient.invalidateQueries({ queryKey: ["credit-history"] });
+        };
+
         // Register listeners
         channel.listen(".whatsapp.message.received", onMessageReceived);
         channel.listen("whatsapp.message.received", onMessageReceived);
@@ -520,6 +607,10 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         channel.listen("conversation.status_changed", onConversationStatusChanged);
         channel.listen(".conversation.created", onConversationCreated);
         channel.listen("conversation.created", onConversationCreated);
+        channel.listen(".credit.balance.updated", onCreditBalanceUpdated);
+        channel.listen("credit.balance.updated", onCreditBalanceUpdated);
+        channel.listen(".CreditBalanceUpdated", onCreditBalanceUpdated);
+        channel.listen("CreditBalanceUpdated", onCreditBalanceUpdated);
 
         // Also subscribe to private user notifications channel
         const userChannel = echo.private(`user.${user.id}.notifications`);
@@ -539,13 +630,17 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             channel.stopListening("conversation.status_changed");
             channel.stopListening(".conversation.created");
             channel.stopListening("conversation.created");
+            channel.stopListening(".credit.balance.updated");
+            channel.stopListening("credit.balance.updated");
+            channel.stopListening(".CreditBalanceUpdated");
+            channel.stopListening("CreditBalanceUpdated");
             userChannel.stopListening(".notification.created");
             userChannel.stopListening("notification.created");
 
             echo.leave(workspaceChannelName);
             echo.leave(`user.${user.id}.notifications`);
         };
-    }, [token, user, queryClient, syncMissedEvents, showBrowserNotification, handleIncomingNotification, router, setActiveCustomerId]);
+    }, [token, user, queryClient, syncMissedEvents, showBrowserNotification, handleIncomingNotification, router, setActiveCustomerId, updateUserCredits]);
 
     // Fallback sync: If Pusher connection is down or disconnected, poll every 20 seconds
     useEffect(() => {

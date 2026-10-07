@@ -25,6 +25,7 @@ interface AuthContextType {
     login: (token: string, targetPath?: string) => void;
     logout: () => void;
     refreshUser: () => Promise<void>;
+    updateUserCredits: (newCredits: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -205,6 +206,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [token, fetchProfile]);
 
+    const updateUserCredits = useCallback((newCredits: number) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            return { ...prev, credits: newCredits };
+        });
+    }, []);
+
     const login = (newToken: string, targetPath?: string) => {
         localStorage.setItem("auth_token", newToken);
         setToken(newToken);
@@ -227,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 login,
                 logout,
                 refreshUser,
+                updateUserCredits,
             }}
         >
             {children}

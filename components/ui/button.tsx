@@ -6,14 +6,14 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#35877D]/20 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F8F83]/20 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-[#35877D] text-white shadow-xs hover:bg-[#2c6e66] border border-[#35877D]",
+          "bg-[#2F8F83] text-white shadow-xs hover:bg-[#267A70] border border-[#2F8F83]",
         primary:
-          "bg-[#35877D] text-white shadow-xs hover:bg-[#2c6e66] border border-[#35877D]",
+          "bg-[#2F8F83] text-white shadow-xs hover:bg-[#267A70] border border-[#2F8F83]",
         secondary:
           "bg-slate-100 text-slate-800 border border-slate-200/80 hover:bg-slate-200/70 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700",
         outline:
@@ -23,17 +23,17 @@ const buttonVariants = cva(
         destructive:
           "bg-red-600 text-white shadow-xs hover:bg-red-700 border border-red-600 focus-visible:ring-red-500/20",
         success:
-          "bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 border border-emerald-600 focus-visible:ring-emerald-500/20",
+          "bg-[#2E9B72] text-white shadow-xs hover:bg-[#25825f] border border-[#2E9B72] focus-visible:ring-[#2E9B72]/20",
         warning:
-          "bg-amber-500 text-white shadow-xs hover:bg-amber-600 border border-amber-500 focus-visible:ring-amber-500/20",
+          "bg-[#D79A2B] text-white shadow-xs hover:bg-[#b88222] border border-[#D79A2B] focus-visible:ring-[#D79A2B]/20",
         link:
-          "text-[#35877D] underline-offset-4 hover:underline p-0 h-auto font-medium",
+          "text-[#2F8F83] underline-offset-4 hover:underline p-0 h-auto font-medium",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        md: "h-9 px-4 py-2",
+        default: "h-9 px-4 py-2 text-xs md:text-sm",
+        md: "h-9 px-4 py-2 text-xs md:text-sm",
         sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-lg px-6 text-base",
+        lg: "h-10 rounded-lg px-5 text-sm",
         icon: "h-9 w-9 p-0 rounded-md",
       },
     },
