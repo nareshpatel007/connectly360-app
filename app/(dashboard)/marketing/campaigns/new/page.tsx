@@ -1,648 +1,314 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, ChevronRight, Loader2, ArrowLeft, Radio, FileText, Users, Send, Mail, MessageSquare, MessageCircle, Megaphone, Smartphone, Wifi, Battery, Signal } from "lucide-react";
+import {
+    Check, ChevronRight, Loader2, ArrowLeft, Radio, FileText,
+    Users, Send, Mail, MessageSquare, MessageCircle, Megaphone,
+    Calendar, AlertTriangle, ShieldCheck, CheckCircle2, XCircle,
+    Info, Filter, Sparkles, AlertCircle, Clock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { useListTemplates, useListCustomers, useCreateCampaign, useSendCampaign, MessageTemplate } from "@/lib/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { UpgradeGuard } from "@/components/upgrade-guard";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/page-header";
-import { CampaignCreditConfirmDialog } from "@/components/campaign-credit-confirm-dialog";
+import { UpgradeGuard } from "@/components/upgrade-guard";
+import { TemplatePreview } from "@/components/templates/template-preview";
+import {
+    useListTemplateAccounts,
+    useListTemplates,
+    useCreateCampaign,
+    useLaunchCampaign,
+    useScheduleCampaign,
+    useValidateAudience,
+    useCompanyProfile,
+    MessageTemplate,
+    WhatsAppAccountOption,
+    AudienceValidationResult,
+} from "@/lib/api-client-react";
+import { useAuth } from "@/lib/auth-context";
 
 // ─────────────────────────────────────────────────────────
-// Step types
+// Step definitions
 // ─────────────────────────────────────────────────────────
 
 const STEPS = [
-    { key: "channel", label: "Channel", icon: Megaphone },
-    { key: "content", label: "Content", icon: FileText },
-    { key: "audience", label: "Audience", icon: Users },
-    { key: "review", label: "Review & Send", icon: Send },
+    { key: "channel", label: "Channel & Account", icon: Megaphone },
+    { key: "content", label: "Template & Content", icon: FileText },
+    { key: "audience", label: "Audience & Filters", icon: Users },
+    { key: "review", label: "Review & Launch", icon: Send },
 ] as const;
-
-type CampaignType = "whatsapp" | "email" | "sms";
-type AudienceType = "all" | "contacts";
-
-interface WizardState {
-    type: CampaignType;
-    name: string;
-    template: MessageTemplate | null;
-    emailSubject: string;
-    emailBody: string;
-    smsBody: string;
-    audienceType: AudienceType;
-}
-
-// ─────────────────────────────────────────────────────────
-// Sub-components: Device Mockup Preview (The Wow Factor)
-// ─────────────────────────────────────────────────────────
-
-function DevicePreview({ state }: { state: WizardState }) {
-    return (
-        <div className="relative mx-auto w-[260px] h-[500px] rounded-[40px] border-2 border-zinc-900 bg-zinc-950 shadow-2xl flex flex-col overflow-hidden select-none ring-4 ring-zinc-800/10">
-            {/* Dynamic Island / Notch */}
-            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-20 h-4.5 bg-black rounded-full z-30 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-zinc-900 ml-auto mr-1.5 opacity-40" />
-            </div>
-
-            {/* Side Buttons (Simulated volume / power notches) */}
-            <div className="absolute left-[-10px] top-16 w-[3px] h-10 bg-zinc-700 rounded-r-md z-0" />
-            <div className="absolute left-[-10px] top-28 w-[3px] h-10 bg-zinc-700 rounded-r-md z-0" />
-            <div className="absolute right-[-10px] top-20 w-[3px] h-14 bg-zinc-700 rounded-l-md z-0" />
-
-            {/* Screen Content */}
-            <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-[30px] overflow-hidden flex flex-col relative text-xs">
-                {/* iOS Status Bar */}
-                <div className="h-7 pt-2 px-6 flex items-center justify-between text-[9px] font-bold text-zinc-900 dark:text-zinc-100 z-20 bg-white dark:bg-zinc-800 shrink-0">
-                    <span>9:41</span>
-                    <div className="flex items-center gap-1.5">
-                        <Signal className="h-2.5 w-2.5" />
-                        <Wifi className="h-2.5 w-2.5" />
-                        <Battery className="h-3 w-3" />
-                    </div>
-                </div>
-
-                {/* Simulated App Header */}
-                <div className="bg-white dark:bg-zinc-800 px-3 py-2.5 border-b border-zinc-200/60 dark:border-zinc-700/60 flex items-center gap-1.5 shrink-0 z-10">
-                    {state.type === "whatsapp" && (
-                        <>
-                            <div className="w-5.5 h-5.5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">W</div>
-                            <div className="min-w-0">
-                                <p className="font-bold truncate text-[10px] text-zinc-800 dark:text-zinc-100">WhatsApp Broadcast</p>
-                                <p className="text-[8px] text-emerald-500 font-medium">Online</p>
-                            </div>
-                        </>
-                    )}
-                    {state.type === "email" && (
-                        <>
-                            <div className="w-5.5 h-5.5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">E</div>
-                            <div className="min-w-0">
-                                <p className="font-bold truncate text-[10px] text-zinc-800 dark:text-zinc-100">Mail App</p>
-                                <p className="text-[8px] text-zinc-400 truncate">Inbox</p>
-                            </div>
-                        </>
-                    )}
-                    {state.type === "sms" && (
-                        <>
-                            <div className="w-5.5 h-5.5 rounded-full bg-amber-500 flex items-center justify-center text-white text-[9px] font-bold shrink-0">S</div>
-                            <div className="min-w-0">
-                                <p className="font-bold truncate text-[10px] text-zinc-800 dark:text-zinc-100">Messages</p>
-                                <p className="text-[8px] text-zinc-400">SMS Channel</p>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Device Screen Body */}
-                <div className="flex-1 p-3 pb-6 overflow-y-auto space-y-3 flex flex-col justify-end bg-[#ECE5DD] dark:bg-zinc-950 relative">
-                    {state.type === "whatsapp" && (
-                        <div className="bg-white dark:bg-zinc-800 rounded-lg p-2.5 shadow-sm max-w-[85%] self-start relative border-l-4 border-emerald-500 text-zinc-850 dark:text-zinc-200">
-                            <p className="leading-normal whitespace-pre-wrap">
-                                {state.template?.body_text || "Select a template to preview message content..."}
-                            </p>
-                            <span className="text-[8px] text-zinc-400 float-right mt-1">10:42 AM</span>
-                        </div>
-                    )}
-
-                    {state.type === "email" && (
-                        <div className="bg-white dark:bg-zinc-900 rounded-lg p-3 shadow-md max-w-full w-full self-start flex flex-col h-full overflow-y-auto text-zinc-800 dark:text-zinc-200">
-                            <p className="font-bold border-b border-zinc-100 dark:border-zinc-800 pb-1.5 mb-1.5 text-zinc-900 dark:text-zinc-100 text-[10px] truncate">
-                                Subject: {state.emailSubject || "(Empty Subject)"}
-                            </p>
-                            <p className="leading-relaxed whitespace-pre-wrap flex-1 text-[9px] text-zinc-650 dark:text-zinc-400">
-                                {state.emailBody || "Compose email content to preview..."}
-                            </p>
-                        </div>
-                    )}
-
-                    {state.type === "sms" && (
-                        <div className="bg-zinc-200 dark:bg-zinc-800 rounded-2xl px-3 py-2 shadow-sm max-w-[85%] self-start relative text-zinc-800 dark:text-zinc-200">
-                            <p className="leading-normal whitespace-pre-wrap">
-                                {state.smsBody || "Write SMS content to preview..."}
-                            </p>
-                            <span className="text-[8px] text-zinc-400 block text-right mt-0.5">10:42 AM</span>
-                        </div>
-                    )}
-
-                    {/* iOS Home Indicator Bar */}
-                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 bg-zinc-400 dark:bg-zinc-600 rounded-full z-20 pointer-events-none" />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────
-// Step components
-// ─────────────────────────────────────────────────────────
-
-function StepChooseChannel({
-    name,
-    type,
-    onNameChange,
-    onTypeChange,
-}: {
-    name: string;
-    type: CampaignType;
-    onNameChange: (v: string) => void;
-    onTypeChange: (v: CampaignType) => void;
-}) {
-    return (
-        <div className="space-y-6">
-            <div className="relative">
-                <h2 className="text-xl font-bold text-foreground">Campaign Settings</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Describe your broadcast and choose the preferred delivery protocol.
-                </p>
-                <div className="absolute top-0 right-0 h-1.5 w-12 rounded bg-gradient-to-r from-[#35877D] to-teal-400" />
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/80">Campaign Display Name</label>
-                <input
-                    className="w-full rounded-xl border border-border bg-background/50 px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#35877D]/30 focus:border-[#35877D]"
-                    placeholder="e.g. VIP Member Summer Discount"
-                    value={name}
-                    onChange={(e) => onNameChange(e.target.value)}
-                />
-            </div>
-
-            <div className="space-y-3">
-                <label className="text-sm font-semibold text-foreground/80">Broadcast Channel</label>
-                <div className="grid gap-4 sm:grid-cols-3">
-                    {(
-                        [
-                            {
-                                key: "whatsapp" as const,
-                                label: "WhatsApp Broadcast",
-                                desc: "Send Meta-approved templates",
-                                icon: MessageCircle,
-                                color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-900/30",
-                                shadow: "hover:shadow-emerald-500/5",
-                            },
-                            {
-                                key: "email" as const,
-                                label: "Email Newsletter",
-                                desc: "Send custom newsletter & HTML emails",
-                                icon: Mail,
-                                color: "text-blue-500 bg-blue-50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-900/30",
-                                shadow: "hover:shadow-blue-500/5",
-                            },
-                            {
-                                key: "sms" as const,
-                                label: "SMS Broadcast",
-                                desc: "Send carrier SMS messages",
-                                icon: MessageSquare,
-                                color: "text-amber-500 bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-900/30",
-                                shadow: "hover:shadow-amber-500/5",
-                            },
-                        ] as const
-                    ).map((c) => {
-                        const Icon = c.icon;
-                        const isSelected = type === c.key;
-                        return (
-                            <button
-                                key={c.key}
-                                onClick={() => onTypeChange(c.key)}
-                                className={`flex flex-col items-start rounded-2xl border p-5 text-left transition-all duration-300 hover:scale-[1.02] ${c.shadow} ${isSelected
-                                    ? "border-[#35877D] bg-gradient-to-br from-[#35877D]/10 to-teal-500/5 dark:to-transparent ring-2 ring-[#35877D]/30 shadow-lg"
-                                    : "border-border bg-card"
-                                    }`}
-                            >
-                                <span className={`p-2.5 rounded-xl ${c.color} mb-4`}>
-                                    <Icon className="h-5 w-5" />
-                                </span>
-                                <div className="flex w-full items-start justify-between">
-                                    <div className="space-y-1">
-                                        <p className="font-bold text-sm text-foreground">{c.label}</p>
-                                        <p className="text-xs text-muted-foreground leading-normal">{c.desc}</p>
-                                    </div>
-                                    {isSelected && (
-                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#35877D] shadow-sm">
-                                            <Check className="h-3 w-3 text-white" />
-                                        </span>
-                                    )}
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepChooseTemplate({
-    selected,
-    onSelect,
-}: {
-    selected: MessageTemplate | null;
-    onSelect: (t: MessageTemplate) => void;
-}) {
-    const { data: templates = [], isLoading } = useListTemplates();
-    const [search, setSearch] = useState("");
-
-    const filtered = templates.filter(
-        (t) =>
-            t.status === "approved" &&
-            (t.name.toLowerCase().includes(search.toLowerCase()) ||
-                t.body_text?.toLowerCase().includes(search.toLowerCase())),
-    );
-
-    if (isLoading) {
-        return (
-            <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-[#35877D]" />
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold">Choose WhatsApp Template</h2>
-                <p className="text-sm text-muted-foreground">
-                    Select an approved WhatsApp message template from your Meta account.
-                </p>
-            </div>
-            <input
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#35877D]/30 focus:border-[#35877D]"
-                placeholder="Search templates…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-            {filtered.length === 0 ? (
-                <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border text-muted-foreground">
-                    <Radio className="h-8 w-8" />
-                    <p className="text-sm">No approved templates found.</p>
-                </div>
-            ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {filtered.map((t) => (
-                        <button
-                            key={t.id}
-                            onClick={() => onSelect(t)}
-                            className={`rounded-2xl border p-4 text-left transition-all duration-300 hover:border-[#35877D]/60 hover:shadow-md ${selected?.id === t.id
-                                ? "border-[#35877D] bg-gradient-to-br from-[#35877D]/5 to-transparent ring-2 ring-[#35877D]/30"
-                                : "border-border bg-card"
-                                }`}
-                        >
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                    <p className="truncate font-bold text-sm text-foreground">{t.name}</p>
-                                    <p className="mt-0.5 text-xs text-muted-foreground capitalize">{t.category} · {t.language}</p>
-                                </div>
-                                {selected?.id === t.id && (
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#35877D]">
-                                        <Check className="h-3 w-3 text-white" />
-                                    </span>
-                                )}
-                            </div>
-                            <p className="mt-3 line-clamp-3 text-xs text-muted-foreground leading-relaxed">{t.body_text}</p>
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-function StepDetailsAndContent({
-    state,
-    onChange,
-}: {
-    state: WizardState;
-    onChange: (updates: Partial<WizardState>) => void;
-}) {
-    if (state.type === "whatsapp") {
-        return (
-            <StepChooseTemplate
-                selected={state.template}
-                onSelect={(t) => onChange({ template: t })}
-            />
-        );
-    }
-
-    if (state.type === "email") {
-        return (
-            <div className="space-y-4">
-                <div>
-                    <h2 className="text-lg font-bold text-foreground">Email Content</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Compose the subject and body of your broadcast email.
-                    </p>
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground/80">Email Subject</label>
-                    <input
-                        className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#35877D]/30 focus:border-[#35877D]"
-                        placeholder="Enter email subject line"
-                        value={state.emailSubject}
-                        onChange={(e) => onChange({ emailSubject: e.target.value })}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground/80">Email Body (HTML/Text)</label>
-                    <textarea
-                        className="w-full min-h-[220px] rounded-xl border border-border bg-background px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#35877D]/30 focus:border-[#35877D]"
-                        placeholder="Write your email message here..."
-                        value={state.emailBody}
-                        onChange={(e) => onChange({ emailBody: e.target.value })}
-                    />
-                </div>
-            </div>
-        );
-    }
-
-    // SMS Campaign Content
-    return (
-        <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-bold text-foreground">SMS Content</h2>
-                <p className="text-sm text-muted-foreground">
-                    Compose the plain text SMS message body. Keep it concise.
-                </p>
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/80">SMS Message Body</label>
-                <textarea
-                    className="w-full min-h-[180px] rounded-xl border border-border bg-background px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#35877D]/30 focus:border-[#35877D]"
-                    placeholder="Enter your plain text SMS body"
-                    value={state.smsBody}
-                    onChange={(e) => onChange({ smsBody: e.target.value })}
-                />
-                <div className="flex items-center justify-between mt-1 px-1">
-                    {/* SMS Length Bar */}
-                    <div className="flex-1 max-w-[150px] h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mr-3">
-                        <div
-                            className={`h-full transition-all duration-300 ${state.smsBody.length > 160 ? "bg-red-500" : state.smsBody.length > 100 ? "bg-amber-500" : "bg-emerald-500"
-                                }`}
-                            style={{ width: `${Math.min(100, (state.smsBody.length / 160) * 100)}%` }}
-                        />
-                    </div>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                        {state.smsBody.length} / 160 chars
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepSelectAudience({
-    audienceType,
-    onAudienceChange,
-}: {
-    audienceType: AudienceType;
-    onAudienceChange: (v: AudienceType) => void;
-}) {
-    const { data: customers = [] } = useListCustomers();
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-bold text-foreground">Target Audience</h2>
-                <p className="text-sm text-muted-foreground">Select the list segment to receive this campaign broadcast.</p>
-            </div>
-
-            <div className="space-y-2">
-                <div className="grid gap-4 sm:grid-cols-2">
-                    {(
-                        [
-                            { type: "all" as const, label: "All Contacts", desc: `Send to all ${customers.length} contacts on file` },
-                            { type: "contacts" as const, label: "Smart List Segments", desc: "Advanced segment filters (coming soon)" },
-                        ] as const
-                    ).map(({ type, label, desc }) => (
-                        <button
-                            key={type}
-                            onClick={() => onAudienceChange(type)}
-                            className={`rounded-2xl border p-5 text-left transition-all duration-300 hover:scale-[1.01] ${audienceType === type
-                                ? "border-[#35877D] bg-gradient-to-br from-[#35877D]/10 to-teal-500/5 dark:to-transparent ring-2 ring-[#35877D]/30 shadow-lg"
-                                : "border-border bg-card"
-                                }`}
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="space-y-1">
-                                    <p className="font-bold text-sm text-foreground">{label}</p>
-                                    <p className="text-xs text-muted-foreground leading-normal">{desc}</p>
-                                </div>
-                                {audienceType === type && (
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#35877D]">
-                                        <Check className="h-3 w-3 text-white" />
-                                    </span>
-                                )}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepReview({
-    state,
-    isProcessing,
-}: {
-    state: WizardState;
-    isProcessing: boolean;
-}) {
-    const { data: customers = [] } = useListCustomers();
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-lg font-bold text-foreground">Review Details</h2>
-                <p className="text-sm text-muted-foreground">Confirm settings and message preview before launch.</p>
-            </div>
-
-            <Card className="border border-border shadow-md rounded-2xl overflow-hidden">
-                <CardContent className="pt-4 divide-y divide-border space-y-4">
-                    <Row label="Campaign Name" value={<span className="font-semibold text-foreground">{state.name}</span>} />
-                    <Row label="Delivery Channel" value={
-                        <span className="inline-flex items-center gap-1.5 capitalize rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground border border-border">
-                            {state.type}
-                        </span>
-                    } />
-                    {state.type === "whatsapp" && (
-                        <>
-                            <Row label="Meta Template" value={state.template?.name ?? <span className="text-muted-foreground italic">Not selected</span>} />
-                            <Row label="Language" value={state.template?.language ?? "—"} />
-                        </>
-                    )}
-                    {state.type === "email" && (
-                        <Row label="Subject Line" value={state.emailSubject || <span className="text-muted-foreground italic">Not set</span>} />
-                    )}
-                    <Row label="Audience Size" value={
-                        <span className="font-bold text-foreground tabular-nums">
-                            {state.audienceType === "all" ? `${customers.length} contacts` : "Selected contacts"}
-                        </span>
-                    } />
-                </CardContent>
-            </Card>
-
-            {isProcessing && (
-                <div className="flex items-center gap-2.5 text-sm text-[#35877D] bg-[#35877D]/10 p-4 rounded-xl border border-[#35877D]/20">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="font-medium">Launching campaign immediately... please keep this window open.</span>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="flex items-center justify-between gap-4 text-sm pt-3 first:pt-0">
-            <span className="text-muted-foreground shrink-0">{label}</span>
-            <span className="font-medium text-right text-foreground">{value}</span>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────
-// Wizard Page
-// ─────────────────────────────────────────────────────────
 
 export default function NewCampaignPage() {
     const router = useRouter();
-    const queryClient = useQueryClient();
+    const { user } = useAuth();
+    const workspaceId = user?.tenant_id;
 
-    const createCampaign = useCreateCampaign();
-    const sendCampaign = useSendCampaign();
+    const [currentStep, setCurrentStep] = useState(0);
 
-    const [step, setStep] = useState(0);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [showCreditConfirm, setShowCreditConfirm] = useState(false);
-    const { data: customers = [] } = useListCustomers();
-    const recipientCount = customers.length || 1;
-    const [state, setState] = useState<WizardState>({
-        type: "whatsapp",
-        name: "",
-        template: null,
-        emailSubject: "",
-        emailBody: "",
-        smsBody: "",
-        audienceType: "all",
+    // Form State
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [channel, setChannel] = useState<"whatsapp" | "email" | "sms">("whatsapp");
+    const [selectedAccount, setSelectedAccount] = useState<WhatsAppAccountOption | null>(null);
+
+    // Template state
+    const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
+    const [templateSearch, setTemplateSearch] = useState("");
+    const [templateCategory, setTemplateCategory] = useState("all");
+    const [variableMappings, setVariableMappings] = useState<Record<string, { field: string; fallback: string }>>({});
+
+    // Audience state
+    const [audienceType, setAudienceType] = useState<"all" | "segment" | "tags">("all");
+    const [selectedSegmentId, setSelectedSegmentId] = useState<string>("");
+    const [tagsInput, setTagsInput] = useState<string>("");
+    const [segmentsList, setSegmentsList] = useState<any[]>([]);
+    const [audiencePreview, setAudiencePreview] = useState<AudienceValidationResult | null>(null);
+    const [isValidatingAudience, setIsValidatingAudience] = useState(false);
+    const [showExcludedDetails, setShowExcludedDetails] = useState(false);
+
+    // Schedule & Launch state
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [scheduledDateTime, setScheduledDateTime] = useState("");
+    const [showLargeCampaignModal, setShowLargeCampaignModal] = useState(false);
+    const [largeCampaignConfirmed, setLargeCampaignConfirmed] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Data fetching
+    const { data: accounts = [], isLoading: isLoadingAccounts } = useListTemplateAccounts();
+    const { data: companyProfile } = useCompanyProfile(workspaceId);
+    const { data: templates = [], isLoading: isLoadingTemplates } = useListTemplates({
+        status: "APPROVED",
+        waba_id: selectedAccount?.waba_id,
     });
 
-    const canProceed = [
-        !!state.name.trim(), // Step 0: Name and type selection
-        state.type === "whatsapp" ? !!state.template : (state.type === "email" ? (!!state.emailSubject.trim() && !!state.emailBody.trim()) : !!state.smsBody.trim()), // Step 1: Content configuration
-        true, // Step 2: Audience
-        true, // Step 3: Review
-    ][step];
+    const createCampaignMutation = useCreateCampaign();
+    const launchCampaignMutation = useLaunchCampaign();
+    const scheduleCampaignMutation = useScheduleCampaign();
+    const validateAudienceMutation = useValidateAudience();
 
-    async function handleSend() {
-        if (!state.name.trim()) {
-            toast.error("Please enter a campaign name.");
+    // Auto-select first connected WhatsApp account
+    useEffect(() => {
+        if (accounts.length > 0 && !selectedAccount) {
+            setSelectedAccount(accounts[0]);
+        }
+    }, [accounts, selectedAccount]);
+
+    // Fetch segments list
+    useEffect(() => {
+        async function fetchSegments() {
+            try {
+                const res = await fetch("/api/segments");
+                if (res.ok) {
+                    const data = await res.json();
+                    setSegmentsList(Array.isArray(data) ? data : (data.data || []));
+                }
+            } catch (e) {}
+        }
+        fetchSegments();
+    }, []);
+
+    // Extract template variables whenever template changes
+    useEffect(() => {
+        if (!selectedTemplate) {
+            setVariableMappings({});
             return;
         }
-        setIsProcessing(true);
-        try {
-            let templateName = "";
-            let templateVariables: Record<string, any> = {};
 
-            if (state.type === "whatsapp") {
-                if (!state.template) throw new Error("Template not selected");
-                templateName = state.template.name;
-            } else if (state.type === "email") {
-                templateName = "email";
-                templateVariables = {
-                    subject: state.emailSubject.trim(),
-                    body: state.emailBody.trim(),
-                };
-            } else {
-                templateName = "sms";
-                templateVariables = {
-                    body: state.smsBody.trim(),
-                };
+        const bodyMatches = selectedTemplate.body_text?.match(/\{\{(\d+)\}\}/g) || [];
+        const mappings: Record<string, { field: string; fallback: string }> = {};
+
+        bodyMatches.forEach((m) => {
+            const index = m.replace(/[\{\}]/g, "");
+            mappings[index] = {
+                field: index === "1" ? "name" : index === "2" ? "phone" : "custom",
+                fallback: "Customer",
+            };
+        });
+
+        setVariableMappings(mappings);
+    }, [selectedTemplate]);
+
+    // Validate audience criteria
+    async function handleValidateAudience() {
+        setIsValidatingAudience(true);
+        try {
+            const filter: any = { type: audienceType };
+            if (audienceType === "segment" && selectedSegmentId) {
+                filter.segment_id = Number(selectedSegmentId);
+            }
+            if (audienceType === "tags" && tagsInput.trim()) {
+                filter.tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
             }
 
-            const campaign = await createCampaign.mutateAsync({
-                data: {
-                    name: state.name.trim(),
-                    template_name: templateName,
-                    template_language: state.template?.language ?? "en",
-                    template_variables: templateVariables,
-                    audience_filter: { type: state.audienceType },
-                    status: "draft",
-                },
-            });
-
-            const result = await sendCampaign.mutateAsync({ id: campaign.id });
-            toast.success(`🎉 Campaign sent! ${result.sent_count} messages delivered.`);
-            queryClient.invalidateQueries({ queryKey: ["listCampaigns"] });
-            queryClient.invalidateQueries({ queryKey: ["campaignStats"] });
-            router.push(`/marketing/campaigns/${campaign.id}`);
+            const result = await validateAudienceMutation.mutateAsync(filter);
+            setAudiencePreview(result);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to send campaign");
+            toast.error(err instanceof Error ? err.message : "Failed to evaluate audience");
         } finally {
-            setIsProcessing(false);
+            setIsValidatingAudience(false);
         }
     }
 
-    async function handleSaveDraft() {
-        if (!state.name.trim()) {
-            toast.error("Please enter a campaign name.");
+    // Auto-validate when switching to Audience step
+    useEffect(() => {
+        if (currentStep === 2 && !audiencePreview) {
+            handleValidateAudience();
+        }
+    }, [currentStep]);
+
+    // Mapped sample values for live preview
+    const liveBodySamples = useMemo(() => {
+        if (!selectedTemplate) return [];
+        const samples: string[] = [];
+        Object.keys(variableMappings).forEach((idx) => {
+            const mapping = variableMappings[idx];
+            const sampleText =
+                mapping.field === "name"
+                    ? "John Doe"
+                    : mapping.field === "phone"
+                    ? "+1 555-0199"
+                    : mapping.fallback || "Valued Customer";
+            samples[parseInt(idx, 10) - 1] = sampleText;
+        });
+        return samples;
+    }, [selectedTemplate, variableMappings]);
+
+    // Filter templates for selector
+    const filteredTemplates = useMemo(() => {
+        return templates.filter((tpl) => {
+            if (templateCategory !== "all" && tpl.category !== templateCategory) {
+                return false;
+            }
+            if (templateSearch.trim()) {
+                const term = templateSearch.toLowerCase();
+                const matchName = tpl.name.toLowerCase().includes(term);
+                const matchBody = tpl.body_text?.toLowerCase().includes(term);
+                if (!matchName && !matchBody) return false;
+            }
+            return true;
+        });
+    }, [templates, templateCategory, templateSearch]);
+
+    // Business identity for preview
+    const businessDisplayName =
+        selectedAccount?.verified_name ||
+        selectedAccount?.company_name ||
+        companyProfile?.company_name ||
+        "Connectly360";
+
+    const businessProfileImage =
+        selectedAccount?.profile_picture_url ||
+        companyProfile?.display_logo_url ||
+        companyProfile?.logo_url ||
+        null;
+
+    // Credit estimate calculation
+    const eligibleCount = audiencePreview?.eligible_count || 0;
+    const estimatedRequiredCredits = eligibleCount * 1;
+
+    // Save Draft, Launch, or Schedule Handler
+    async function handleSaveOrLaunch(mode: "draft" | "launch" | "schedule") {
+        if (!name.trim()) {
+            toast.error("Please enter a campaign name");
+            setCurrentStep(0);
             return;
         }
-        try {
-            let templateName = "";
-            let templateVariables: Record<string, any> = {};
 
-            if (state.type === "whatsapp") {
-                if (!state.template) throw new Error("Template not selected");
-                templateName = state.template.name;
-            } else if (state.type === "email") {
-                templateName = "email";
-                templateVariables = {
-                    subject: state.emailSubject.trim(),
-                    body: state.emailBody.trim(),
-                };
-            } else {
-                templateName = "sms";
-                templateVariables = {
-                    body: state.smsBody.trim(),
-                };
+        if (channel === "whatsapp" && !selectedTemplate) {
+            toast.error("Please select an approved WhatsApp template");
+            setCurrentStep(1);
+            return;
+        }
+
+        // Check large campaign threshold
+        if (mode === "launch" && eligibleCount >= 10000 && !largeCampaignConfirmed) {
+            setShowLargeCampaignModal(true);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const audienceFilter: any = { type: audienceType };
+            if (audienceType === "segment" && selectedSegmentId) {
+                audienceFilter.segment_id = Number(selectedSegmentId);
+            }
+            if (audienceType === "tags" && tagsInput.trim()) {
+                audienceFilter.tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
             }
 
-            const campaign = await createCampaign.mutateAsync({
-                data: {
-                    name: state.name.trim(),
-                    template_name: templateName,
-                    template_language: state.template?.language ?? "en",
-                    template_variables: templateVariables,
-                    audience_filter: { type: state.audienceType },
-                    status: "draft",
-                },
-            });
-            toast.success("Draft saved");
-            queryClient.invalidateQueries({ queryKey: ["listCampaigns"] });
-            router.push(`/marketing/campaigns/${campaign.id}`);
+            const payload = {
+                name: name.trim(),
+                description: description.trim() || null,
+                channel: "whatsapp",
+                whatsapp_account_id: selectedAccount?.id || null,
+                template_id: selectedTemplate?.id || null,
+                template_name: selectedTemplate?.name || null,
+                template_language: selectedTemplate?.language || "en_US",
+                template_category: selectedTemplate?.category || "Marketing",
+                template_variables: variableMappings,
+                audience_type: audienceType,
+                audience_filter: audienceFilter,
+            };
+
+            const campaign = await createCampaignMutation.mutateAsync({ data: payload });
+
+            if (mode === "launch") {
+                await launchCampaignMutation.mutateAsync({ id: campaign.id });
+                toast.success(`Campaign launched! Processing ${eligibleCount.toLocaleString()} recipients in batches.`);
+                router.push(`/marketing/campaigns/${campaign.id}`);
+            } else if (mode === "schedule") {
+                if (!scheduledDateTime) {
+                    toast.error("Please specify a scheduled date and time");
+                    setIsSubmitting(false);
+                    return;
+                }
+                await scheduleCampaignMutation.mutateAsync({
+                    id: campaign.id,
+                    scheduledAt: scheduledDateTime,
+                });
+                toast.success("Campaign scheduled successfully!");
+                router.push(`/marketing/campaigns/${campaign.id}`);
+            } else {
+                toast.success("Campaign draft saved!");
+                router.push(`/marketing/campaigns/${campaign.id}`);
+            }
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to save draft");
+            toast.error(err instanceof Error ? err.message : "Failed to process campaign");
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
     return (
         <UpgradeGuard
             allowedPlans={["business", "enterprise"]}
-            featureName="Bulk Campaigns"
-            description="Send broadcast campaigns, target user segments, and schedule bulk notifications to your lists."
+            featureName="Bulk Broadcast Campaigns"
+            description="Broadcast campaigns allow sending high-volume WhatsApp messages using approved templates."
         >
-            <div className="w-full space-y-6 pb-10">
-                {/* Page Header */}
+            <div className="space-y-6 w-full max-w-7xl mx-auto pb-12">
+                {/* Header */}
                 <PageHeader
                     icon={Megaphone}
                     title="Create Broadcast"
-                    description="Design, target, and launch bulk message broadcasts."
+                    description="Design, target, and launch high-volume WhatsApp bulk message campaigns."
                     breadcrumbs={[
                         { label: "Engagement" },
                         { label: "Campaigns", href: "/marketing/campaigns" },
@@ -650,155 +316,805 @@ export default function NewCampaignPage() {
                     ]}
                 />
 
-                {/* Two Column Layout utilizing left and right space */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Step Navigation Pill Indicator */}
+                <div className="flex items-center justify-between rounded-xl border border-border bg-card p-2 shadow-2xs">
+                    {STEPS.map((s, idx) => {
+                        const Icon = s.icon;
+                        const isCurrent = currentStep === idx;
+                        const isPassed = currentStep > idx;
 
-                    {/* Left Side: Wizard Forms */}
-                    <div className="lg:col-span-8 space-y-6">
-                        {/* Step Indicator */}
-                        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm">
-                            {STEPS.map((s, index) => {
-                                const isActive = index === step;
-                                const isCompleted = index < step;
-                                const Icon = s.icon;
-                                return (
-                                    <div key={s.key} className="flex flex-1 items-center last:flex-initial">
-                                        <div className="flex items-center gap-2.5">
+                        return (
+                            <button
+                                key={s.key}
+                                type="button"
+                                onClick={() => setCurrentStep(idx)}
+                                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 px-3 text-xs font-semibold transition-all ${
+                                    isCurrent
+                                        ? "bg-[#2F8F83] text-white shadow-xs"
+                                        : isPassed
+                                        ? "text-[#2F8F83] hover:bg-muted/60"
+                                        : "text-muted-foreground hover:bg-muted/40"
+                                }`}
+                            >
+                                <div
+                                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                                        isCurrent
+                                            ? "bg-white/20 text-white"
+                                            : isPassed
+                                            ? "bg-[#2F8F83]/10 text-[#2F8F83]"
+                                            : "bg-muted text-muted-foreground"
+                                    }`}
+                                >
+                                    {isPassed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
+                                </div>
+                                <span className="hidden sm:inline">{s.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Main 2-Column Workspace: Form & Live Realtime Device Preview */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* Left Column: Step Configuration Form (7 cols) */}
+                    <div className="lg:col-span-7 space-y-6">
+                        {/* STEP 1: Channel & Account */}
+                        {currentStep === 0 && (
+                            <Card className="shadow-2xs border-border">
+                                <CardHeader className="p-5 pb-3">
+                                    <CardTitle className="text-base font-bold">1. Channel & Account</CardTitle>
+                                    <CardDescription className="text-xs">
+                                        Select the broadcast channel and connected WhatsApp phone number.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-5 pt-2 space-y-5">
+                                    {/* Campaign Name */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-foreground">
+                                            Campaign Name <span className="text-destructive">*</span>
+                                        </label>
+                                        <Input
+                                            placeholder="e.g. Diwali Mega Sale 2026 VIP"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="text-xs"
+                                        />
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-foreground">Description (Optional)</label>
+                                        <Textarea
+                                            placeholder="Internal notes about target audience or campaign goals..."
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            rows={2}
+                                            className="text-xs resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Channel Selector */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-foreground">Broadcast Protocol</label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {/* WhatsApp */}
                                             <div
-                                                className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 ${isCompleted
-                                                    ? "bg-[#35877D] text-white shadow-md shadow-[#35877D]/25"
-                                                    : isActive
-                                                        ? "border-2 border-[#35877D] bg-[#35877D]/10 text-[#35877D] shadow-sm shadow-[#35877D]/10"
-                                                        : "border border-border bg-background text-muted-foreground"
-                                                    }`}
+                                                onClick={() => setChannel("whatsapp")}
+                                                className={`relative flex flex-col p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                                                    channel === "whatsapp"
+                                                        ? "border-[#2F8F83] bg-teal-50/30 dark:bg-teal-950/20"
+                                                        : "border-border hover:border-border/80"
+                                                }`}
                                             >
-                                                {isCompleted ? <Check className="h-4.5 w-4.5" /> : <Icon className="h-4.5 w-4.5" />}
+                                                <div className="flex items-center justify-between">
+                                                    <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600">
+                                                        <MessageCircle className="h-4 w-4" />
+                                                    </div>
+                                                    {channel === "whatsapp" && (
+                                                        <CheckCircle2 className="h-4 w-4 text-[#2F8F83]" />
+                                                    )}
+                                                </div>
+                                                <span className="font-semibold text-xs mt-2 text-foreground">WhatsApp</span>
+                                                <span className="text-[11px] text-muted-foreground mt-0.5">Meta Cloud API</span>
                                             </div>
-                                            <span
-                                                className={`hidden text-xs sm:text-sm font-bold sm:block ${isActive ? "text-foreground" : isCompleted ? "text-[#35877D]" : "text-muted-foreground"
-                                                    }`}
-                                            >
-                                                {s.label}
+
+                                            {/* Email (Coming soon) */}
+                                            <div className="relative flex flex-col p-3.5 rounded-xl border border-dashed border-border/80 bg-muted/30 opacity-70 cursor-not-allowed">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="h-8 w-8 rounded-lg bg-blue-100/50 flex items-center justify-center text-blue-500">
+                                                        <Mail className="h-4 w-4" />
+                                                    </div>
+                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">
+                                                        Soon
+                                                    </span>
+                                                </div>
+                                                <span className="font-semibold text-xs mt-2 text-muted-foreground">Email Newsletter</span>
+                                                <span className="text-[11px] text-muted-foreground mt-0.5">Coming soon</span>
+                                            </div>
+
+                                            {/* SMS (Coming soon) */}
+                                            <div className="relative flex flex-col p-3.5 rounded-xl border border-dashed border-border/80 bg-muted/30 opacity-70 cursor-not-allowed">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="h-8 w-8 rounded-lg bg-amber-100/50 flex items-center justify-center text-amber-500">
+                                                        <MessageSquare className="h-4 w-4" />
+                                                    </div>
+                                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">
+                                                        Soon
+                                                    </span>
+                                                </div>
+                                                <span className="font-semibold text-xs mt-2 text-muted-foreground">SMS Broadcast</span>
+                                                <span className="text-[11px] text-muted-foreground mt-0.5">Coming soon</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Connected WhatsApp Account Selector */}
+                                    {channel === "whatsapp" && (
+                                        <div className="space-y-2 pt-2 border-t border-border/60">
+                                            <label className="text-xs font-semibold text-foreground">
+                                                Connected WhatsApp Account
+                                            </label>
+                                            {isLoadingAccounts ? (
+                                                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                                                    <Loader2 className="h-4 w-4 animate-spin text-[#2F8F83]" />
+                                                    Loading accounts...
+                                                </div>
+                                            ) : accounts.length === 0 ? (
+                                                <div className="p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                                                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <p className="font-semibold">No WhatsApp Account Connected</p>
+                                                        <p className="text-[11px] mt-0.5">
+                                                            Please connect a Meta WhatsApp Business account in WhatsApp Settings before launching campaigns.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <Select
+                                                        value={selectedAccount ? String(selectedAccount.id) : ""}
+                                                        onValueChange={(val) => {
+                                                            const acc = accounts.find((a) => String(a.id) === val);
+                                                            if (acc) setSelectedAccount(acc);
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="text-xs h-10">
+                                                            <SelectValue placeholder="Select phone number" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {accounts.map((acc) => (
+                                                                <SelectItem key={acc.id} value={String(acc.id)}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-semibold">{acc.display_phone_number || "Default Number"}</span>
+                                                                        {acc.verified_name && (
+                                                                            <span className="text-muted-foreground text-[11px]">
+                                                                                ({acc.verified_name})
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded font-mono">
+                                                                            Connected
+                                                                        </span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+
+                                                    {selectedAccount && (
+                                                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs">
+                                                            <div className="flex items-center gap-2">
+                                                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                                                                <span className="font-medium">
+                                                                    {selectedAccount.verified_name || "Official WhatsApp Account"}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[11px] text-muted-foreground font-mono">
+                                                                WABA ID: {selectedAccount.waba_id}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* STEP 2: Template & Content */}
+                        {currentStep === 1 && (
+                            <Card className="shadow-2xs border-border">
+                                <CardHeader className="p-5 pb-3">
+                                    <CardTitle className="text-base font-bold">2. Template & Variable Mapping</CardTitle>
+                                    <CardDescription className="text-xs">
+                                        Choose an approved Meta template and map dynamic variables like contact name.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-5 pt-2 space-y-5">
+                                    {/* Template Search & Filter */}
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <Input
+                                            placeholder="Search approved templates..."
+                                            value={templateSearch}
+                                            onChange={(e) => setTemplateSearch(e.target.value)}
+                                            className="text-xs h-9 flex-1"
+                                        />
+                                        <Select value={templateCategory} onValueChange={setTemplateCategory}>
+                                            <SelectTrigger className="text-xs h-9 w-[140px]">
+                                                <SelectValue placeholder="Category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Categories</SelectItem>
+                                                <SelectItem value="Marketing">Marketing</SelectItem>
+                                                <SelectItem value="Utility">Utility</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Templates Grid */}
+                                    {isLoadingTemplates ? (
+                                        <div className="flex h-36 items-center justify-center">
+                                            <Loader2 className="h-5 w-5 animate-spin text-[#2F8F83]" />
+                                        </div>
+                                    ) : filteredTemplates.length === 0 ? (
+                                        <div className="p-6 text-center border border-dashed rounded-xl space-y-2">
+                                            <p className="text-xs font-semibold text-muted-foreground">
+                                                No approved templates found
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Only templates with APPROVED status can be used for broadcast campaigns.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
+                                            {filteredTemplates.map((tpl) => {
+                                                const isSelected = selectedTemplate?.id === tpl.id;
+                                                return (
+                                                    <div
+                                                        key={tpl.id}
+                                                        onClick={() => setSelectedTemplate(tpl)}
+                                                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start justify-between ${
+                                                            isSelected
+                                                                ? "border-[#2F8F83] bg-teal-50/30 dark:bg-teal-950/20 shadow-2xs"
+                                                                : "border-border hover:bg-muted/40"
+                                                        }`}
+                                                    >
+                                                        <div className="space-y-1 min-w-0 flex-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-bold text-foreground truncate">
+                                                                    {tpl.name}
+                                                                </span>
+                                                                <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold px-1.5 py-0.2 rounded">
+                                                                    {tpl.status}
+                                                                </span>
+                                                                <span className="text-[10px] text-muted-foreground uppercase font-mono">
+                                                                    {tpl.language}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground line-clamp-2">
+                                                                {tpl.body_text}
+                                                            </p>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <CheckCircle2 className="h-4 w-4 text-[#2F8F83] shrink-0 ml-2 mt-0.5" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Variable Mapping Config */}
+                                    {selectedTemplate && Object.keys(variableMappings).length > 0 && (
+                                        <div className="space-y-3 pt-3 border-t border-border/60">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-foreground">
+                                                    Variable Mappings ({Object.keys(variableMappings).length})
+                                                </span>
+                                                <span className="text-[11px] text-muted-foreground">
+                                                    Define field source and fallback
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                {Object.keys(variableMappings).map((idx) => {
+                                                    const current = variableMappings[idx];
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="flex flex-col sm:flex-row items-center gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/60"
+                                                        >
+                                                            <div className="w-16 shrink-0 font-mono font-bold text-xs text-[#2F8F83]">
+                                                                &#123;&#123;{idx}&#125;&#125;
+                                                            </div>
+                                                            <Select
+                                                                value={current.field}
+                                                                onValueChange={(val) => {
+                                                                    setVariableMappings((prev) => ({
+                                                                        ...prev,
+                                                                        [idx]: { ...prev[idx], field: val },
+                                                                    }));
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs flex-1">
+                                                                    <SelectValue placeholder="Map to contact field" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="name">Contact Name</SelectItem>
+                                                                    <SelectItem value="phone">Phone Number</SelectItem>
+                                                                    <SelectItem value="email">Email Address</SelectItem>
+                                                                    <SelectItem value="city">City</SelectItem>
+                                                                    <SelectItem value="stage">Lead Stage</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+
+                                                            <Input
+                                                                placeholder="Fallback (e.g. Customer)"
+                                                                value={current.fallback}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setVariableMappings((prev) => ({
+                                                                        ...prev,
+                                                                        [idx]: { ...prev[idx], fallback: val },
+                                                                    }));
+                                                                }}
+                                                                className="h-8 text-xs sm:w-40"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* STEP 3: Audience & Exclusions */}
+                        {currentStep === 2 && (
+                            <Card className="shadow-2xs border-border">
+                                <CardHeader className="p-5 pb-3">
+                                    <CardTitle className="text-base font-bold">3. Audience & Eligibility</CardTitle>
+                                    <CardDescription className="text-xs">
+                                        Target contacts, preview exclusions, and ensure marketing opt-in compliance.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-5 pt-2 space-y-5">
+                                    {/* Audience Type Radio Cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div
+                                            onClick={() => {
+                                                setAudienceType("all");
+                                                setAudiencePreview(null);
+                                            }}
+                                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                                audienceType === "all"
+                                                    ? "border-[#2F8F83] bg-teal-50/30 dark:bg-teal-950/20"
+                                                    : "border-border hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            <span className="font-semibold text-xs block text-foreground">All Contacts</span>
+                                            <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                                                Workspace contacts
                                             </span>
                                         </div>
-                                        {index < STEPS.length - 1 && (
-                                            <div
-                                                className={`mx-3 md:mx-6 h-0.5 flex-1 rounded transition-colors duration-500 ${index < step ? "bg-[#35877D]" : "bg-muted"}`}
+
+                                        <div
+                                            onClick={() => {
+                                                setAudienceType("segment");
+                                                setAudiencePreview(null);
+                                            }}
+                                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                                audienceType === "segment"
+                                                    ? "border-[#2F8F83] bg-teal-50/30 dark:bg-teal-950/20"
+                                                    : "border-border hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            <span className="font-semibold text-xs block text-foreground">Saved Segment</span>
+                                            <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                                                Customer segmentation
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            onClick={() => {
+                                                setAudienceType("tags");
+                                                setAudiencePreview(null);
+                                            }}
+                                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                                audienceType === "tags"
+                                                    ? "border-[#2F8F83] bg-teal-50/30 dark:bg-teal-950/20"
+                                                    : "border-border hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            <span className="font-semibold text-xs block text-foreground">Tags</span>
+                                            <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                                                Filter by contact tags
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Segment selector if segment chosen */}
+                                    {audienceType === "segment" && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-foreground">Select Segment</label>
+                                            <Select value={selectedSegmentId} onValueChange={setSelectedSegmentId}>
+                                                <SelectTrigger className="text-xs h-9">
+                                                    <SelectValue placeholder="Choose a customer segment" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {segmentsList.map((seg) => (
+                                                        <SelectItem key={seg.id} value={String(seg.id)}>
+                                                            {seg.name} ({seg.contacts_count ?? seg.count ?? 0} contacts)
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+
+                                    {/* Tag input if tags chosen */}
+                                    {audienceType === "tags" && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-foreground">Enter Tags (comma separated)</label>
+                                            <Input
+                                                placeholder="e.g. VIP, Wholesale, Lead2026"
+                                                value={tagsInput}
+                                                onChange={(e) => setTagsInput(e.target.value)}
+                                                className="text-xs"
                                             />
+                                        </div>
+                                    )}
+
+                                    {/* Evaluation Button */}
+                                    <div className="flex items-center justify-between pt-1">
+                                        <span className="text-xs text-muted-foreground">
+                                            Re-evaluate contacts against WhatsApp eligibility & opt-in
+                                        </span>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={isValidatingAudience}
+                                            onClick={handleValidateAudience}
+                                            className="text-xs h-8"
+                                        >
+                                            {isValidatingAudience && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                                            Evaluate Audience
+                                        </Button>
+                                    </div>
+
+                                    {/* Live Audience Breakdown Card */}
+                                    {audiencePreview && (
+                                        <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-4">
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                <div className="p-2.5 rounded-lg bg-card border border-border">
+                                                    <span className="text-[11px] text-muted-foreground block">Total Contacts</span>
+                                                    <span className="text-lg font-bold text-foreground">
+                                                        {audiencePreview.total_contacts.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                                    <span className="text-[11px] text-emerald-800 dark:text-emerald-300 block font-semibold">Eligible</span>
+                                                    <span className="text-lg font-bold text-emerald-600">
+                                                        {audiencePreview.eligible_count.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800">
+                                                    <span className="text-[11px] text-red-800 dark:text-red-300 block font-semibold">Excluded</span>
+                                                    <span className="text-lg font-bold text-red-600">
+                                                        {audiencePreview.excluded_count.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Exclusion Reasons */}
+                                            {audiencePreview.excluded_count > 0 && (
+                                                <div className="space-y-1.5 text-xs">
+                                                    <div className="flex items-center justify-between text-muted-foreground font-semibold">
+                                                        <span>Exclusion Breakdown</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowExcludedDetails(!showExcludedDetails)}
+                                                            className="text-[#2F8F83] hover:underline text-[11px]"
+                                                        >
+                                                            {showExcludedDetails ? "Hide details" : "View excluded contacts"}
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground pt-1">
+                                                        <div className="flex justify-between p-1.5 bg-card rounded border border-border">
+                                                            <span>No WhatsApp Number:</span>
+                                                            <span className="font-semibold text-foreground">{audiencePreview.reasons.no_phone}</span>
+                                                        </div>
+                                                        <div className="flex justify-between p-1.5 bg-card rounded border border-border">
+                                                            <span>Invalid Phone:</span>
+                                                            <span className="font-semibold text-foreground">{audiencePreview.reasons.invalid_phone}</span>
+                                                        </div>
+                                                        <div className="flex justify-between p-1.5 bg-card rounded border border-border">
+                                                            <span>Duplicates Removed:</span>
+                                                            <span className="font-semibold text-foreground">{audiencePreview.reasons.duplicate_phone}</span>
+                                                        </div>
+                                                        <div className="flex justify-between p-1.5 bg-card rounded border border-border">
+                                                            <span>No Marketing Opt-In:</span>
+                                                            <span className="font-semibold text-foreground">{audiencePreview.reasons.no_marketing_opt_in}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {showExcludedDetails && audiencePreview.sample_excluded.length > 0 && (
+                                                <div className="space-y-1 text-xs pt-2 border-t border-border">
+                                                    <span className="font-semibold text-muted-foreground text-[11px]">Sample Excluded Contacts:</span>
+                                                    {audiencePreview.sample_excluded.map((s) => (
+                                                        <div key={s.id} className="flex items-center justify-between py-1 text-[11px] text-muted-foreground">
+                                                            <span>{s.name} ({s.phone})</span>
+                                                            <span className="text-red-500 font-medium">{s.reason}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* STEP 4: Review & Launch */}
+                        {currentStep === 3 && (
+                            <Card className="shadow-2xs border-border">
+                                <CardHeader className="p-5 pb-3">
+                                    <CardTitle className="text-base font-bold">4. Review & Launch</CardTitle>
+                                    <CardDescription className="text-xs">
+                                        Review campaign summary, credit requirements, and schedule or send now.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-5 pt-2 space-y-5">
+                                    {/* Campaign Summary List */}
+                                    <div className="p-4 rounded-xl border border-border bg-card space-y-2 text-xs">
+                                        <div className="flex justify-between py-1 border-b border-border/50">
+                                            <span className="text-muted-foreground">Campaign Name:</span>
+                                            <span className="font-bold text-foreground">{name}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-b border-border/50">
+                                            <span className="text-muted-foreground">Sender Account:</span>
+                                            <span className="font-medium text-foreground">
+                                                {selectedAccount?.display_phone_number} ({selectedAccount?.verified_name || "Connected"})
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-b border-border/50">
+                                            <span className="text-muted-foreground">Approved Template:</span>
+                                            <span className="font-medium text-emerald-600 font-mono">
+                                                {selectedTemplate?.name} ({selectedTemplate?.language})
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-b border-border/50">
+                                            <span className="text-muted-foreground">Target Audience:</span>
+                                            <span className="font-medium text-foreground uppercase">{audienceType}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1">
+                                            <span className="text-muted-foreground">Frozen Snapshot Size:</span>
+                                            <span className="font-bold text-foreground">{eligibleCount.toLocaleString()} recipients</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Credit Requirement Box */}
+                                    <div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/20 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-4 w-4 text-[#2F8F83]" />
+                                                <span className="font-bold text-xs text-foreground">Credit Estimate</span>
+                                            </div>
+                                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+                                                ✓ Sufficient Balance
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div className="p-2 bg-card rounded border border-border">
+                                                <span className="text-[11px] text-muted-foreground block">Required Credits</span>
+                                                <span className="text-base font-bold text-foreground">
+                                                    {estimatedRequiredCredits.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div className="p-2 bg-card rounded border border-border">
+                                                <span className="text-[11px] text-muted-foreground block">Available in Wallet</span>
+                                                <span className="text-base font-bold text-foreground">
+                                                    {Number((user as any)?.credits_balance ?? (user as any)?.credits ?? 50000).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Credits will be reserved when the campaign launches and consumed upon successful delivery. Unused credits are released automatically.
+                                        </p>
+                                    </div>
+
+                                    {/* Scheduling Options */}
+                                    <div className="space-y-3 pt-2 border-t border-border/60">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="scheduleCheck"
+                                                checked={isScheduling}
+                                                onChange={(e) => setIsScheduling(e.target.checked)}
+                                                className="rounded border-border text-[#2F8F83] focus:ring-[#2F8F83]"
+                                            />
+                                            <label htmlFor="scheduleCheck" className="text-xs font-semibold cursor-pointer">
+                                                Schedule this campaign for later
+                                            </label>
+                                        </div>
+
+                                        {isScheduling && (
+                                            <div className="space-y-1.5 pl-5">
+                                                <label className="text-[11px] text-muted-foreground">Select Date & Time</label>
+                                                <Input
+                                                    type="datetime-local"
+                                                    value={scheduledDateTime}
+                                                    onChange={(e) => setScheduledDateTime(e.target.value)}
+                                                    className="text-xs max-w-xs"
+                                                />
+                                            </div>
                                         )}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                        {/* Step content wrapper card */}
-                        <Card className="border border-border/80 shadow-lg rounded-3xl overflow-hidden bg-card/60 backdrop-blur-md">
-                            <CardContent className="p-6 sm:p-8">
-                                <div
-                                    className="transition-all duration-300 ease-in-out"
-                                    style={{ opacity: isProcessing ? 0.6 : 1, pointerEvents: isProcessing ? "none" : "auto" }}
-                                >
-                                    {step === 0 && (
-                                        <StepChooseChannel
-                                            name={state.name}
-                                            type={state.type}
-                                            onNameChange={(v) => setState((s) => ({ ...s, name: v }))}
-                                            onTypeChange={(v) => setState((s) => ({ ...s, type: v }))}
-                                        />
-                                    )}
-                                    {step === 1 && (
-                                        <StepDetailsAndContent
-                                            state={state}
-                                            onChange={(updates) => setState((s) => ({ ...s, ...updates }))}
-                                        />
-                                    )}
-                                    {step === 2 && (
-                                        <StepSelectAudience
-                                            audienceType={state.audienceType}
-                                            onAudienceChange={(v) => setState((s) => ({ ...s, audienceType: v }))}
-                                        />
-                                    )}
-                                    {step === 3 && (
-                                        <StepReview
-                                            state={state}
-                                            isProcessing={isProcessing}
-                                        />
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Navigation Controls */}
-                        <div className="flex items-center justify-between border-t border-border pt-5">
+                        {/* Navigation / Action Footer */}
+                        <div className="flex items-center justify-between pt-2">
                             <Button
                                 variant="outline"
-                                onClick={() => (step === 0 ? router.push("/marketing/campaigns") : setStep((s) => s - 1))}
-                                disabled={isProcessing}
-                                className="border-border rounded-xl shadow-sm font-medium hover:bg-muted"
+                                size="sm"
+                                onClick={() => (currentStep === 0 ? router.push("/marketing/campaigns") : setCurrentStep((s) => s - 1))}
+                                className="text-xs h-9"
                             >
-                                {step === 0 ? "Cancel" : "Back"}
+                                <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                                {currentStep === 0 ? "Cancel" : "Back"}
                             </Button>
-                            <div className="flex items-center gap-3">
-                                {step === 3 && (
+
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={isSubmitting}
+                                    onClick={() => handleSaveOrLaunch("draft")}
+                                    className="text-xs h-9"
+                                >
+                                    Save as Draft
+                                </Button>
+
+                                {currentStep < 3 ? (
                                     <Button
-                                        variant="outline"
-                                        onClick={handleSaveDraft}
-                                        disabled={isProcessing}
-                                        className="border-border rounded-xl shadow-sm font-semibold hover:bg-muted text-foreground"
+                                        size="sm"
+                                        onClick={() => setCurrentStep((s) => s + 1)}
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 font-semibold"
                                     >
-                                        Save Draft
+                                        Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                     </Button>
-                                )}
-                                {step < 3 ? (
+                                ) : isScheduling ? (
                                     <Button
-                                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-md font-semibold flex items-center gap-2"
-                                        disabled={!canProceed}
-                                        onClick={() => setStep((s) => s + 1)}
+                                        size="sm"
+                                        disabled={isSubmitting}
+                                        onClick={() => handleSaveOrLaunch("schedule")}
+                                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-9 px-5 font-semibold"
                                     >
-                                        Next <ChevronRight className="h-4 w-4" />
+                                        {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                                        <Clock className="h-3.5 w-3.5 mr-1.5" /> Schedule Campaign
                                     </Button>
                                 ) : (
                                     <Button
-                                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-md font-semibold flex items-center gap-2"
-                                        disabled={isProcessing || !canProceed}
-                                        onClick={() => setShowCreditConfirm(true)}
+                                        size="sm"
+                                        disabled={isSubmitting || eligibleCount === 0}
+                                        onClick={() => handleSaveOrLaunch("launch")}
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-5 font-semibold shadow-xs"
                                     >
-                                        {isProcessing ? (
-                                            <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
-                                        ) : (
-                                            <><Send className="h-4 w-4" /> Launch Campaign</>
-                                        )}
+                                        {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                                        <Send className="h-3.5 w-3.5 mr-1.5" /> Launch Broadcast Now
                                     </Button>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Side: Sticky Live Preview */}
-                    <div className="lg:col-span-4 lg:sticky lg:top-6">
-                        <Card className="border border-border/85 shadow-md rounded-2xl p-5 bg-card/50 backdrop-blur-sm flex flex-col items-center justify-center min-h-[500px]">
-                            <p className="text-xs font-bold text-muted-foreground mb-4 flex items-center gap-1.5 uppercase tracking-wider">
-                                <Smartphone className="h-4 w-4 text-[#35877D]" /> Live Mobile Preview
-                            </p>
-                            <DevicePreview state={state} />
-                        </Card>
+                    {/* Right Column: Live Mobile Preview (5 cols) */}
+                    <div className="lg:col-span-5 lg:sticky lg:top-6">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                    <MessageCircle className="h-3.5 w-3.5 text-[#2F8F83]" />
+                                    Live WhatsApp Mobile Preview
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">Realtime Dynamic</span>
+                            </div>
+
+                            {/* Device Frame */}
+                            <div className="relative mx-auto w-full max-w-[340px] rounded-[36px] border-4 border-zinc-900 bg-zinc-950 p-2 shadow-2xl ring-4 ring-zinc-800/10">
+                                {/* Device Camera / Dynamic Island */}
+                                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-30" />
+
+                                <div className="rounded-[28px] overflow-hidden bg-slate-100 dark:bg-zinc-900 min-h-[500px]">
+                                    {selectedTemplate ? (
+                                        <TemplatePreview
+                                            businessName={businessDisplayName}
+                                            profileImageUrl={businessProfileImage}
+                                            verified={true}
+                                            headerType={selectedTemplate.header_type || "none"}
+                                            headerContent={selectedTemplate.header_content || ""}
+                                            headerMediaUrl={selectedTemplate.header_media_url || ""}
+                                            bodyText={selectedTemplate.body_text || ""}
+                                            bodySamples={liveBodySamples}
+                                            footerText={selectedTemplate.footer_text || ""}
+                                            buttons={selectedTemplate.buttons || []}
+                                            category={selectedTemplate.category || "Marketing"}
+                                        />
+                                    ) : (
+                                        <div className="flex h-[480px] flex-col items-center justify-center p-6 text-center space-y-2 text-muted-foreground">
+                                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                                                <MessageCircle className="h-6 w-6" />
+                                            </div>
+                                            <p className="text-xs font-semibold">No Template Selected</p>
+                                            <p className="text-[11px] max-w-[200px]">
+                                                Choose an approved WhatsApp template in Step 2 to preview message layout and variables.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Campaign Credit Confirmation Dialog */}
-            <CampaignCreditConfirmDialog
-                open={showCreditConfirm}
-                onOpenChange={setShowCreditConfirm}
-                recipientCount={recipientCount}
-                costPerMessage={1}
-                isSending={isProcessing}
-                onConfirm={() => {
-                    setShowCreditConfirm(false);
-                    handleSend();
-                }}
-            />
+                {/* Large Campaign Safety Confirmation Modal */}
+                <Dialog open={showLargeCampaignModal} onOpenChange={setShowLargeCampaignModal}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-amber-600">
+                                <AlertTriangle className="h-5 w-5" />
+                                Large Volume Broadcast Confirmation
+                            </DialogTitle>
+                            <DialogDescription className="text-xs pt-1">
+                                You are about to broadcast to{" "}
+                                <span className="font-bold text-foreground">
+                                    {eligibleCount.toLocaleString()}
+                                </span>{" "}
+                                WhatsApp recipients.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-3 py-2 text-xs text-muted-foreground">
+                            <p>
+                                This campaign will be processed in asynchronous batches with rate limiting and automated credit reservations.
+                            </p>
+                            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 space-y-1">
+                                <p className="font-semibold">Compliance Checklist:</p>
+                                <p>• Audience has valid WhatsApp marketing consent.</p>
+                                <p>• Approved Meta template &quot;{selectedTemplate?.name}&quot; will be used.</p>
+                                <p>• Unsubscribed or blocked numbers are suppressed automatically.</p>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowLargeCampaignModal(false)}
+                                className="text-xs"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={() => {
+                                    setLargeCampaignConfirmed(true);
+                                    setShowLargeCampaignModal(false);
+                                    handleSaveOrLaunch("launch");
+                                }}
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs"
+                            >
+                                I Understand, Launch Campaign
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </UpgradeGuard>
     );
 }
-

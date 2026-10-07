@@ -1310,58 +1310,158 @@ export interface Campaign {
     id: number;
     tenant_id: number;
     name: string;
-    template_name: string;
-    template_language: string;
-    template_variables?: Record<string, string[]> | null;
-    audience_filter?: { type: 'all' | 'contacts'; contact_ids?: number[] } | null;
-    status: 'draft' | 'sending' | 'sent' | 'failed' | 'paused';
+    description?: string | null;
+    channel: 'whatsapp' | 'email' | 'sms';
+    whatsapp_account_id?: number | null;
+    waba_id?: string | null;
+    phone_number_id?: string | null;
+    template_id?: number | null;
+    template_name?: string | null;
+    template_language?: string | null;
+    template_category?: string | null;
+    template_variables?: any | null;
+    audience_type?: string | null;
+    audience_filter?: any | null;
+    status: 'draft' | 'validating' | 'ready' | 'scheduled' | 'queued' | 'running' | 'paused' | 'completed' | 'partially_completed' | 'failed' | 'cancelled';
     total_recipients: number;
+    eligible_recipients: number;
+    excluded_recipients: number;
+    queued_count?: number;
+    processing_count?: number;
     sent_count: number;
     delivered_count: number;
     read_count: number;
-    replied_count: number;
     failed_count: number;
+    skipped_count?: number;
+    credits_estimated?: number;
+    credits_reserved?: number;
+    credits_consumed?: number;
+    credits_refunded?: number;
+    progress_percentage?: number;
+    delivery_rate?: number;
+    read_rate?: number;
+    rate_limit?: number;
+    batch_size?: number;
     scheduled_at?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+    paused_at?: string | null;
+    cancelled_at?: string | null;
     created_at: string;
     updated_at: string;
+    template?: any;
+    whatsapp_account?: any;
+    creator?: any;
+    batches?: any[];
 }
 
 export interface CampaignRecipient {
     id: number;
     campaign_id: number;
+    workspace_id?: number;
     customer_id?: number | null;
     phone: string;
+    phone_number?: string;
     name?: string | null;
-    status: 'pending' | 'sent' | 'delivered' | 'read' | 'replied' | 'failed';
+    template_variables?: any;
+    status: 'pending' | 'validating' | 'queued' | 'sending' | 'sent' | 'delivered' | 'read' | 'failed' | 'skipped' | 'cancelled';
     wamid?: string | null;
+    external_message_id?: string | null;
+    error_code?: string | null;
     error_message?: string | null;
+    attempts?: number;
+    credits_consumed?: number;
     sent_at?: string | null;
     delivered_at?: string | null;
     read_at?: string | null;
-    replied_at?: string | null;
+    failed_at?: string | null;
     contact_name?: string | null;
     contact_phone?: string | null;
+    customer?: any;
     created_at: string;
 }
 
 export interface CampaignStats {
     total_campaigns: number;
-    total_messages: number;
-    total_sent: number;
+    active_campaigns: number;
+    scheduled_campaigns: number;
+    messages_sent: number;
+    delivered: number;
+    read: number;
+    failed: number;
     delivery_rate: number;
+    read_rate: number;
+    credits_used: number;
+}
+
+export interface AudienceValidationResult {
+    total_contacts: number;
+    eligible_count: number;
+    excluded_count: number;
+    reasons: {
+        no_phone: number;
+        invalid_phone: number;
+        duplicate_phone: number;
+        opted_out_or_blocked: number;
+        no_marketing_opt_in: number;
+    };
+    sample_eligible: Array<{ id: number; name: string; phone: string }>;
+    sample_excluded: Array<{ id: number; name: string; phone: string; reason: string }>;
+}
+
+export interface CampaignEstimateResult {
+    audience_count: number;
+    unit_credits: number;
+    required_credits: number;
+    available_credits: number;
+    shortfall: number;
+    has_enough_credits: boolean;
+    market_name: string;
+    category: string;
+}
+
+export interface CampaignAnalytics {
+    campaign_id: number;
+    name: string;
+    status: string;
+    channel: string;
+    total_recipients: number;
+    eligible_recipients: number;
+    sent_count: number;
+    delivered_count: number;
+    read_count: number;
+    failed_count: number;
+    skipped_count: number;
+    delivery_rate: number;
+    read_rate: number;
+    credits_reserved: number;
+    credits_consumed: number;
+    credits_refunded: number;
+    started_at?: string | null;
+    completed_at?: string | null;
+    status_breakdown: Record<string, number>;
+    error_breakdown: Record<string, number>;
 }
 
 // -------------------------------------------------------------
 // Campaign Hooks
 // -------------------------------------------------------------
 
-export function useListCampaigns(options?: any) {
+export function useListCampaigns(params?: { status?: string; channel?: string; search?: string; page?: number; per_page?: number }, options?: any) {
     return useQuery<Campaign[]>({
-        queryKey: ["listCampaigns"],
+        queryKey: ["listCampaigns", params],
         queryFn: async () => {
-            const res = await apiFetch(`${API_BASE}/campaigns`);
+            const query = new URLSearchParams();
+            if (params?.status) query.set('status', params.status);
+            if (params?.channel) query.set('channel', params.channel);
+            if (params?.search) query.set('search', params.search);
+            if (params?.page) query.set('page', String(params.page));
+            if (params?.per_page) query.set('per_page', String(params.per_page));
+
+            const res = await apiFetch(`${API_BASE}/campaigns?${query.toString()}`);
             if (!res.ok) throw new Error("Failed to fetch campaigns");
-            return res.json();
+            const data = await res.json();
+            return Array.isArray(data) ? data : (data.data || []);
         },
         ...options,
     });
@@ -1373,19 +1473,22 @@ export function useGetCampaignStats(options?: any) {
         queryFn: async () => {
             const res = await apiFetch(`${API_BASE}/campaigns/stats`);
             if (!res.ok) throw new Error("Failed to fetch campaign stats");
-            return res.json();
+            const data = await res.json();
+            return data.data || data;
         },
         ...options,
     });
 }
 
 export function useGetCampaign(id: number | string | null | undefined) {
-    return useQuery<{ campaign: Campaign; recipients: CampaignRecipient[] }>({
+    return useQuery<{ campaign: Campaign; recipients?: CampaignRecipient[] }>({
         queryKey: ["getCampaign", id],
         queryFn: async () => {
             const res = await apiFetch(`${API_BASE}/campaigns/${id}`);
             if (!res.ok) throw new Error("Failed to fetch campaign");
-            return res.json();
+            const data = await res.json();
+            if (data.campaign) return data;
+            return { campaign: data.data || data, recipients: [] };
         },
         enabled: !!id,
     });
@@ -1393,7 +1496,7 @@ export function useGetCampaign(id: number | string | null | undefined) {
 
 export function useCreateCampaign() {
     return useMutation({
-        mutationFn: async ({ data }: { data: Omit<Campaign, "id" | "tenant_id" | "sent_count" | "delivered_count" | "read_count" | "replied_count" | "failed_count" | "total_recipients" | "created_at" | "updated_at"> }) => {
+        mutationFn: async ({ data }: { data: any }) => {
             const res = await apiFetch(`${API_BASE}/campaigns`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1403,14 +1506,15 @@ export function useCreateCampaign() {
                 const errorData = await res.json().catch(() => ({}));
                 throw new Error(errorData.error || errorData.message || "Failed to create campaign");
             }
-            return res.json();
+            const resData = await res.json();
+            return resData.data || resData;
         },
     });
 }
 
 export function useUpdateCampaign() {
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Pick<Campaign, "name" | "status" | "template_variables" | "scheduled_at">> }) => {
+        mutationFn: async ({ id, data }: { id: number; data: any }) => {
             const res = await apiFetch(`${API_BASE}/campaigns/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -1420,7 +1524,8 @@ export function useUpdateCampaign() {
                 const errorData = await res.json().catch(() => ({}));
                 throw new Error(errorData.error || errorData.message || "Failed to update campaign");
             }
-            return res.json();
+            const resData = await res.json();
+            return resData.data || resData;
         },
     });
 }
@@ -1440,6 +1545,70 @@ export function useDeleteCampaign() {
     });
 }
 
+export function useValidateAudience() {
+    return useMutation({
+        mutationFn: async (audienceFilter: any) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/validate-audience`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audience_filter: audienceFilter }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to evaluate audience");
+            }
+            const resData = await res.json();
+            return (resData.data || resData) as AudienceValidationResult;
+        },
+    });
+}
+
+export function useEstimateCampaignCredits(id: number | string | null | undefined) {
+    return useQuery<CampaignEstimateResult>({
+        queryKey: ["campaignEstimate", id],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/estimate`);
+            if (!res.ok) throw new Error("Failed to estimate campaign credits");
+            const data = await res.json();
+            return data.data || data;
+        },
+        enabled: !!id,
+    });
+}
+
+export function usePrepareCampaign() {
+    return useMutation({
+        mutationFn: async ({ id, async = false }: { id: number; async?: boolean }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/prepare`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ async }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to prepare campaign snapshot");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useLaunchCampaign() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/launch`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || "Failed to launch campaign");
+            }
+            const data = await res.json();
+            return data.data || data;
+        },
+    });
+}
+
 export function useSendCampaign() {
     return useMutation({
         mutationFn: async ({ id }: { id: number }) => {
@@ -1448,10 +1617,134 @@ export function useSendCampaign() {
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.message || "Failed to send campaign");
+                throw new Error(errorData.message || errorData.error || "Failed to launch campaign");
             }
-            return res.json() as Promise<{ message: string; sent_count: number; failed_count: number; status: string }>;
+            return res.json();
         },
+    });
+}
+
+export function useScheduleCampaign() {
+    return useMutation({
+        mutationFn: async ({ id, scheduledAt }: { id: number; scheduledAt: string }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/schedule`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ scheduled_at: scheduledAt }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to schedule campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function usePauseCampaign() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/pause`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to pause campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useResumeCampaign() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/resume`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to resume campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useCancelCampaign() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/cancel`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to cancel campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useRetryCampaignFailed() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/retry-failed`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to retry campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useDuplicateCampaign() {
+    return useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/duplicate`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to duplicate campaign");
+            }
+            const data = await res.json();
+            return data.data || data;
+        },
+    });
+}
+
+export function useGetCampaignAnalytics(id: number | string | null | undefined) {
+    return useQuery<CampaignAnalytics>({
+        queryKey: ["campaignAnalytics", id],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/analytics`);
+            if (!res.ok) throw new Error("Failed to fetch campaign analytics");
+            const data = await res.json();
+            return data.data || data;
+        },
+        enabled: !!id,
+    });
+}
+
+export function useGetCampaignRecipients(id: number | string | null | undefined, params?: { status?: string; search?: string; page?: number; per_page?: number }) {
+    return useQuery<{ data: CampaignRecipient[]; pagination: { current_page: number; last_page: number; per_page: number; total: number } }>({
+        queryKey: ["campaignRecipients", id, params],
+        queryFn: async () => {
+            const query = new URLSearchParams();
+            if (params?.status) query.set('status', params.status);
+            if (params?.search) query.set('search', params.search);
+            if (params?.page) query.set('page', String(params.page));
+            if (params?.per_page) query.set('per_page', String(params.per_page));
+
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/recipients?${query.toString()}`);
+            if (!res.ok) throw new Error("Failed to fetch campaign recipients");
+            return res.json();
+        },
+        enabled: !!id,
     });
 }
 
