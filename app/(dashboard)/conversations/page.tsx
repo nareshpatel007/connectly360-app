@@ -408,17 +408,6 @@ export default function ConversationsPage() {
                             )}
                         </div>
 
-                        {/* Shared Number Notice Banner */}
-                        <div className="m-3 mx-4 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50/60 text-xs text-amber-800 flex items-center justify-between gap-3 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Zap size={13} className="text-amber-600 shrink-0" />
-                                <span className="font-semibold">You're currently using a shared number. Connect channels to unlock priority automation.</span>
-                            </div>
-                            <Button size="sm" className="bg-[#378179] hover:bg-[#2b625c] text-white font-semibold text-xs h-7 px-3 rounded-lg border-none shadow-xs cursor-pointer">
-                                Connect Channel
-                            </Button>
-                        </div>
-
                         {/* Composer Chat Input area */}
                         <div className="p-3 bg-white border-t border-slate-200 shrink-0">
                             <form onSubmit={handleSendReply} className="space-y-2.5">
