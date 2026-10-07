@@ -87,8 +87,9 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
             const fetchPacks = async () => {
                 setIsLoadingPacks(true);
                 try {
+                    const isValidToken = Boolean(token && token !== "undefined" && token !== "null" && token.split(".").length === 3);
                     const res = await fetch("/api/billing/credits/packages", {
-                        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                        headers: isValidToken ? { Authorization: `Bearer ${token}` } : undefined
                     });
                     const data = await res.json();
                     if (data.status && Array.isArray(data.data) && data.data.length > 0) {
@@ -119,11 +120,12 @@ export function BuyCreditsModal({ open, onOpenChange, highlightCredits }: BuyCre
         }
         setIsCalculating(true);
         try {
+            const isValidToken = Boolean(token && token !== "undefined" && token !== "null" && token.split(".").length === 3);
             const res = await fetch("/api/billing/credits/calculate-custom", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : ""
+                    ...(isValidToken ? { Authorization: `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({ amount: amt })
             });

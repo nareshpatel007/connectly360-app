@@ -121,11 +121,12 @@ export default function RechargeCreditsPage() {
         }
         setIsCalculatingCustom(true);
         try {
+            const isValidToken = Boolean(token && token !== "undefined" && token !== "null" && token.split(".").length === 3);
             const res = await fetch("/api/billing/credits/calculate-custom", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : ""
+                    ...(isValidToken ? { Authorization: `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({ amount: amt })
             });

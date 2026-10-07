@@ -117,6 +117,32 @@ export default function WebhooksPage() {
         eventId?: string;
     } | null>(null);
 
+    // Event categories normalization (resilient to array or object payload)
+    const groupedCategoriesList = useMemo(() => {
+        if (!categoriesData) return [];
+
+        if (Array.isArray(categoriesData)) {
+            return categoriesData.map((cat: any) => ({
+                name: cat.name || cat.id || "General",
+                events: Array.isArray(cat.events) ? (cat.events as WebhookEventDefinition[]) : []
+            }));
+        }
+
+        if (typeof categoriesData === "object") {
+            return Object.entries(categoriesData).map(([catName, val]: [string, any]) => {
+                if (Array.isArray(val)) {
+                    return { name: catName, events: val as WebhookEventDefinition[] };
+                }
+                if (val && Array.isArray(val.events)) {
+                    return { name: val.name || catName, events: val.events as WebhookEventDefinition[] };
+                }
+                return { name: catName, events: [] as WebhookEventDefinition[] };
+            });
+        }
+
+        return [];
+    }, [categoriesData]);
+
     // Add / Edit form fields
     const [formName, setFormName] = useState("");
     const [formUrl, setFormUrl] = useState("");
@@ -162,8 +188,9 @@ export default function WebhooksPage() {
     };
 
     const handleToggleCategory = (events: WebhookEventDefinition[]) => {
+        if (!Array.isArray(events)) return;
         const eventKeys = events.map(e => e.key);
-        const allSelected = eventKeys.every(k => selectedEvents.includes(k));
+        const allSelected = eventKeys.length > 0 && eventKeys.every(k => selectedEvents.includes(k));
         if (allSelected) {
             setSelectedEvents(prev => prev.filter(k => !eventKeys.includes(k)));
         } else {
@@ -821,8 +848,8 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                             <Skeleton className="h-4 w-48" />
                                         </div>
                                     ) : (
-                                        Object.entries(categoriesData).map(([category, events]) => {
-                                            const allSelected = events.every((ev) => selectedEvents.includes(ev.key));
+                                        groupedCategoriesList.map(({ name: category, events }) => {
+                                            const allSelected = events.length > 0 && events.every((ev) => selectedEvents.includes(ev.key));
 
                                             return (
                                                 <div key={category} className="space-y-2">

@@ -14,15 +14,25 @@ async function apiFetch(url: string, options: RequestInit = {}) {
 
     if (typeof window !== "undefined") {
         const token = localStorage.getItem("auth_token");
-        if (token) {
+        if (token && token !== "undefined" && token !== "null" && token.split(".").length === 3) {
             headers["Authorization"] = `Bearer ${token}`;
         }
     }
 
-    return fetch(url, {
+    const res = await fetch(url, {
         ...options,
         headers,
     });
+
+    if (res.status === 401 && typeof window !== "undefined") {
+        const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register");
+        if (!isAuthEndpoint) {
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("auth_user");
+        }
+    }
+
+    return res;
 }
 
 // -------------------------------------------------------------

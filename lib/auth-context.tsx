@@ -131,10 +131,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = localStorage.getItem("auth_token");
         localStorage.removeItem("auth_user");
 
-        if (storedToken) {
+        // Validate that storedToken is a genuine JWT format (3 dot-separated segments)
+        const isValidTokenFormat = Boolean(
+            storedToken &&
+            storedToken !== "undefined" &&
+            storedToken !== "null" &&
+            storedToken.trim().length > 10 &&
+            storedToken.split(".").length === 3
+        );
+
+        if (isValidTokenFormat && storedToken) {
             setToken(storedToken);
             fetchProfile(storedToken);
         } else {
+            if (storedToken) {
+                localStorage.removeItem("auth_token");
+            }
+            setToken(null);
+            setUser(null);
             setIsLoading(false);
         }
     }, [fetchProfile]);

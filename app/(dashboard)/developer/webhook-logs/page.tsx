@@ -89,11 +89,32 @@ function WebhookLogsContent() {
     // Flatten event list for filter dropdown
     const allRegisteredEvents = useMemo(() => {
         const list: { key: string; label: string }[] = [];
-        Object.values(categoriesData).forEach((events) => {
-            events.forEach((ev) => {
-                list.push({ key: ev.key, label: ev.label });
+        if (!categoriesData) return list;
+
+        if (Array.isArray(categoriesData)) {
+            categoriesData.forEach((cat: any) => {
+                if (Array.isArray(cat?.events)) {
+                    cat.events.forEach((ev: any) => {
+                        if (ev?.key) list.push({ key: ev.key, label: ev.label || ev.key });
+                    });
+                }
             });
-        });
+            return list;
+        }
+
+        if (typeof categoriesData === "object") {
+            Object.values(categoriesData).forEach((events: any) => {
+                if (Array.isArray(events)) {
+                    events.forEach((ev: any) => {
+                        if (ev?.key) list.push({ key: ev.key, label: ev.label || ev.key });
+                    });
+                } else if (events && Array.isArray(events.events)) {
+                    events.events.forEach((ev: any) => {
+                        if (ev?.key) list.push({ key: ev.key, label: ev.label || ev.key });
+                    });
+                }
+            });
+        }
         return list;
     }, [categoriesData]);
 

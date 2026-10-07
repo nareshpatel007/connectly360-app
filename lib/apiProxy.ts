@@ -44,10 +44,17 @@ export async function handleApiProxy(
         const incomingContentType = req.headers.get("content-type") || "";
         const tenantHeader = req.headers.get("X-Tenant-Id") || req.headers.get("x-tenant-id");
 
+        const hasValidAuth = Boolean(
+            clientAuth &&
+            !clientAuth.includes("undefined") &&
+            !clientAuth.includes("null") &&
+            clientAuth.replace("Bearer", "").trim().length > 10
+        );
+
         const headers: Record<string, string> = {
             "Requested-Domain": SITE_URL,
             "X-Api-Token": API_TOKEN,
-            "Authorization": clientAuth || `Bearer ${API_TOKEN}`
+            "Authorization": hasValidAuth && clientAuth ? clientAuth : `Bearer ${API_TOKEN}`
         };
 
         if (tenantHeader) {

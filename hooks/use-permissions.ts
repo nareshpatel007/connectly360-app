@@ -20,24 +20,29 @@ export function usePermissions() {
     const { data, isLoading, refetch } = useQuery<PermissionsData | null>({
         queryKey: ["auth", "permissions", user?.tenant_id, user?.id],
         queryFn: async () => {
-            if (!token) return null;
+            if (!token || token === "undefined" || token === "null" || !user) return null;
             try {
                 const res = await fetch("/api/auth/permissions", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
+                if (res.status === 401) {
+                    if (typeof window !== "undefined") {
+                        localStorage.removeItem("auth_token");
+                    }
+                    return null;
+                }
                 const json = await res.json();
                 if (json.status && json.data) {
                     return json.data;
                 }
                 return null;
             } catch (err) {
-                console.error("Failed to load effective permissions", err);
                 return null;
             }
         },
-        enabled: !!token,
+        enabled: Boolean(token && token !== "undefined" && token !== "null" && user),
         staleTime: 60 * 1000, // 1 minute cache
     });
 
