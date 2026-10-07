@@ -1971,5 +1971,164 @@ export function useRetryWebhookDelivery(workspaceId?: number | null) {
     });
 }
 
+// -------------------------------------------------------------
+// WhatsApp Business Profile Management
+// -------------------------------------------------------------
+
+export interface WhatsAppProfileCategory {
+    value: string;
+    label: string;
+}
+
+export interface WhatsAppAvailableAccount {
+    id: number;
+    phone_number: string;
+    display_name: string;
+    phone_number_id: string;
+    status: string;
+}
+
+export interface WhatsAppBusinessProfile {
+    business_name: string | null;
+    business_name_status: string;
+    business_name_notice: string;
+    about: string;
+    description: string;
+    category: string;
+    category_label: string;
+    categories: WhatsAppProfileCategory[];
+    address: string;
+    email: string;
+    websites: string[];
+    profile_picture_url: string | null;
+    phone_number: string | null;
+    phone_number_id: string | null;
+    waba_id: string | null;
+    status: "connected" | "disconnected" | "needs_attention";
+    status_notice: string | null;
+    quality_rating: string | null;
+    messaging_limit: string | null;
+    can_edit: boolean;
+    is_test_mode: boolean;
+    available_accounts: WhatsAppAvailableAccount[];
+    last_synced_at: string | null;
+}
+
+export interface UpdateWhatsAppProfilePayload {
+    phone_number_id?: string;
+    about?: string;
+    description?: string;
+    category?: string;
+    address?: string;
+    email?: string;
+    websites?: string[];
+}
+
+export function useWhatsAppBusinessProfile(phoneNumberId?: string, workspaceId?: number | null) {
+    return useQuery<WhatsAppBusinessProfile>({
+        queryKey: ["whatsapp-business-profile", workspaceId ?? null, phoneNumberId ?? null],
+        queryFn: async () => {
+            const queryParams = new URLSearchParams();
+            if (phoneNumberId) queryParams.set("phone_number_id", phoneNumberId);
+
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+
+            const url = `${API_BASE}/whatsapp/business-profile${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+            const res = await apiFetch(url, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to load WhatsApp business profile");
+            }
+            return data.data;
+        },
+        staleTime: 60 * 1000,
+    });
+}
+
+export function useUpdateWhatsAppBusinessProfile(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: UpdateWhatsAppProfilePayload) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/whatsapp/business-profile`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to update WhatsApp business profile");
+            }
+            return data.data as WhatsAppBusinessProfile;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["whatsapp-business-profile"] });
+        },
+    });
+}
+
+export function useUploadWhatsAppBusinessProfilePicture(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ file, phoneNumberId }: { file: File; phoneNumberId?: string }) => {
+            const formData = new FormData();
+            formData.append("profile_picture", file);
+            if (phoneNumberId) {
+                formData.append("phone_number_id", phoneNumberId);
+            }
+
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+
+            const res = await apiFetch(`${API_BASE}/whatsapp/business-profile/profile-picture`, {
+                method: "POST",
+                headers,
+                body: formData,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to upload WhatsApp profile picture");
+            }
+            return data.data as WhatsAppBusinessProfile;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["whatsapp-business-profile"] });
+        },
+    });
+}
+
+export function useSyncWhatsAppBusinessProfile(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (phoneNumberId?: string) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/whatsapp/business-profile/sync`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ phone_number_id: phoneNumberId }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to sync profile from WhatsApp");
+            }
+            return data.data as WhatsAppBusinessProfile;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["whatsapp-business-profile"] });
+        },
+    });
+}
+
 
 

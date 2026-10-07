@@ -565,6 +565,14 @@ export default function WhatsAppIntegrationPage() {
                 actions={
                     <div className="flex items-center gap-3">
                         <Link
+                            href="/integrations/whatsapp/business-profile"
+                            className="border border-[#35877D]/30 bg-[#35877D]/10 hover:bg-[#35877D]/20 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-bold h-9 px-3.5 transition-colors shadow-2xs"
+                        >
+                            <Building2 size={13} />
+                            <span>Business Profile</span>
+                        </Link>
+
+                        <Link
                             href="/automations/auto-replies"
                             className="border border-[#35877D]/30 bg-[#35877D]/5 hover:bg-[#35877D]/10 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
                         >

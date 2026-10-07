@@ -216,12 +216,29 @@ export const CLIENT_NAV_SECTIONS: NavSection[] = [
         section: "CHANNELS & INTEGRATIONS",
         items: [
             {
-                id: "whatsapp",
+                id: "whatsapp-group",
                 label: "WhatsApp",
                 icon: MessageCircle,
                 href: "/integrations/whatsapp",
-                patterns: ["/integrations/whatsapp/**"],
-                permission: "whatsapp.view"
+                permission: "whatsapp.view",
+                subItems: [
+                    {
+                        id: "whatsapp-connection",
+                        label: "Connection",
+                        icon: MessageCircle,
+                        href: "/integrations/whatsapp",
+                        exact: true,
+                        permission: "whatsapp.view"
+                    },
+                    {
+                        id: "whatsapp-business-profile",
+                        label: "Business Profile",
+                        icon: Building2,
+                        href: "/integrations/whatsapp/business-profile",
+                        exact: true,
+                        permission: "whatsapp.view"
+                    }
+                ]
             },
             {
                 id: "integrations",

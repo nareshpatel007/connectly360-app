@@ -48,6 +48,7 @@ const NAVIGATION_ITEMS = [
     { label: "WhatsApp Campaigns", icon: Megaphone, href: "/marketing/campaigns", group: "Marketing", desc: "Outbound message broadcasts & schedule" },
     { label: "Message Templates", icon: FileText, href: "/marketing/templates", group: "Marketing", desc: "Meta-approved WhatsApp message templates" },
     { label: "WhatsApp Integration", icon: MessageCircle, href: "/integrations/whatsapp", group: "Integrations", desc: "Sandbox testing & official WABA connection" },
+    { label: "WhatsApp Business Profile", icon: Building2, href: "/integrations/whatsapp/business-profile", group: "Integrations", desc: "WhatsApp display name, about, vertical, websites & profile photo" },
     { label: "API Keys", icon: Key, href: "/integrations/api-keys", group: "Integrations", desc: "REST API keys & developer credentials" },
     { label: "Webhooks", icon: Webhook, href: "/integrations/webhooks", group: "Integrations", desc: "Custom HTTP callback endpoints" },
     { label: "Analytics", icon: PieChart, href: "/analytics", group: "Analytics", desc: "Performance breakdown & chat metrics" },
