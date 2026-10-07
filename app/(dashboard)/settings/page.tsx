@@ -76,7 +76,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={Building2}
                 title="Business Settings"
@@ -84,30 +84,30 @@ export default function SettingsPage() {
                 breadcrumbs={[{ label: "Settings" }]}
             />
 
-            <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
-                <CardHeader className="border-b border-slate-100 pb-4">
-                    <CardTitle className="text-base font-bold text-slate-900">Business Profile</CardTitle>
-                    <CardDescription className="text-xs text-slate-500">
+            <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs overflow-hidden">
+                <CardHeader className="border-b border-[#E5E9EE] pb-4">
+                    <CardTitle className="text-sm font-semibold text-[#172033]">Business Profile</CardTitle>
+                    <CardDescription className="text-xs text-[#5F6B7A]">
                         This information is referenced by your AI assistant when responding to customer queries.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="p-6">
                     {isLoading ? (
                         <div className="space-y-6">
                             {Array.from({ length: 4 }).map((_, i) => (
-                                <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                                <Skeleton key={i} className="h-12 w-full rounded-lg" />
                             ))}
                         </div>
                     ) : (
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                                 <FormField
                                     control={form.control}
                                     name="companyName"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                                <Building2 className="w-4 h-4 text-blue-500" />
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-semibold text-[#172033] flex items-center gap-2">
+                                                <Building2 className="w-4 h-4 text-[#2F8F83]" />
                                                 Company Name
                                             </FormLabel>
                                             <FormControl>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
                                                     {...field} 
                                                     data-testid="input-company-name" 
                                                     placeholder="e.g. Connectly360" 
-                                                    className="h-12 text-base border-2 focus-visible:ring-2 focus-visible:ring-blue-500/50"
+                                                    className="h-10 text-xs sm:text-sm rounded-lg border border-[#E5E9EE] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83]"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -126,9 +126,9 @@ export default function SettingsPage() {
                                     control={form.control}
                                     name="contactNumber"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                                <Phone className="w-4 h-4 text-green-500" />
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-semibold text-[#172033] flex items-center gap-2">
+                                                <Phone className="w-4 h-4 text-[#2F8F83]" />
                                                 Contact Number
                                             </FormLabel>
                                             <FormControl>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
                                                     {...field} 
                                                     data-testid="input-contact-number" 
                                                     placeholder="+91 9586557162" 
-                                                    className="h-12 text-base border-2 focus-visible:ring-2 focus-visible:ring-green-500/50"
+                                                    className="h-10 text-xs sm:text-sm rounded-lg border border-[#E5E9EE] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83]"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -147,9 +147,9 @@ export default function SettingsPage() {
                                     control={form.control}
                                     name="deliveryInformation"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                                <Truck className="w-4 h-4 text-orange-500" />
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-semibold text-[#172033] flex items-center gap-2">
+                                                <Truck className="w-4 h-4 text-[#2F8F83]" />
                                                 Delivery Information
                                             </FormLabel>
                                             <FormControl>
@@ -158,7 +158,7 @@ export default function SettingsPage() {
                                                     data-testid="textarea-delivery-info"
                                                     placeholder="We deliver across India..."
                                                     rows={4}
-                                                    className="text-base border-2 focus-visible:ring-2 focus-visible:ring-orange-500/50 resize-none"
+                                                    className="text-xs sm:text-sm rounded-lg border border-[#E5E9EE] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83] resize-none"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -169,9 +169,9 @@ export default function SettingsPage() {
                                     control={form.control}
                                     name="businessHours"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
-                                            <FormLabel className="text-base font-semibold flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-purple-500" />
+                                        <FormItem className="space-y-1.5">
+                                            <FormLabel className="text-xs font-semibold text-[#172033] flex items-center gap-2">
+                                                <Clock className="w-4 h-4 text-[#2F8F83]" />
                                                 Business Hours
                                             </FormLabel>
                                             <FormControl>
@@ -179,28 +179,30 @@ export default function SettingsPage() {
                                                     {...field} 
                                                     data-testid="input-business-hours" 
                                                     placeholder="Mon-Sat: 9:00 AM - 7:00 PM IST" 
-                                                    className="h-12 text-base border-2 focus-visible:ring-2 focus-visible:ring-purple-500/50"
+                                                    className="h-10 text-xs sm:text-sm rounded-lg border border-[#E5E9EE] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83]"
                                                 />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                                <Button
-                                    type="submit"
-                                    className="w-full h-11 text-sm font-bold bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs transition-colors cursor-pointer"
-                                    disabled={updateSettings.isPending}
-                                    data-testid="button-save-settings"
-                                >
-                                    {updateSettings.isPending ? (
-                                        <span className="flex items-center gap-2">
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Saving...
-                                        </span>
-                                    ) : (
-                                        "Save Settings"
-                                    )}
-                                </Button>
+                                <div className="pt-2">
+                                    <Button
+                                        type="submit"
+                                        className="h-10 px-6 text-xs font-semibold bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg shadow-xs transition-colors cursor-pointer"
+                                        disabled={updateSettings.isPending}
+                                        data-testid="button-save-settings"
+                                    >
+                                        {updateSettings.isPending ? (
+                                            <span className="flex items-center gap-2">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Saving...
+                                            </span>
+                                        ) : (
+                                            "Save Settings"
+                                        )}
+                                    </Button>
+                                </div>
                             </form>
                         </Form>
                     )}

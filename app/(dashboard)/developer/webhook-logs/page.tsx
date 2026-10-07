@@ -246,7 +246,7 @@ function WebhookLogsContent() {
             featureName="Webhooks"
             description="Inspect outgoing real-time webhook deliveries, HTTP response status codes, payload structures, and retry attempts."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 <PageHeader
                     icon={Activity}
                     title="Webhook Logs"
@@ -261,9 +261,9 @@ function WebhookLogsContent() {
                             <Link href="/developer/webhooks">
                                 <Button
                                     variant="outline"
-                                    className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                    className="border-[#E5E9EE] text-[#172033] hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer h-9 px-4 hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                 >
-                                    <Webhook size={14} className="text-[#35877D]" />
+                                    <Webhook size={14} className="text-[#2F8F83]" />
                                     Manage Endpoints
                                 </Button>
                             </Link>
@@ -271,10 +271,10 @@ function WebhookLogsContent() {
                             <Button
                                 variant="outline"
                                 onClick={() => refetchLogs()}
-                                className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                className="border-[#E5E9EE] text-[#172033] hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer h-9 px-4 hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                 title="Refresh Logs"
                             >
-                                <RefreshCw size={13} className={isLogsFetching ? "animate-spin text-[#35877D]" : "text-slate-500"} />
+                                <RefreshCw size={13} className={isLogsFetching ? "animate-spin text-[#2F8F83]" : "text-[#5F6B7A]"} />
                                 Refresh
                             </Button>
                         </div>
@@ -282,19 +282,19 @@ function WebhookLogsContent() {
                 />
 
                 {/* Filters & Search Card */}
-                <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs">
+                <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs">
                     <CardContent className="p-4 sm:p-5 space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             {/* Search */}
                             <div className="relative">
-                                <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+                                <Search size={14} className="absolute left-3 top-3 text-[#8A95A3]" />
                                 <Input
                                     placeholder="Search Event ID, URL, or error..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={handleSearchKeyDown}
                                     onBlur={handleApplySearch}
-                                    className="pl-9 rounded-xl border-slate-200 text-xs h-9"
+                                    className="pl-9 rounded-lg border-[#E5E9EE] text-xs h-9 focus:border-[#2F8F83]"
                                 />
                             </div>
 
@@ -303,22 +303,22 @@ function WebhookLogsContent() {
                                 <Select
                                     value={endpointFilter}
                                     onValueChange={(val) => {
-                                        setEndpointFilter(val);
-                                        setPage(1);
-                                    }}
-                                >
-                                    <SelectTrigger className="rounded-xl border-slate-200 text-xs h-9">
-                                        <SelectValue placeholder="All Endpoints" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl text-xs">
-                                        <SelectItem value="all">All Endpoints</SelectItem>
-                                        {endpoints.map((ep) => (
-                                            <SelectItem key={ep.id} value={String(ep.id)}>
-                                                {ep.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                         setEndpointFilter(val);
+                                         setPage(1);
+                                     }}
+                                 >
+                                     <SelectTrigger className="rounded-lg border-[#E5E9EE] text-xs h-9">
+                                         <SelectValue placeholder="All Endpoints" />
+                                     </SelectTrigger>
+                                     <SelectContent className="rounded-lg text-xs">
+                                         <SelectItem value="all">All Endpoints</SelectItem>
+                                         {endpoints.map((ep) => (
+                                             <SelectItem key={ep.id} value={String(ep.id)}>
+                                                 {ep.name}
+                                             </SelectItem>
+                                         ))}
+                                     </SelectContent>
+                                 </Select>
                             </div>
 
                             {/* Event Type Filter */}
@@ -328,20 +328,20 @@ function WebhookLogsContent() {
                                     onValueChange={(val) => {
                                         setEventTypeFilter(val);
                                         setPage(1);
-                                    }}
-                                >
-                                    <SelectTrigger className="rounded-xl border-slate-200 text-xs h-9">
-                                        <SelectValue placeholder="All Events" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl text-xs max-h-56">
-                                        <SelectItem value="all">All Events</SelectItem>
-                                        {allRegisteredEvents.map((ev) => (
-                                            <SelectItem key={ev.key} value={ev.key}>
-                                                {ev.key}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                     }}
+                                 >
+                                     <SelectTrigger className="rounded-lg border-[#E5E9EE] text-xs h-9">
+                                         <SelectValue placeholder="All Events" />
+                                     </SelectTrigger>
+                                     <SelectContent className="rounded-lg text-xs max-h-56">
+                                         <SelectItem value="all">All Events</SelectItem>
+                                         {allRegisteredEvents.map((ev) => (
+                                             <SelectItem key={ev.key} value={ev.key}>
+                                                 {ev.key}
+                                             </SelectItem>
+                                         ))}
+                                     </SelectContent>
+                                 </Select>
                             </div>
 
                             {/* Status Filter */}
@@ -351,52 +351,52 @@ function WebhookLogsContent() {
                                     onValueChange={(val) => {
                                         setStatusFilter(val);
                                         setPage(1);
-                                    }}
-                                >
-                                    <SelectTrigger className="rounded-xl border-slate-200 text-xs h-9">
-                                        <SelectValue placeholder="All Statuses" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl text-xs">
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="delivered">Delivered</SelectItem>
-                                        <SelectItem value="pending">Pending / Queued</SelectItem>
-                                        <SelectItem value="retrying">Retrying</SelectItem>
-                                        <SelectItem value="failed">Failed</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                     }}
+                                 >
+                                     <SelectTrigger className="rounded-lg border-[#E5E9EE] text-xs h-9">
+                                         <SelectValue placeholder="All Statuses" />
+                                     </SelectTrigger>
+                                     <SelectContent className="rounded-lg text-xs">
+                                         <SelectItem value="all">All Statuses</SelectItem>
+                                         <SelectItem value="delivered">Delivered</SelectItem>
+                                         <SelectItem value="pending">Pending / Queued</SelectItem>
+                                         <SelectItem value="retrying">Retrying</SelectItem>
+                                         <SelectItem value="failed">Failed</SelectItem>
+                                         <SelectItem value="cancelled">Cancelled</SelectItem>
+                                     </SelectContent>
+                                 </Select>
                             </div>
                         </div>
 
                         {/* Active filter pills / clear */}
                         {(debouncedSearch || endpointFilter !== "all" || eventTypeFilter !== "all" || statusFilter !== "all") && (
-                            <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs text-slate-500">
+                            <div className="flex items-center justify-between pt-1 border-t border-[#E5E9EE] text-xs text-[#5F6B7A]">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-semibold text-slate-700">Active filters:</span>
+                                    <span className="font-semibold text-[#172033]">Active filters:</span>
                                     {debouncedSearch && (
-                                        <Badge variant="outline" className="bg-slate-50 text-slate-600 text-[11px] gap-1">
+                                        <Badge variant="outline" className="bg-[#F7F9FA] text-[#5F6B7A] border-[#E5E9EE] text-[11px] gap-1">
                                             Search: {debouncedSearch}
                                         </Badge>
                                     )}
                                     {endpointFilter !== "all" && (
-                                        <Badge variant="outline" className="bg-slate-50 text-slate-600 text-[11px] gap-1">
+                                        <Badge variant="outline" className="bg-[#F7F9FA] text-[#5F6B7A] border-[#E5E9EE] text-[11px] gap-1">
                                             Endpoint ID: {endpointFilter}
                                         </Badge>
                                     )}
                                     {eventTypeFilter !== "all" && (
-                                        <Badge variant="outline" className="bg-slate-50 text-slate-600 text-[11px] gap-1">
+                                        <Badge variant="outline" className="bg-[#F7F9FA] text-[#5F6B7A] border-[#E5E9EE] text-[11px] gap-1">
                                             Event: {eventTypeFilter}
                                         </Badge>
                                     )}
                                     {statusFilter !== "all" && (
-                                        <Badge variant="outline" className="bg-slate-50 text-slate-600 text-[11px] gap-1">
+                                        <Badge variant="outline" className="bg-[#F7F9FA] text-[#5F6B7A] border-[#E5E9EE] text-[11px] gap-1">
                                             Status: {statusFilter}
                                         </Badge>
                                     )}
                                 </div>
                                 <button
                                     onClick={handleClearFilters}
-                                    className="text-xs text-[#35877D] hover:underline font-semibold cursor-pointer"
+                                    className="text-xs text-[#2F8F83] hover:underline font-semibold cursor-pointer"
                                 >
                                     Reset Filters
                                 </button>
@@ -406,13 +406,13 @@ function WebhookLogsContent() {
                 </Card>
 
                 {/* Log Table Card */}
-                <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
-                    <CardHeader className="border-b border-slate-100 py-3.5 px-6 flex flex-row items-center justify-between">
+                <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs overflow-hidden">
+                    <CardHeader className="border-b border-[#E5E9EE] py-3.5 px-6 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="text-sm font-bold text-slate-900">
+                            <CardTitle className="text-sm font-bold text-[#172033]">
                                 Delivery History
                             </CardTitle>
-                            <CardDescription className="text-xs text-slate-500">
+                            <CardDescription className="text-xs text-[#5F6B7A]">
                                 Showing {logs.length} of {totalCount} total webhook deliveries
                             </CardDescription>
                         </div>
@@ -557,9 +557,9 @@ function WebhookLogsContent() {
 
                         {/* Pagination Bar */}
                         {lastPage > 1 && (
-                            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                            <div className="p-4 border-t border-[#E5E9EE] flex items-center justify-between text-xs text-[#5F6B7A]">
                                 <div>
-                                    Page <span className="font-bold">{page}</span> of <span className="font-bold">{lastPage}</span>
+                                    Page <span className="font-bold text-[#172033]">{page}</span> of <span className="font-bold text-[#172033]">{lastPage}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button
@@ -567,7 +567,7 @@ function WebhookLogsContent() {
                                         size="sm"
                                         onClick={() => setPage((p) => Math.max(p - 1, 1))}
                                         disabled={page <= 1}
-                                        className="h-8 px-2.5 rounded-lg border-slate-200"
+                                        className="h-8 px-2.5 rounded-lg border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                     >
                                         <ChevronLeft size={14} className="mr-1" />
                                         Previous
@@ -577,7 +577,7 @@ function WebhookLogsContent() {
                                         size="sm"
                                         onClick={() => setPage((p) => Math.min(p + 1, lastPage))}
                                         disabled={page >= lastPage}
-                                        className="h-8 px-2.5 rounded-lg border-slate-200"
+                                        className="h-8 px-2.5 rounded-lg border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                     >
                                         Next
                                         <ChevronRight size={14} className="ml-1" />
@@ -591,16 +591,16 @@ function WebhookLogsContent() {
                 {/* Delivery Inspection Sheet / Drawer */}
                 <Sheet open={!!selectedLogId} onOpenChange={(open) => !open && setSelectedLogId(null)}>
                     <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col h-full bg-white">
-                        <SheetHeader className="p-5 border-b border-slate-100 bg-slate-50/50">
+                        <SheetHeader className="p-5 border-b border-[#E5E9EE] bg-[#F7F9FA]">
                             <div className="flex items-center justify-between pr-6">
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
-                                        <SheetTitle className="text-base font-bold text-slate-900 font-mono">
+                                        <SheetTitle className="text-base font-bold text-[#172033] font-mono">
                                             {logDetail?.event_type || "Webhook Delivery"}
                                         </SheetTitle>
                                         {logDetail && renderStatusBadge(logDetail.status, logDetail.http_status)}
                                     </div>
-                                    <SheetDescription className="text-xs text-slate-500 font-mono">
+                                    <SheetDescription className="text-xs text-[#5F6B7A] font-mono">
                                         Event ID: {logDetail?.event_id}
                                     </SheetDescription>
                                 </div>
@@ -616,36 +616,36 @@ function WebhookLogsContent() {
                         ) : (
                             <div className="flex-1 overflow-y-auto p-5 space-y-5">
                                 {/* Summary stats grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-[#F7F9FA] rounded-xl border border-[#E5E9EE] text-xs">
                                     <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-semibold">HTTP Status</span>
-                                        <p className="font-bold text-slate-900 mt-0.5">{logDetail.http_status || "None"}</p>
+                                        <span className="text-[10px] text-[#8A95A3] uppercase font-semibold">HTTP Status</span>
+                                        <p className="font-bold text-[#172033] mt-0.5">{logDetail.http_status || "None"}</p>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Latency</span>
-                                        <p className="font-bold text-slate-900 mt-0.5">{logDetail.duration_ms ? `${logDetail.duration_ms}ms` : "-"}</p>
+                                        <span className="text-[10px] text-[#8A95A3] uppercase font-semibold">Latency</span>
+                                        <p className="font-bold text-[#172033] mt-0.5">{logDetail.duration_ms ? `${logDetail.duration_ms}ms` : "-"}</p>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Attempts</span>
-                                        <p className="font-bold text-slate-900 mt-0.5">{logDetail.attempt_count}</p>
+                                        <span className="text-[10px] text-[#8A95A3] uppercase font-semibold">Attempts</span>
+                                        <p className="font-bold text-[#172033] mt-0.5">{logDetail.attempt_count}</p>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Destination</span>
-                                        <p className="font-bold text-slate-900 mt-0.5 truncate">{logDetail.endpoint?.name || "Endpoint"}</p>
+                                        <span className="text-[10px] text-[#8A95A3] uppercase font-semibold">Destination</span>
+                                        <p className="font-bold text-[#172033] mt-0.5 truncate">{logDetail.endpoint?.name || "Endpoint"}</p>
                                     </div>
                                 </div>
 
                                 {/* Endpoint URL */}
                                 <div className="space-y-1 text-xs">
-                                    <span className="font-semibold text-slate-700">Target Endpoint URL</span>
-                                    <div className="p-2.5 bg-slate-100/70 rounded-xl font-mono text-[11px] text-slate-800 break-all select-all">
+                                    <span className="font-semibold text-[#172033]">Target Endpoint URL</span>
+                                    <div className="p-2.5 bg-[#F1F3F5] rounded-xl font-mono text-[11px] text-[#172033] break-all select-all">
                                         {logDetail.endpoint?.url || logDetail.endpoint_url}
                                     </div>
                                 </div>
 
                                 {/* Detail Tabs: Overview, Request, Response, Attempts */}
                                 <Tabs defaultValue="request" className="w-full">
-                                    <TabsList className="grid grid-cols-3 w-full bg-slate-100 rounded-xl p-1">
+                                    <TabsList className="grid grid-cols-3 w-full bg-[#F1F3F5] rounded-xl p-1">
                                         <TabsTrigger value="request" className="rounded-lg text-xs font-semibold">
                                             Request Payload
                                         </TabsTrigger>
@@ -661,7 +661,7 @@ function WebhookLogsContent() {
                                     <TabsContent value="request" className="space-y-4 pt-3">
                                         {/* Headers */}
                                         <div className="space-y-1.5">
-                                            <span className="font-semibold text-xs text-slate-700">Request Headers</span>
+                                            <span className="font-semibold text-xs text-[#172033]">Request Headers</span>
                                             <pre className="p-3 bg-slate-900 text-slate-200 rounded-xl font-mono text-[11px] overflow-x-auto max-h-36">
                                                 {JSON.stringify(logDetail.request_headers || {}, null, 2)}
                                             </pre>
@@ -670,12 +670,12 @@ function WebhookLogsContent() {
                                         {/* Body / Payload */}
                                         <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-xs text-slate-700">JSON Payload</span>
+                                                <span className="font-semibold text-xs text-[#172033]">JSON Payload</span>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => copyToClipboard(JSON.stringify(logDetail.payload, null, 2), "payload")}
-                                                    className="h-7 px-2 text-[11px] font-semibold text-[#35877D] hover:bg-teal-50"
+                                                    className="h-7 px-2 text-[11px] font-semibold text-[#2F8F83] hover:bg-[#E8F6F3]"
                                                 >
                                                     {hasCopiedPayload ? <Check size={12} className="mr-1" /> : <Copy size={12} className="mr-1" />}
                                                     {hasCopiedPayload ? "Copied" : "Copy JSON"}
@@ -700,7 +700,7 @@ function WebhookLogsContent() {
                                         )}
 
                                         <div className="space-y-1.5">
-                                            <span className="font-semibold text-xs text-slate-700">Response Headers</span>
+                                            <span className="font-semibold text-xs text-[#172033]">Response Headers</span>
                                             <pre className="p-3 bg-slate-900 text-slate-200 rounded-xl font-mono text-[11px] overflow-x-auto max-h-36">
                                                 {JSON.stringify(logDetail.response_headers || {}, null, 2)}
                                             </pre>
@@ -708,7 +708,7 @@ function WebhookLogsContent() {
 
                                         <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-xs text-slate-700">Response Body</span>
+                                                <span className="font-semibold text-xs text-[#172033]">Response Body</span>
                                                 {logDetail.response_truncated && (
                                                     <span className="text-[10px] text-amber-600 font-semibold">(Truncated at 64KB)</span>
                                                 )}
@@ -722,7 +722,7 @@ function WebhookLogsContent() {
                                     {/* Attempts Timeline Tab */}
                                     <TabsContent value="attempts" className="space-y-3 pt-3">
                                         {!logDetail.attempts || logDetail.attempts.length === 0 ? (
-                                            <div className="p-6 text-center text-xs text-slate-400">
+                                            <div className="p-6 text-center text-xs text-[#8A95A3]">
                                                 No individual attempt breakdown recorded for this delivery.
                                             </div>
                                         ) : (
@@ -730,11 +730,11 @@ function WebhookLogsContent() {
                                                 {logDetail.attempts.map((att) => (
                                                     <div
                                                         key={att.id}
-                                                        className="p-3.5 rounded-xl border border-slate-200 bg-white text-xs space-y-2 shadow-2xs"
+                                                        className="p-3.5 rounded-xl border border-[#E5E9EE] bg-white text-xs space-y-2 shadow-2xs"
                                                     >
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-bold text-slate-800">
+                                                                <span className="font-bold text-[#172033]">
                                                                     Attempt #{att.attempt_number}
                                                                 </span>
                                                                 {att.http_status ? (
@@ -755,7 +755,7 @@ function WebhookLogsContent() {
                                                                 )}
                                                             </div>
 
-                                                            <span className="text-slate-400 text-[11px]">
+                                                            <span className="text-[#8A95A3] text-[11px]">
                                                                 {att.duration_ms ? `${att.duration_ms}ms` : "-"}
                                                             </span>
                                                         </div>
@@ -766,7 +766,7 @@ function WebhookLogsContent() {
                                                             </p>
                                                         )}
 
-                                                        <div className="text-[10px] text-slate-400">
+                                                        <div className="text-[10px] text-[#8A95A3]">
                                                             Started: {new Date(att.started_at).toLocaleString()}
                                                         </div>
                                                     </div>
@@ -778,11 +778,11 @@ function WebhookLogsContent() {
 
                                 {/* Action Buttons at bottom of sheet */}
                                 {canRetry && (logDetail.status === "failed" || logDetail.status === "retrying") && (
-                                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                                    <div className="pt-3 border-t border-[#E5E9EE] flex items-center justify-end">
                                         <Button
                                             onClick={() => handleRetry(logDetail.id)}
                                             disabled={retryMutation.isPending}
-                                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer"
+                                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer h-9 px-4"
                                         >
                                             <RotateCw size={13} className={retryMutation.isPending ? "animate-spin" : ""} />
                                             {retryMutation.isPending ? "Queuing Retry..." : "Retry Delivery Now"}

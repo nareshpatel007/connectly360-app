@@ -288,7 +288,7 @@ export default function KnowledgeBasePage() {
             featureName="AI Knowledge Base" 
             description="Train a custom AI agent on your business files and automate customer replies 24/7."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 <PageHeader
                     icon={BookOpen}
                     title="Knowledge Base"
@@ -300,14 +300,14 @@ export default function KnowledgeBasePage() {
 
                 {/* Left Side Sub-Navigation Panel */}
                 <div className="md:col-span-3 space-y-4">
-                    <Card className="border border-[#EAE6DF] bg-white shadow-sm rounded-xl overflow-hidden p-2">
+                    <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden p-2">
                         <div className="space-y-1">
                             <button
                                 onClick={() => setIsMenuExpanded(!isMenuExpanded)}
-                                className="w-full flex items-center justify-between p-2 text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                                className="w-full flex items-center justify-between p-2 text-xs font-semibold text-[#172033] hover:bg-slate-50 rounded-lg transition-colors"
                             >
-                                <span className="flex items-center gap-2 uppercase tracking-wider">
-                                    <Bot size={14} className="text-[#378179]" />
+                                <span className="flex items-center gap-2 uppercase tracking-wider text-[11px] font-semibold">
+                                    <Bot size={14} className="text-[#2F8F83]" />
                                     AI Control Room
                                 </span>
                                 {isMenuExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -318,43 +318,43 @@ export default function KnowledgeBasePage() {
                                     <button
                                         onClick={() => setActiveSubTab("articles")}
                                         className={`w-full flex items-center justify-between p-2 text-xs font-medium rounded-lg text-left transition-colors ${activeSubTab === "articles"
-                                            ? "bg-[#378179]/10 text-[#29605a] font-semibold"
-                                            : "text-slate-600 hover:bg-slate-50"
+                                            ? "bg-[#E8F6F3] text-[#2F8F83] font-semibold"
+                                            : "text-[#5F6B7A] hover:bg-slate-50 hover:text-[#172033]"
                                             }`}
                                     >
                                         <span className="flex items-center gap-2">
                                             <BookOpen size={13} />
                                             Q&A Articles
                                         </span>
-                                        {activeSubTab === "articles" && <span className="h-1.5 w-1.5 rounded-full bg-[#378179]" />}
+                                        {activeSubTab === "articles" && <span className="h-1.5 w-1.5 rounded-full bg-[#2F8F83]" />}
                                     </button>
 
                                     <button
                                         onClick={() => setActiveSubTab("settings")}
                                         className={`w-full flex items-center justify-between p-2 text-xs font-medium rounded-lg text-left transition-colors ${activeSubTab === "settings"
-                                            ? "bg-[#378179]/10 text-[#29605a] font-semibold"
-                                            : "text-slate-600 hover:bg-slate-50"
+                                            ? "bg-[#E8F6F3] text-[#2F8F83] font-semibold"
+                                            : "text-[#5F6B7A] hover:bg-slate-50 hover:text-[#172033]"
                                             }`}
                                     >
                                         <span className="flex items-center gap-2">
                                             <Bot size={13} />
                                             AI Settings
                                         </span>
-                                        {activeSubTab === "settings" && <span className="h-1.5 w-1.5 rounded-full bg-[#378179]" />}
+                                        {activeSubTab === "settings" && <span className="h-1.5 w-1.5 rounded-full bg-[#2F8F83]" />}
                                     </button>
 
                                     <button
                                         onClick={() => setActiveSubTab("sandbox")}
                                         className={`w-full flex items-center justify-between p-2 text-xs font-medium rounded-lg text-left transition-colors ${activeSubTab === "sandbox"
-                                            ? "bg-[#378179]/10 text-[#29605a] font-semibold"
-                                            : "text-slate-600 hover:bg-slate-50"
+                                            ? "bg-[#E8F6F3] text-[#2F8F83] font-semibold"
+                                            : "text-[#5F6B7A] hover:bg-slate-50 hover:text-[#172033]"
                                             }`}
                                     >
                                         <span className="flex items-center gap-2">
                                             <MessageSquare size={13} />
                                             Testing Sandbox
                                         </span>
-                                        {activeSubTab === "sandbox" && <span className="h-1.5 w-1.5 rounded-full bg-[#378179]" />}
+                                        {activeSubTab === "sandbox" && <span className="h-1.5 w-1.5 rounded-full bg-[#2F8F83]" />}
                                     </button>
                                 </div>
                             )}
@@ -362,14 +362,14 @@ export default function KnowledgeBasePage() {
                     </Card>
 
                     {/* Quick Helper Banner */}
-                    <div className="border border-slate-100 border-l-4 border-l-[#378179] bg-slate-50/50 p-4 rounded-r-xl rounded-l-md shadow-sm">
+                    <div className="border border-[#E5E9EE] border-l-4 border-l-[#2F8F83] bg-slate-50/70 p-4 rounded-r-xl rounded-l-md shadow-2xs">
                         <div className="flex gap-2.5">
-                            <div className="h-6 w-6 rounded-full bg-[#378179]/10 flex items-center justify-center shrink-0">
-                                <AlertCircle size={13} className="text-[#378179]" />
+                            <div className="h-6 w-6 rounded-full bg-[#E8F6F3] flex items-center justify-center shrink-0">
+                                <AlertCircle size={13} className="text-[#2F8F83]" />
                             </div>
                             <div className="space-y-1">
-                                <h4 className="text-xs font-semibold text-slate-800">How it works?</h4>
-                                <p className="text-xs text-slate-600 leading-relaxed">
+                                <h4 className="text-xs font-semibold text-[#172033]">How it works?</h4>
+                                <p className="text-xs text-[#5F6B7A] leading-relaxed">
                                     When customers ask questions on WhatsApp, the AI reviews active Q&As and answers based on the prompt instructions.
                                 </p>
                             </div>
@@ -382,11 +382,11 @@ export default function KnowledgeBasePage() {
 
                     {/* Tab 1: Q&A Articles list */}
                     {activeSubTab === "articles" && (
-                        <Card className="border border-[#EAE6DF] bg-white shadow-sm rounded-xl overflow-hidden">
-                            <CardHeader className="border-b border-[#FAF8F5] pb-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                        <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4 flex flex-row flex-wrap items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <CardTitle className="text-xl font-bold text-slate-800">Q&A Knowledge Base</CardTitle>
-                                    <CardDescription className="text-slate-600 text-xs">
+                                    <CardTitle className="text-base font-semibold text-[#172033]">Q&A Knowledge Base</CardTitle>
+                                    <CardDescription className="text-[#5F6B7A] text-xs">
                                         Manage facts, answers, and business information the AI should refer to.
                                     </CardDescription>
                                 </div>
@@ -396,14 +396,14 @@ export default function KnowledgeBasePage() {
                                         <Input
                                             type="search"
                                             placeholder="Search Q&As..."
-                                            className="pl-9 h-9 text-xs text-slate-600"
+                                            className="pl-9 h-9 text-xs text-[#172033] border-[#E5E9EE] focus-visible:ring-[#2F8F83]"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                         />
                                     </div>
                                     <Button
                                         onClick={openCreateDialog}
-                                        className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-medium"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-medium transition-colors"
                                     >
                                         <Plus size={14} />
                                         Add Q&A
@@ -414,11 +414,11 @@ export default function KnowledgeBasePage() {
                             <CardContent className="p-0">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                                            <TableHead className="w-[30%] font-semibold text-slate-700 text-xs pl-6">Question</TableHead>
-                                            <TableHead className="w-[50%] font-semibold text-slate-700 text-xs">Answer</TableHead>
-                                            <TableHead className="w-[10%] font-semibold text-slate-700 text-xs">Status</TableHead>
-                                            <TableHead className="w-[10%] font-semibold text-slate-700 text-xs text-right pr-6">Actions</TableHead>
+                                        <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 border-b border-[#E5E9EE]">
+                                            <TableHead className="w-[30%] font-semibold text-[#172033] text-xs pl-6">Question</TableHead>
+                                            <TableHead className="w-[50%] font-semibold text-[#172033] text-xs">Answer</TableHead>
+                                            <TableHead className="w-[10%] font-semibold text-[#172033] text-xs">Status</TableHead>
+                                            <TableHead className="w-[10%] font-semibold text-[#172033] text-xs text-right pr-6">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -433,24 +433,24 @@ export default function KnowledgeBasePage() {
                                             ))
                                         ) : filteredItems?.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="h-32 text-center text-slate-600 text-xs pl-6 pr-6">
+                                                <TableCell colSpan={4} className="h-32 text-center text-[#5F6B7A] text-xs pl-6 pr-6">
                                                     No knowledge base articles found. Click "Add Q&A" to get started.
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
                                             filteredItems?.map((item) => (
-                                                <TableRow key={item.id} className="hover:bg-slate-50/40 text-slate-600">
-                                                    <TableCell className="align-top font-medium text-slate-800 text-xs py-3 pl-6">
+                                                <TableRow key={item.id} className="hover:bg-slate-50/40 text-slate-600 border-b border-[#E5E9EE]">
+                                                    <TableCell className="align-top font-medium text-[#172033] text-xs py-3 pl-6">
                                                         {item.question}
                                                     </TableCell>
-                                                    <TableCell className="align-top text-xs py-3 whitespace-pre-line leading-relaxed text-slate-600">
+                                                    <TableCell className="align-top text-xs py-3 whitespace-pre-line leading-relaxed text-[#5F6B7A]">
                                                         {item.answer}
                                                     </TableCell>
                                                     <TableCell className="align-top py-3">
                                                         <Switch
                                                             checked={!!item.status}
                                                             onCheckedChange={() => handleToggleStatus(item)}
-                                                            className="scale-75 origin-left data-[state=checked]:bg-[#378179]"
+                                                            className="scale-75 origin-left data-[state=checked]:bg-[#2F8F83]"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="align-top py-3 text-right pr-6">
@@ -459,7 +459,7 @@ export default function KnowledgeBasePage() {
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 onClick={() => openEditDialog(item)}
-                                                                className="h-8 w-8 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
+                                                                className="h-8 w-8 text-[#5F6B7A] hover:text-[#172033] hover:bg-slate-100 rounded-lg"
                                                             >
                                                                 <Edit2 size={13} />
                                                             </Button>
@@ -484,10 +484,10 @@ export default function KnowledgeBasePage() {
 
                     {/* Tab 2: AI Settings configurations */}
                     {activeSubTab === "settings" && (
-                        <Card className="border border-[#EAE6DF] bg-white shadow-sm rounded-xl">
-                            <CardHeader className="border-b border-[#FAF8F5]">
-                                <CardTitle className="text-xl font-bold text-slate-800">AI Reply Rule Settings</CardTitle>
-                                <CardDescription className="text-slate-600 text-xs">
+                        <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl">
+                            <CardHeader className="border-b border-[#E5E9EE]">
+                                <CardTitle className="text-base font-semibold text-[#172033]">AI Reply Rule Settings</CardTitle>
+                                <CardDescription className="text-[#5F6B7A] text-xs">
                                     Toggle automation rules and customize system behaviors.
                                 </CardDescription>
                             </CardHeader>
@@ -502,12 +502,12 @@ export default function KnowledgeBasePage() {
                                     <form onSubmit={handleSaveSettings} className="space-y-6">
 
                                         {/* Toggle Auto Reply */}
-                                        <div className="flex items-start justify-between p-4 bg-[#378179]/5 border border-[#378179]/10 rounded-xl">
+                                        <div className="flex items-start justify-between p-4 bg-[#E8F6F3]/50 border border-[#BFE4DD] rounded-xl">
                                             <div className="space-y-1 pr-4">
-                                                <Label htmlFor="aiAutoReply" className="text-xs font-semibold text-slate-800">
+                                                <Label htmlFor="aiAutoReply" className="text-xs font-semibold text-[#172033]">
                                                     AI Auto-reply Mode
                                                 </Label>
-                                                <p className="text-xs text-slate-600 leading-normal">
+                                                <p className="text-xs text-[#5F6B7A] leading-normal">
                                                     If enabled, questions that do not trigger keyword rules will be automatically answered by the AI using details from your Q&A Knowledge Base.
                                                 </p>
                                             </div>
@@ -515,26 +515,26 @@ export default function KnowledgeBasePage() {
                                                 id="aiAutoReply"
                                                 checked={aiAutoReply}
                                                 onCheckedChange={setAiAutoReply}
-                                                className="data-[state=checked]:bg-[#378179]"
+                                                className="data-[state=checked]:bg-[#2F8F83]"
                                             />
                                         </div>
 
                                         {/* System Prompt Instructions */}
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
-                                                <Label htmlFor="aiSystemPrompt" className="text-xs font-semibold text-slate-800">
+                                                <Label htmlFor="aiSystemPrompt" className="text-xs font-semibold text-[#172033]">
                                                     AI System Prompt
                                                 </Label>
-                                                <span className="text-xs text-slate-600 font-medium">Optional</span>
+                                                <span className="text-xs text-[#5F6B7A] font-medium">Optional</span>
                                             </div>
                                             <Textarea
                                                 id="aiSystemPrompt"
                                                 value={aiSystemPrompt}
                                                 onChange={(e) => setAiSystemPrompt(e.target.value)}
                                                 placeholder="e.g. You are a helpful support agent for Travel Company. Be polite, direct, and keep responses short. Do not answer questions that require access to personal accounts."
-                                                className="min-h-[120px] text-xs text-slate-600 leading-relaxed resize-y"
+                                                className="min-h-[120px] text-xs text-[#172033] border-[#E5E9EE] leading-relaxed resize-y focus-visible:ring-[#2F8F83]"
                                             />
-                                            <p className="text-xs text-slate-600 leading-relaxed">
+                                            <p className="text-xs text-[#5F6B7A] leading-relaxed">
                                                 Instruct the AI on how to behave, what tone to write in, and any boundary restrictions. If left empty, a standard professional customer service assistant prompt is automatically set.
                                             </p>
                                         </div>
@@ -543,7 +543,7 @@ export default function KnowledgeBasePage() {
                                         <div className="pt-2 flex justify-start">
                                             <Button
                                                 type="submit"
-                                                className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs px-5 h-9 rounded-xl font-medium"
+                                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs px-5 h-9 rounded-xl font-medium transition-colors"
                                                 disabled={updateSettingsMutation.isPending}
                                             >
                                                 {updateSettingsMutation.isPending ? (
@@ -568,42 +568,42 @@ export default function KnowledgeBasePage() {
 
                             {/* Input Settings Side-panel */}
                             <div className="lg:col-span-5 space-y-4">
-                                <Card className="border border-[#EAE6DF] bg-white shadow-sm rounded-xl p-5 h-full flex flex-col justify-between">
+                                <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl p-5 h-full flex flex-col justify-between">
                                     <div className="space-y-4">
                                         <div className="space-y-1">
-                                            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                                                <Sparkles size={14} className="text-[#378179]" />
+                                            <h3 className="text-sm font-semibold text-[#172033] flex items-center gap-1.5">
+                                                <Sparkles size={14} className="text-[#2F8F83]" />
                                                 Simulator Playground
                                             </h3>
-                                            <p className="text-xs text-slate-600 leading-relaxed">
+                                            <p className="text-xs text-[#5F6B7A] leading-relaxed">
                                                 Test how the AI replies dynamically based on your current knowledge articles. This sandbox uses your active configurations.
                                             </p>
                                         </div>
 
-                                        <div className="space-y-1.5 border-t border-slate-100 pt-3">
-                                            <Label className="text-xs font-semibold text-slate-700">Prompt Mode In-Use</Label>
-                                            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs text-slate-600 italic leading-relaxed max-h-[140px] overflow-y-auto">
+                                        <div className="space-y-1.5 border-t border-[#E5E9EE] pt-3">
+                                            <Label className="text-xs font-semibold text-[#172033]">Prompt Mode In-Use</Label>
+                                            <div className="bg-slate-50 p-2.5 rounded-lg border border-[#E5E9EE] text-xs text-[#5F6B7A] italic leading-relaxed max-h-[140px] overflow-y-auto">
                                                 {aiSystemPrompt.trim()
                                                     ? aiSystemPrompt.trim()
                                                     : "Default Persona: You are a helpful customer support AI assistant. Keep responses short and professional."}
                                             </div>
                                         </div>
 
-                                        <div className="space-y-1 border-t border-slate-100 pt-3">
-                                            <div className="text-xs font-semibold text-slate-700">Active Facts Count</div>
-                                            <div className="text-xs font-medium text-slate-600">
+                                        <div className="space-y-1 border-t border-[#E5E9EE] pt-3">
+                                            <div className="text-xs font-semibold text-[#172033]">Active Facts Count</div>
+                                            <div className="text-xs font-medium text-[#5F6B7A]">
                                                 {kbItems ? kbItems.filter(i => i.status).length : 0} Q&A items will be fed as search context to OpenAI.
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-slate-100">
+                                    <div className="pt-4 border-t border-[#E5E9EE]">
                                         <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
                                             onClick={handleClearSandbox}
-                                            className="w-full text-xs text-slate-600 flex items-center justify-center gap-1 rounded-xl h-9 hover:bg-slate-50"
+                                            className="w-full text-xs text-[#5F6B7A] border-[#E5E9EE] flex items-center justify-center gap-1 rounded-xl h-9 hover:bg-slate-50 hover:text-[#172033]"
                                         >
                                             <RefreshCw size={12} />
                                             Clear Sandbox Chat
@@ -614,10 +614,10 @@ export default function KnowledgeBasePage() {
 
                             {/* Chat smartphone mockup */}
                             <div className="lg:col-span-7">
-                                <div className="border border-[#EAE6DF] bg-slate-100 shadow-sm rounded-3xl overflow-hidden flex flex-col h-[480px] max-w-[420px] mx-auto relative">
+                                <div className="border border-[#E5E9EE] bg-slate-100 shadow-2xs rounded-3xl overflow-hidden flex flex-col h-[480px] max-w-[420px] mx-auto relative">
 
                                     {/* Mock Smartphone Header */}
-                                    <div className="bg-[#378179] text-white px-4 py-3 shrink-0 flex items-center gap-3 shadow-md relative z-10">
+                                    <div className="bg-[#2F8F83] text-white px-4 py-3 shrink-0 flex items-center gap-3 shadow-md relative z-10">
                                         <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                                             <Bot size={18} className="text-white" />
                                         </div>
@@ -644,7 +644,7 @@ export default function KnowledgeBasePage() {
                                                             }`}
                                                     >
                                                         {msg.text}
-                                                        <div className="text-[8.5px] text-slate-600 text-right mt-1">
+                                                        <div className="text-[8.5px] text-slate-500 text-right mt-1">
                                                             {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </div>
                                                     </div>
@@ -655,7 +655,7 @@ export default function KnowledgeBasePage() {
                                             {simulateAiReplyMutation.isPending && (
                                                 <div className="flex justify-start">
                                                     <div className="bg-white border border-slate-200 text-slate-600 rounded-2xl rounded-tl-none px-3 py-2.5 text-xs shadow-sm flex items-center gap-2">
-                                                        <Loader2 className="h-3 w-3 animate-spin text-[#378179]" />
+                                                        <Loader2 className="h-3 w-3 animate-spin text-[#2F8F83]" />
                                                         <span>AI is writing reply...</span>
                                                     </div>
                                                 </div>
@@ -664,7 +664,7 @@ export default function KnowledgeBasePage() {
                                     </div>
 
                                     {/* Mock Smartphone Input Box */}
-                                    <form onSubmit={handleSendSandboxMessage} className="bg-[#f0f0f0] p-2 shrink-0 border-t border-slate-200 flex gap-1.5 items-center relative z-10">
+                                    <form onSubmit={handleSendSandboxMessage} className="bg-[#f0f0f0] p-2 shrink-0 border-t border-[#E5E9EE] flex gap-1.5 items-center relative z-10">
                                         <Input
                                             type="text"
                                             placeholder="Type message to test AI..."
@@ -676,7 +676,7 @@ export default function KnowledgeBasePage() {
                                         <Button
                                             type="submit"
                                             size="icon"
-                                            className="h-9 w-9 rounded-full bg-[#378179] hover:bg-[#2c6761] text-white border-0"
+                                            className="h-9 w-9 rounded-full bg-[#2F8F83] hover:bg-[#267A70] text-white border-0 transition-colors"
                                             disabled={!sandboxInput.trim() || simulateAiReplyMutation.isPending}
                                         >
                                             <Send size={14} />
@@ -693,14 +693,14 @@ export default function KnowledgeBasePage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold text-slate-800">Add Q&A Entry</DialogTitle>
-                        <DialogDescription className="text-slate-600 text-xs">
+                        <DialogTitle className="text-base font-semibold text-[#172033]">Add Q&A Entry</DialogTitle>
+                        <DialogDescription className="text-[#5F6B7A] text-xs">
                             Define facts or business answers that the AI should query when talking to customers.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleCreateKb} className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="createQuestion" className="text-xs font-semibold text-slate-700">
+                            <Label htmlFor="createQuestion" className="text-xs font-semibold text-[#172033]">
                                 Question / Topic Keyword <span className="text-red-500">*</span>
                             </Label>
                             <Input
@@ -708,12 +708,12 @@ export default function KnowledgeBasePage() {
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 placeholder="e.g. What are your opening hours?"
-                                className="text-xs text-slate-700"
+                                className="text-xs text-[#172033] border-[#E5E9EE]"
                                 required
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="createAnswer" className="text-xs font-semibold text-slate-700">
+                            <Label htmlFor="createAnswer" className="text-xs font-semibold text-[#172033]">
                                 Correct Business Answer <span className="text-red-500">*</span>
                             </Label>
                             <Textarea
@@ -721,20 +721,20 @@ export default function KnowledgeBasePage() {
                                 value={answer}
                                 onChange={(e) => setAnswer(e.target.value)}
                                 placeholder="e.g. We are open Monday to Friday from 9:00 AM to 6:00 PM IST. We are closed on weekends."
-                                className="min-h-[100px] text-xs text-slate-700 leading-relaxed"
+                                className="min-h-[100px] text-xs text-[#172033] border-[#E5E9EE] leading-relaxed"
                                 required
                             />
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 border border-[#E5E9EE] rounded-xl">
                             <div className="space-y-0.5">
-                                <Label htmlFor="createStatus" className="text-xs font-bold text-slate-700">Entry Active</Label>
-                                <p className="text-xs text-slate-600">Disable to temporarily hide this fact from the AI.</p>
+                                <Label htmlFor="createStatus" className="text-xs font-semibold text-[#172033]">Entry Active</Label>
+                                <p className="text-xs text-[#5F6B7A]">Disable to temporarily hide this fact from the AI.</p>
                             </div>
                             <Switch
                                 id="createStatus"
                                 checked={status}
                                 onCheckedChange={setStatus}
-                                className="data-[state=checked]:bg-[#378179]"
+                                className="data-[state=checked]:bg-[#2F8F83]"
                             />
                         </div>
                         <DialogFooter className="pt-2">
@@ -743,13 +743,13 @@ export default function KnowledgeBasePage() {
                                 variant="outline"
                                 onClick={() => setIsCreateOpen(false)}
                                 disabled={createKbMutation.isPending}
-                                className="text-xs rounded-lg"
+                                className="text-xs rounded-lg border-[#E5E9EE] text-[#5F6B7A]"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs rounded-lg font-semibold"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-lg font-medium transition-colors"
                                 disabled={createKbMutation.isPending}
                             >
                                 {createKbMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Entry"}
@@ -763,14 +763,14 @@ export default function KnowledgeBasePage() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold text-slate-800">Edit Q&A Entry</DialogTitle>
-                        <DialogDescription className="text-slate-600 text-xs">
+                        <DialogTitle className="text-base font-semibold text-[#172033]">Edit Q&A Entry</DialogTitle>
+                        <DialogDescription className="text-[#5F6B7A] text-xs">
                             Update custom details and save changes instantly.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleUpdateKb} className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="editQuestion" className="text-xs font-semibold text-slate-700">
+                            <Label htmlFor="editQuestion" className="text-xs font-semibold text-[#172033]">
                                 Question / Topic Keyword <span className="text-red-500">*</span>
                             </Label>
                             <Input
@@ -778,12 +778,12 @@ export default function KnowledgeBasePage() {
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 placeholder="e.g. What are your opening hours?"
-                                className="text-xs text-slate-700"
+                                className="text-xs text-[#172033] border-[#E5E9EE]"
                                 required
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="editAnswer" className="text-xs font-semibold text-slate-700">
+                            <Label htmlFor="editAnswer" className="text-xs font-semibold text-[#172033]">
                                 Correct Business Answer <span className="text-red-500">*</span>
                             </Label>
                             <Textarea
@@ -791,20 +791,20 @@ export default function KnowledgeBasePage() {
                                 value={answer}
                                 onChange={(e) => setAnswer(e.target.value)}
                                 placeholder="e.g. We are open Monday to Friday from 9:00 AM to 6:00 PM IST."
-                                className="min-h-[100px] text-xs text-slate-700 leading-relaxed"
+                                className="min-h-[100px] text-xs text-[#172033] border-[#E5E9EE] leading-relaxed"
                                 required
                             />
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="flex items-center justify-between p-3 bg-slate-50 border border-[#E5E9EE] rounded-xl">
                             <div className="space-y-0.5">
-                                <Label htmlFor="editStatus" className="text-xs font-bold text-slate-700">Entry Active</Label>
-                                <p className="text-xs text-slate-600">Disable to temporarily hide this fact from the AI.</p>
+                                <Label htmlFor="editStatus" className="text-xs font-semibold text-[#172033]">Entry Active</Label>
+                                <p className="text-xs text-[#5F6B7A]">Disable to temporarily hide this fact from the AI.</p>
                             </div>
                             <Switch
                                 id="editStatus"
                                 checked={status}
                                 onCheckedChange={setStatus}
-                                className="data-[state=checked]:bg-[#378179]"
+                                className="data-[state=checked]:bg-[#2F8F83]"
                             />
                         </div>
                         <DialogFooter className="pt-2">
@@ -816,13 +816,13 @@ export default function KnowledgeBasePage() {
                                     setSelectedItem(null);
                                 }}
                                 disabled={updateKbMutation.isPending}
-                                className="text-xs rounded-lg"
+                                className="text-xs rounded-lg border-[#E5E9EE] text-[#5F6B7A]"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs rounded-lg font-semibold"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-lg font-medium transition-colors"
                                 disabled={updateKbMutation.isPending}
                             >
                                 {updateKbMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}

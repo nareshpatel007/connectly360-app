@@ -278,7 +278,7 @@ export default function WhatsAppBusinessProfilePage() {
   // Loading State
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      <div className="space-y-6 w-full pb-16">
         <PageHeader
           title="WhatsApp Business Profile"
           description="Configure your official WhatsApp Business information, category, About message, and contact channels."
@@ -296,7 +296,7 @@ export default function WhatsAppBusinessProfilePage() {
   // Error State
   if (isError) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      <div className="space-y-6 w-full pb-16">
         <PageHeader
           title="WhatsApp Business Profile"
           description="Configure your official WhatsApp Business information, category, About message, and contact channels."
@@ -318,7 +318,7 @@ export default function WhatsAppBusinessProfilePage() {
           <div className="flex items-center justify-center gap-3">
             <Button
               onClick={() => refetch()}
-              className="bg-[#35877D] hover:bg-[#2c6e66] text-white rounded-xl shadow-xs"
+              className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl shadow-xs"
             >
               <RefreshCw size={16} className="mr-2" />
               Try Again
@@ -343,7 +343,7 @@ export default function WhatsAppBusinessProfilePage() {
   const isDisconnected = profile?.status === "disconnected" || !profile?.phone_number;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
+    <div className="space-y-6 w-full pb-16 font-sans">
       <PageHeader
         title="WhatsApp Business Profile"
         description="Manage the profile information, company description, category, and contact details shown to customers on WhatsApp."
@@ -363,49 +363,21 @@ export default function WhatsAppBusinessProfilePage() {
             >
               <RefreshCw
                 size={14}
-                className={`mr-2 ${syncMutation.isPending ? "animate-spin text-[#35877D]" : ""}`}
+                className={`mr-2 ${syncMutation.isPending ? "animate-spin text-[#2F8F83]" : ""}`}
               />
               Sync from WhatsApp
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="rounded-xl border-slate-200/80 text-slate-700 hover:text-slate-900 hover:bg-slate-100/70 shadow-2xs"
-            >
-              <Link href="/integrations/whatsapp">
-                Connection Setup
-                <ArrowRight size={14} className="ml-1.5" />
-              </Link>
             </Button>
           </div>
         }
       />
 
-      {/* Navigation Switcher Tab Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 mb-6">
-        <Link
-          href="/integrations/whatsapp"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          <MessageCircle size={16} />
-          Connection & Phone Setup
-        </Link>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#35877D]/10 text-[#35877D] border border-[#35877D]/20 shadow-2xs">
-          <Building2 size={16} />
-          Business Profile
-          <span className="h-2 w-2 rounded-full bg-[#35877D]" />
-        </div>
-      </div>
-
       {/* WhatsApp Account Switcher & Connection Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${
-            isConnected ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
+          <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isConnected ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
             isNeedsAttention ? "bg-amber-50 text-amber-600 border border-amber-200" :
-            "bg-slate-100 text-slate-500 border border-slate-200"
-          }`}>
+              "bg-slate-100 text-slate-500 border border-slate-200"
+            }`}>
             <Phone size={20} />
           </div>
 
@@ -735,11 +707,10 @@ export default function WhatsAppBusinessProfilePage() {
                         About Status Text
                       </Label>
                       <span
-                        className={`text-[11px] font-mono ${
-                          about.length > 130
-                            ? "text-rose-600 font-bold"
-                            : "text-slate-400 font-medium"
-                        }`}
+                        className={`text-[11px] font-mono ${about.length > 130
+                          ? "text-rose-600 font-bold"
+                          : "text-slate-400 font-medium"
+                          }`}
                       >
                         {about.length} / 139
                       </span>
@@ -764,11 +735,10 @@ export default function WhatsAppBusinessProfilePage() {
                         Business Description
                       </Label>
                       <span
-                        className={`text-[11px] font-mono ${
-                          description.length > 245
-                            ? "text-rose-600 font-bold"
-                            : "text-slate-400 font-medium"
-                        }`}
+                        className={`text-[11px] font-mono ${description.length > 245
+                          ? "text-rose-600 font-bold"
+                          : "text-slate-400 font-medium"
+                          }`}
                       >
                         {description.length} / 256
                       </span>
@@ -964,11 +934,10 @@ export default function WhatsAppBusinessProfilePage() {
                   <Button
                     type="submit"
                     disabled={updateMutation.isPending || isSavedSuccess}
-                    className={`rounded-xl px-6 py-2.5 font-bold text-xs shadow-md transition-all cursor-pointer ${
-                      isSavedSuccess
-                        ? "bg-emerald-600 text-white shadow-emerald-500/20"
-                        : "bg-[#35877D] hover:bg-[#2b6e66] text-white shadow-[#35877D]/25"
-                    }`}
+                    className={`rounded-xl px-6 py-2.5 font-bold text-xs shadow-md transition-all cursor-pointer ${isSavedSuccess
+                      ? "bg-emerald-600 text-white shadow-emerald-500/20"
+                      : "bg-[#35877D] hover:bg-[#2b6e66] text-white shadow-[#35877D]/25"
+                      }`}
                   >
                     {updateMutation.isPending ? (
                       <>

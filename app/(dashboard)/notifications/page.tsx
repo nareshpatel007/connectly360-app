@@ -138,15 +138,15 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-6xl">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={Bell}
                 title="Notifications"
                 description="View and manage all real-time alerts and workspace activity in one centralized feed."
             />
 
-            <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                <CardHeader className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-[#E5E9EE] pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <CardTitle className="text-base font-bold text-slate-800">
                             Workspace Alerts & Feed
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
                 <CardContent className="p-0">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-3">
-                            <Loader2 className="animate-spin text-[#378179]" size={32} />
+                            <Loader2 className="animate-spin text-[#2F8F83]" size={32} />
                             <p className="text-sm font-medium text-slate-500">Loading alerts...</p>
                         </div>
                     ) : filteredNotifications.length === 0 ? (
@@ -284,7 +284,7 @@ export default function NotificationsPage() {
                                                         {n.message}
                                                     </p>
                                                     {n.action_url && (
-                                                        <span className="text-[10px] font-semibold text-[#35877D] inline-flex items-center gap-0.5 pt-0.5 hover:underline">
+                                                        <span className="text-[10px] font-semibold text-[#2F8F83] inline-flex items-center gap-0.5 pt-0.5 hover:underline">
                                                             View entity <ExternalLink size={10} />
                                                         </span>
                                                     )}
@@ -334,7 +334,7 @@ export default function NotificationsPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => markReadMutation.mutate(n.id)}
-                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#35877D] hover:bg-teal-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#2F8F83] hover:bg-teal-50 transition-colors"
                                                         title="Mark as read"
                                                     >
                                                         <Check size={14} />

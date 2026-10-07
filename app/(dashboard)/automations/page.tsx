@@ -173,7 +173,7 @@ export default function AutomationsPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Page Header */}
             <PageHeader
                 icon={Zap}
@@ -188,14 +188,14 @@ export default function AutomationsPage() {
                     <div className="flex items-center gap-2.5">
                         <Link
                             href="/automations/auto-replies"
-                            className="border border-[#35877D]/30 bg-[#35877D]/5 hover:bg-[#35877D]/10 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
+                            className="border border-[#BFE4DD] bg-[#E8F6F3] hover:bg-[#E8F6F3]/80 text-[#2F8F83] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
                         >
                             <MessageSquare size={13} />
                             <span>Auto-Reply Rules</span>
                         </Link>
                         <Button
                             onClick={openCreateDialog}
-                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer h-9 px-4 text-xs font-semibold"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl shadow-2xs flex items-center gap-2 cursor-pointer h-9 px-4 text-xs font-semibold"
                         >
                             <Plus className="h-4 w-4" />
                             Create Rule
@@ -205,9 +205,9 @@ export default function AutomationsPage() {
             />
 
             {/* Quick Navigation Banner for WhatsApp Auto-Replies */}
-            <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/40 to-white border border-teal-200/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/40 to-white border border-[#BFE4DD] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex items-center gap-3.5">
-                    <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="h-10 w-10 rounded-xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center shrink-0 shadow-2xs border border-[#BFE4DD]">
                         <MessageSquare size={19} />
                     </div>
                     <div>
@@ -217,7 +217,7 @@ export default function AutomationsPage() {
                 </div>
                 <Link
                     href="/automations/auto-replies"
-                    className="px-3.5 py-1.5 bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors shadow-2xs w-fit"
+                    className="px-3.5 py-1.5 bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors shadow-2xs w-fit"
                 >
                     <span>Manage Auto-Replies</span>
                     <ArrowRight size={13} />
@@ -327,19 +327,19 @@ export default function AutomationsPage() {
                                         <TableRow key={rule.id} className="hover:bg-muted/50 transition-colors border-border">
                                             <TableCell className="py-3.5 pl-6">
                                                 <div className="font-semibold text-foreground text-xs">{rule.name || "WhatsApp Rule"}</div>
-                                                <span className="text-[9.5px] bg-[#35877D]/10 text-[#35877D] border border-[#35877D]/20 px-1.5 py-0.5 rounded-md italic mt-1 inline-block">
+                                                <span className="text-[9.5px] bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD] px-1.5 py-0.5 rounded-md italic mt-1 inline-block">
                                                     Keyword: {rule.keyword}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground text-xs py-3.5">
                                                 <span className="flex items-center gap-1.5">
-                                                    <Play size={11} className="text-[#35877D] fill-[#35877D]/10 shrink-0" />
+                                                    <Play size={11} className="text-[#2F8F83] fill-[#E8F6F3] shrink-0" />
                                                     {rule.trigger_type || "New WhatsApp message is received"}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground text-xs py-3.5">
                                                 <span className="flex items-center gap-1.5">
-                                                    <span className="h-2 w-2 rounded-full bg-[#35877D] shrink-0" />
+                                                    <span className="h-2 w-2 rounded-full bg-[#2F8F83] shrink-0" />
                                                     {rule.action_type || "Send message"}
                                                 </span>
                                             </TableCell>
@@ -347,7 +347,7 @@ export default function AutomationsPage() {
                                                 <Switch
                                                     checked={!!rule.status}
                                                     onCheckedChange={() => handleToggleStatus(rule)}
-                                                    className="scale-75 origin-left data-[state=checked]:bg-[#35877D]"
+                                                    className="scale-75 origin-left data-[state=checked]:bg-[#2F8F83]"
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right font-mono font-semibold text-foreground text-xs py-3.5">

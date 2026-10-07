@@ -57,13 +57,13 @@ function StatCard({
 }) {
     const pct = total > 0 ? Math.round((value / total) * 100) : 0;
     return (
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-[#E5E9EE] bg-white shadow-2xs p-4">
             <div className="flex items-center justify-between">
                 <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>{icon}</div>
-                <span className="text-xs text-muted-foreground">{pct}%</span>
+                <span className="text-xs text-[#5F6B7A]">{pct}%</span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-foreground">{value.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-3 text-2xl font-bold text-[#172033]">{value.toLocaleString()}</p>
+            <p className="text-xs text-[#5F6B7A]">{label}</p>
         </div>
     );
 }
@@ -71,16 +71,16 @@ function StatCard({
 function FunnelChart({ steps }: { steps: { label: string; value: number; color: string }[] }) {
     const max = Math.max(...steps.map((s) => s.value), 1);
     return (
-        <div className="rounded-xl border border-border bg-card p-4">
-            <h3 className="mb-4 text-sm font-medium text-foreground">Engagement Funnel</h3>
+        <div className="rounded-xl border border-[#E5E9EE] bg-white shadow-2xs p-5">
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#172033]">Engagement Funnel</h3>
             <div className="space-y-2">
                 {steps.map((step) => {
                     const pctOfMax = Math.max(5, Math.round((step.value / max) * 100));
                     const pctOfFirst = steps[0].value > 0 ? Math.round((step.value / steps[0].value) * 100) : 0;
                     return (
                         <div key={step.label} className="flex items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs text-muted-foreground">{step.label}</span>
-                            <div className="relative h-7 flex-1 rounded-full bg-muted">
+                            <span className="w-20 shrink-0 text-xs font-medium text-[#5F6B7A]">{step.label}</span>
+                            <div className="relative h-7 flex-1 rounded-full bg-slate-100 overflow-hidden">
                                 <div
                                     className={`h-7 rounded-full ${step.color} transition-[width] duration-500`}
                                     style={{ width: `${pctOfMax}%` }}
@@ -207,7 +207,7 @@ export default function CampaignDetailPage() {
     const statusInfo = CAMPAIGN_STATUS[campaign.status];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Page Header */}
             <PageHeader
                 icon={Megaphone}
@@ -224,7 +224,7 @@ export default function CampaignDetailPage() {
                         {/* Send button — only for draft/failed */}
                         {(campaign.status === "draft" || campaign.status === "failed") && (
                             <Button
-                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs cursor-pointer"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg shadow-xs h-9 px-4 text-xs font-semibold cursor-pointer transition-colors"
                                 disabled={sending}
                                 onClick={handleSend}
                             >
@@ -234,12 +234,12 @@ export default function CampaignDetailPage() {
                         )}
                         {/* Delete */}
                         {confirmDelete ? (
-                            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-1 text-sm">
+                            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-sm">
                                 <span className="text-red-700 text-xs font-semibold">Delete campaign?</span>
-                                <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                                <Button variant="outline" size="sm" className="h-7 text-xs rounded-md" onClick={() => setConfirmDelete(false)}>Cancel</Button>
                                 <Button
                                     size="sm"
-                                    className="h-7 text-xs bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                                    className="h-7 text-xs bg-red-600 text-white hover:bg-red-700 rounded-md"
                                     disabled={deleteMutation.isPending}
                                     onClick={handleDelete}
                                 >
@@ -252,7 +252,7 @@ export default function CampaignDetailPage() {
                                 size="sm"
                                 disabled={campaign.status === "sending"}
                                 onClick={() => setConfirmDelete(true)}
-                                className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl h-9 cursor-pointer disabled:opacity-40"
+                                className="border-red-200 text-red-600 hover:bg-red-50 rounded-lg h-9 cursor-pointer disabled:opacity-40"
                             >
                                 <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
                             </Button>
@@ -270,31 +270,31 @@ export default function CampaignDetailPage() {
                     : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
             }`}>
                 <StatCard label="Recipients" value={campaign.total_recipients} total={campaign.total_recipients}
-                    icon={<Users className="h-4 w-4" />} color="bg-muted text-muted-foreground" />
+                    icon={<Users className="h-4 w-4" />} color="bg-slate-100 text-[#5F6B7A]" />
                 <StatCard label="Sent" value={campaign.sent_count} total={campaign.total_recipients}
-                    icon={<Send className="h-4 w-4" />} color="bg-[#35877D]/10 text-[#35877D]" />
+                    icon={<Send className="h-4 w-4" />} color="bg-[#E8F6F3] text-[#2F8F83]" />
                 
                 {campaign.template_name !== 'email' && campaign.template_name !== 'sms' && (
                     <>
                         <StatCard label="Delivered" value={campaign.delivered_count} total={campaign.total_recipients}
-                            icon={<CheckCheck className="h-4 w-4" />} color="bg-teal-500/10 text-teal-400" />
+                            icon={<CheckCheck className="h-4 w-4" />} color="bg-teal-50 text-teal-600" />
                         <StatCard label="Read" value={campaign.read_count} total={campaign.total_recipients}
-                            icon={<Eye className="h-4 w-4" />} color="bg-blue-500/10 text-blue-400" />
+                            icon={<Eye className="h-4 w-4" />} color="bg-blue-50 text-blue-600" />
                         <StatCard label="Replied" value={campaign.replied_count} total={campaign.total_recipients}
-                            icon={<MessageCircle className="h-4 w-4" />} color="bg-indigo-500/10 text-indigo-400" />
+                            icon={<MessageCircle className="h-4 w-4" />} color="bg-indigo-50 text-indigo-600" />
                     </>
                 )}
 
                 {campaign.template_name !== 'sms' && (
                     <StatCard label="Failed" value={campaign.failed_count} total={campaign.total_recipients}
-                        icon={<AlertCircle className="h-4 w-4" />} color="bg-red-500/10 text-red-400" />
+                        icon={<AlertCircle className="h-4 w-4" />} color="bg-red-50 text-red-600" />
                 )}
             </div>
 
             {/* Funnel - Only for WhatsApp */}
             {campaign.template_name !== 'email' && campaign.template_name !== 'sms' && (
                 <FunnelChart steps={[
-                    { label: "Sent",      value: campaign.sent_count,      color: "bg-[#35877D]" },
+                    { label: "Sent",      value: campaign.sent_count,      color: "bg-[#2F8F83]" },
                     { label: "Delivered", value: campaign.delivered_count, color: "bg-teal-500" },
                     { label: "Read",      value: campaign.read_count,      color: "bg-blue-500" },
                     { label: "Replied",   value: campaign.replied_count,   color: "bg-indigo-500" },
@@ -302,9 +302,9 @@ export default function CampaignDetailPage() {
             )}
 
             {/* Recipients Table */}
-            <div className="rounded-xl border border-border bg-card">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border px-4 py-4">
-                    <h2 className="text-sm font-semibold text-foreground">
+            <div className="rounded-xl border border-[#E5E9EE] bg-white shadow-2xs overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#E5E9EE] px-4 py-3.5">
+                    <h2 className="text-sm font-semibold text-[#172033]">
                         Recipients ({filteredRecipients.length}
                         {statusFilter !== "all" ? ` of ${recipients.length}` : ""})
                     </h2>
@@ -315,10 +315,10 @@ export default function CampaignDetailPage() {
                                 <button
                                     key={s}
                                     onClick={() => setStatusFilter(s)}
-                                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors ${
+                                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors cursor-pointer ${
                                         statusFilter === s
-                                            ? "border-[#35877D] bg-[#35877D]/10 text-[#35877D]"
-                                            : "border-border text-muted-foreground hover:border-[#35877D]/50"
+                                            ? "border-[#2F8F83] bg-[#E8F6F3] text-[#2F8F83]"
+                                            : "border-[#E5E9EE] text-[#5F6B7A] hover:border-[#2F8F83]/50"
                                     }`}
                                 >
                                     {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -329,7 +329,7 @@ export default function CampaignDetailPage() {
                             variant="outline" size="sm"
                             onClick={handleExport}
                             disabled={recipients.length === 0}
-                            className="border-border text-muted-foreground hover:bg-muted"
+                            className="border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50 h-8 rounded-lg text-xs"
                         >
                             <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
                         </Button>
@@ -346,38 +346,38 @@ export default function CampaignDetailPage() {
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
-                                <TableRow className="border-border hover:bg-transparent">
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Sent</TableHead>
-                                    <TableHead>Delivered</TableHead>
-                                    <TableHead>Read</TableHead>
-                                    <TableHead>Error</TableHead>
+                                <TableRow className="border-[#E5E9EE] bg-[#F7F9FA] hover:bg-[#F7F9FA]">
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Contact</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Phone</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Status</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Sent</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Delivered</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Read</TableHead>
+                                    <TableHead className="text-xs font-semibold text-[#172033]">Error</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredRecipients.map((r) => {
                                     const rs = RECIPIENT_STATUS[r.status];
                                     return (
-                                        <TableRow key={r.id} className="border-border">
-                                            <TableCell className="font-medium">{r.contact_name ?? r.name ?? "Unknown"}</TableCell>
-                                            <TableCell className="text-muted-foreground">{r.contact_phone ?? r.phone}</TableCell>
+                                        <TableRow key={r.id} className="border-[#E5E9EE] hover:bg-slate-50/60 transition-colors">
+                                            <TableCell className="font-medium text-xs text-[#172033]">{r.contact_name ?? r.name ?? "Unknown"}</TableCell>
+                                            <TableCell className="text-xs text-[#5F6B7A]">{r.contact_phone ?? r.phone}</TableCell>
                                             <TableCell>
-                                                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${rs.classes}`}>
+                                                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${rs.classes}`}>
                                                     {rs.label}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground text-xs">
+                                            <TableCell className="text-[#5F6B7A] text-xs">
                                                 {r.sent_at ? new Date(r.sent_at).toLocaleString() : "—"}
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground text-xs">
+                                            <TableCell className="text-[#5F6B7A] text-xs">
                                                 {r.delivered_at ? new Date(r.delivered_at).toLocaleString() : "—"}
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground text-xs">
+                                            <TableCell className="text-[#5F6B7A] text-xs">
                                                 {r.read_at ? new Date(r.read_at).toLocaleString() : "—"}
                                             </TableCell>
-                                            <TableCell className="max-w-xs truncate text-xs text-red-400">
+                                            <TableCell className="max-w-xs truncate text-xs text-rose-500 font-mono">
                                                 {r.error_message ?? "—"}
                                             </TableCell>
                                         </TableRow>

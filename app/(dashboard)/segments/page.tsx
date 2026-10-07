@@ -276,7 +276,7 @@ export default function SegmentsPage() {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Header */}
             <PageHeader
                 icon={Filter}
@@ -301,17 +301,17 @@ export default function SegmentsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => fetchSegments(true)}
-                            className="rounded-xl border-slate-200 text-slate-700 h-9 px-3 cursor-pointer"
+                            className="rounded-xl border-[#E5E9EE] text-slate-700 h-9 px-3 cursor-pointer"
                             title="Recalculate Segments"
                         >
-                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#35877D]" : ""} />
+                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#2F8F83]" : ""} />
                         </Button>
                         <Button
                             onClick={() => {
                                 setEditingSegment(null);
                                 setIsBuilderOpen(true);
                             }}
-                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-colors cursor-pointer gap-1.5"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-colors cursor-pointer gap-1.5"
                         >
                             <Plus size={16} />
                             New Segment
@@ -329,7 +329,7 @@ export default function SegmentsPage() {
                         placeholder="Search segments by name or condition..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-10 rounded-xl border-slate-200 text-xs font-semibold"
+                        className="pl-10 h-10 rounded-xl border-[#E5E9EE] text-xs font-semibold"
                     />
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -355,8 +355,8 @@ export default function SegmentsPage() {
                     ))}
                 </div>
             ) : filteredSegments.length === 0 ? (
-                <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 my-8">
-                    <div className="h-14 w-14 rounded-2xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mx-auto font-bold shadow-2xs">
+                <div className="bg-white border border-dashed border-[#E5E9EE] rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 my-8">
+                    <div className="h-14 w-14 rounded-2xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center mx-auto font-bold shadow-2xs border border-[#BFE4DD]">
                         <Layers size={26} />
                     </div>
                     <div className="space-y-1">
@@ -375,7 +375,7 @@ export default function SegmentsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setSearchQuery("")}
-                                className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 cursor-pointer"
+                                className="rounded-xl border-[#E5E9EE] text-slate-700 font-bold text-xs h-9 px-4 cursor-pointer"
                             >
                                 Clear Search
                             </Button>
@@ -385,7 +385,7 @@ export default function SegmentsPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={handleRestoreDefaults}
-                                    className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 gap-1.5 cursor-pointer"
+                                    className="rounded-xl border-[#E5E9EE] text-slate-700 font-bold text-xs h-9 px-4 gap-1.5 cursor-pointer"
                                 >
                                     <RotateCcw size={13} />
                                     Restore Presets
@@ -395,7 +395,7 @@ export default function SegmentsPage() {
                                         setEditingSegment(null);
                                         setIsBuilderOpen(true);
                                     }}
-                                    className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs gap-1.5 cursor-pointer"
                                 >
                                     <Plus size={15} />
                                     New Segment
@@ -409,19 +409,19 @@ export default function SegmentsPage() {
                     {filteredSegments.map((segment) => (
                         <Card
                             key={segment.id}
-                            className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all space-y-4 flex flex-col justify-between group"
+                            className="bg-white border border-[#E5E9EE] rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all space-y-4 flex flex-col justify-between group"
                         >
                             <div className="space-y-2.5">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="h-9 w-9 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center font-bold shrink-0">
+                                        <div className="h-9 w-9 rounded-xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center font-bold shrink-0 border border-[#BFE4DD]">
                                             <Filter size={16} />
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-sm font-bold text-slate-900">{segment.name}</h3>
                                                 {segment.isSystem && (
-                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-teal-50 text-[#35877D] border border-teal-100">
+                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD]">
                                                         System
                                                     </span>
                                                 )}
@@ -434,7 +434,7 @@ export default function SegmentsPage() {
                                     <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => handleRecalculateSingle(e, segment.id)}
-                                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-[#35877D] hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-[#2F8F83] hover:bg-[#E8F6F3] rounded-lg transition-colors cursor-pointer"
                                             title="Recalculate Audience"
                                         >
                                             <RefreshCw size={12} />
@@ -461,12 +461,12 @@ export default function SegmentsPage() {
                                     {segment.conditions?.map((cond, i) => (
                                         <span
                                             key={i}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono font-medium text-slate-700"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-[#E5E9EE] text-[11px] font-mono font-medium text-slate-700"
                                         >
                                             <span className="text-slate-400">#</span>
                                             <span className="font-bold">{cond.field}</span>
                                             <span className="text-slate-400">{cond.operator}</span>
-                                            <span className="text-[#35877D] font-bold">{cond.value}</span>
+                                            <span className="text-[#2F8F83] font-bold">{cond.value}</span>
                                         </span>
                                     ))}
                                 </div>

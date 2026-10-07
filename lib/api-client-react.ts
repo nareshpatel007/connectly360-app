@@ -1218,6 +1218,8 @@ export interface CompanyProfile {
     currency?: string | null;
     logo_path?: string | null;
     logo_url?: string | null;
+    display_logo_url?: string | null;
+    media?: any[];
     created_at?: string;
     updated_at?: string;
 }

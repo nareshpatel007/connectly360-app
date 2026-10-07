@@ -99,7 +99,7 @@ interface SessionInfoData {
 }
 
 const STATUS_CONFIG = {
-    connected: { label: "Connected", icon: CheckCircle2, color: "text-[#35877D]", badge: "bg-emerald-50 text-[#35877D] border-emerald-100" },
+    connected: { label: "Connected", icon: CheckCircle2, color: "text-[#2F8F83]", badge: "bg-[#E8F6F3] text-[#2F8F83] border-[#BFE4DD]" },
     pending_registration: { label: "Pending Registration", icon: Clock, color: "text-amber-600", badge: "bg-amber-50 text-amber-800 border-amber-200" },
     pending: { label: "Pending", icon: Clock, color: "text-amber-600", badge: "bg-amber-50 text-amber-800 border-amber-100" },
     failed: { label: "Failed", icon: XCircle, color: "text-red-600", badge: "bg-red-50 text-red-800 border-red-100" },
@@ -563,10 +563,10 @@ export default function WhatsAppIntegrationPage() {
                 ]}
                 badge={isConnected ? "Active WABA" : undefined}
                 actions={
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                         <Link
                             href="/integrations/whatsapp/business-profile"
-                            className="border border-[#35877D]/30 bg-[#35877D]/10 hover:bg-[#35877D]/20 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-bold h-9 px-3.5 transition-colors shadow-2xs"
+                            className="border border-[#BFE4DD] bg-[#E8F6F3] hover:bg-[#E8F6F3]/80 text-[#2F8F83] rounded-lg flex items-center gap-1.5 text-xs font-medium h-9 px-3 transition-colors shadow-2xs"
                         >
                             <Building2 size={13} />
                             <span>Business Profile</span>
@@ -574,7 +574,7 @@ export default function WhatsAppIntegrationPage() {
 
                         <Link
                             href="/automations/auto-replies"
-                            className="border border-[#35877D]/30 bg-[#35877D]/5 hover:bg-[#35877D]/10 text-[#35877D] rounded-xl flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 transition-colors shadow-2xs"
+                            className="border border-[#E5E9EE] bg-white hover:bg-slate-50 text-[#172033] rounded-lg flex items-center gap-1.5 text-xs font-medium h-9 px-3 transition-colors shadow-2xs"
                         >
                             <span>Auto-Reply Rules</span>
                             <ArrowUpRight size={13} />
@@ -584,17 +584,17 @@ export default function WhatsAppIntegrationPage() {
                             variant="outline"
                             size="sm"
                             onClick={refreshStatus}
-                            className="border-slate-200 hover:bg-slate-50 rounded-xl flex items-center gap-2 text-xs font-semibold cursor-pointer h-9 px-4"
+                            className="border-[#E5E9EE] hover:bg-slate-50 rounded-lg flex items-center gap-1.5 text-xs font-medium cursor-pointer h-9 px-3 text-[#5F6B7A] hover:text-[#172033]"
                         >
-                            <RefreshCcw size={13} className={isLoadingStatus ? "animate-spin text-[#35877D]" : "text-slate-500"} />
+                            <RefreshCcw size={13} className={isLoadingStatus ? "animate-spin text-[#2F8F83]" : "text-[#5F6B7A]"} />
                             Refresh Status
                         </Button>
 
                         {isConnected && (
-                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-[#35877D] text-xs font-semibold border border-emerald-200 shadow-2xs">
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#E8F6F3] text-[#2F8F83] text-xs font-medium border border-[#BFE4DD] shadow-2xs">
                                 <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#35877D] opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#35877D]"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2F8F83] opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2F8F83]"></span>
                                 </span>
                                 Connected
                             </span>
@@ -605,9 +605,9 @@ export default function WhatsAppIntegrationPage() {
 
             {/* Test Mode Banner */}
             {(account as any)?.is_test_mode && (
-                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 text-amber-900 shadow-xs">
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-4 text-amber-900 shadow-2xs">
                     <div className="flex items-center gap-3">
-                        <span className="px-2.5 py-1 bg-amber-500 text-white font-bold text-[10px] tracking-wider uppercase rounded-lg shadow-xs shrink-0">
+                        <span className="px-2 py-0.5 bg-amber-500 text-white font-medium text-[10px] tracking-wider uppercase rounded-md shadow-xs shrink-0">
                             {(account as any)?.modeBadge || "TEST MODE"}
                         </span>
                         <p className="text-xs font-medium">
@@ -626,16 +626,16 @@ export default function WhatsAppIntegrationPage() {
 
                         {/* WhatsApp Phone Registration Stage Card (Meta Embedded Signup 2-Step Verification) */}
                         {(isRegistrationPending || isRegistrationFailed || isExpired || isRegisteringPhone) && (
-                            <Card className="bg-white border-2 border-[#35877D]/30 shadow-md rounded-2xl overflow-hidden animate-in fade-in duration-300">
-                                <CardHeader className="bg-gradient-to-r from-emerald-50/50 via-[#FAF8F5] to-emerald-50/30 border-b border-emerald-100/60 pb-4">
+                            <Card className="bg-white border border-[#BFE4DD] shadow-xs rounded-xl overflow-hidden animate-in fade-in duration-300">
+                                <CardHeader className="bg-[#E8F6F3]/40 border-b border-[#BFE4DD]/50 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="p-2 rounded-xl bg-[#35877D]/10 text-[#35877D]">
-                                                <ShieldCheck size={20} />
+                                            <div className="p-2 rounded-lg bg-[#E8F6F3] text-[#2F8F83]">
+                                                <ShieldCheck size={18} />
                                             </div>
                                             <div>
-                                                <CardTitle className="text-sm font-bold text-[#0B2E1E]">WhatsApp Phone Registration</CardTitle>
-                                                <CardDescription className="text-xs text-slate-500">
+                                                <CardTitle className="text-sm font-semibold text-[#172033]">WhatsApp Phone Registration</CardTitle>
+                                                <CardDescription className="text-xs text-[#5F6B7A]">
                                                     {isRegisteringPhone ? "Registering your WhatsApp number with Meta..." : "Register your phone number with Meta Cloud API to activate live messaging."}
                                                 </CardDescription>
                                             </div>
@@ -842,8 +842,8 @@ export default function WhatsAppIntegrationPage() {
                                                 <p className="text-xs font-medium text-red-600">{pinError}</p>
                                             )}
 
-                                            <div className="rounded-xl bg-emerald-50/70 border border-emerald-200/60 p-3 text-xs text-emerald-900 flex items-start gap-2">
-                                                <ShieldCheck size={16} className="text-[#35877D] shrink-0 mt-0.5" />
+                                            <div className="rounded-lg bg-[#E8F6F3] border border-[#BFE4DD] p-3 text-xs text-[#172033] flex items-start gap-2">
+                                                <ShieldCheck size={16} className="text-[#2F8F83] shrink-0 mt-0.5" />
                                                 <div>
                                                     <span className="font-semibold">Security Notice: </span>
                                                     This PIN is used for WhatsApp two-step verification. Store it securely.
@@ -853,7 +853,7 @@ export default function WhatsAppIntegrationPage() {
                                             <Button
                                                 type="submit"
                                                 disabled={isRegisteringPhone || registerPin.length !== 6 || registerPinConfirm.length !== 6}
-                                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-semibold text-xs h-10 px-6 rounded-xl cursor-pointer w-full sm:w-auto shadow-xs"
+                                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-9 px-5 rounded-lg cursor-pointer w-full sm:w-auto shadow-xs"
                                             >
                                                 {isRegisteringPhone ? (
                                                     <>
@@ -874,20 +874,20 @@ export default function WhatsAppIntegrationPage() {
                         )}
 
                         {/* Connection Status Card */}
-                        <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
-                            <CardHeader className="border-b border-[#FAF8F5] pb-4">
+                        <Card className="bg-white border border-[#E5E9EE] shadow-2xs rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                                        <div className="p-2 rounded-lg bg-[#F7F9FA] border border-[#E5E9EE]">
                                             {isConnected ? (
-                                                <Wifi className="text-[#35877D]" size={18} />
+                                                <Wifi className="text-[#2F8F83]" size={18} />
                                             ) : (
                                                 <WifiOff className="text-slate-400" size={18} />
                                             )}
                                         </div>
                                         <div>
-                                            <CardTitle className="text-sm font-bold text-[#0B2E1E]">Embedded Connection Status</CardTitle>
-                                            <CardDescription className="text-xs text-slate-400">Manage Meta Business credentials mapping.</CardDescription>
+                                            <CardTitle className="text-sm font-semibold text-[#172033]">Embedded Connection Status</CardTitle>
+                                            <CardDescription className="text-xs text-[#5F6B7A]">Manage Meta Business credentials mapping.</CardDescription>
                                         </div>
                                     </div>
                                     {isConnected && (
@@ -897,7 +897,7 @@ export default function WhatsAppIntegrationPage() {
                                                 size="sm"
                                                 onClick={handleSyncAccount}
                                                 disabled={isSyncing}
-                                                className="h-8 text-[11px] font-semibold rounded-lg border-slate-200"
+                                                className="h-8 text-[11px] font-medium rounded-lg border-[#E5E9EE]"
                                             >
                                                 <RefreshCcw size={12} className={isSyncing ? "animate-spin mr-1" : "mr-1"} />
                                                 Sync
@@ -907,7 +907,7 @@ export default function WhatsAppIntegrationPage() {
                                                 size="sm"
                                                 onClick={handleTestConnection}
                                                 disabled={isTesting}
-                                                className="h-8 text-[11px] font-semibold rounded-lg border-slate-200"
+                                                className="h-8 text-[11px] font-medium rounded-lg border-[#E5E9EE]"
                                             >
                                                 <Activity size={12} className={isTesting ? "animate-spin mr-1" : "mr-1"} />
                                                 Test Health
@@ -933,7 +933,7 @@ export default function WhatsAppIntegrationPage() {
                                         </div>
 
                                         {account && account.status !== "disconnected" ? (
-                                            <div className="border border-[#FAF8F5] rounded-xl p-1 bg-[#FAF8F5]/30 divide-y divide-[#FAF8F5]">
+                                            <div className="border border-[#E5E9EE] rounded-lg p-1 bg-[#F7F9FA] divide-y divide-[#E5E9EE]">
                                                 {account.displayName && <InfoRow icon={Building2} label="Business Name" value={account.displayName} />}
                                                 {account.phoneNumber && <InfoRow icon={PhoneCall} label="Phone Number" value={account.phoneNumber} />}
                                                 {account.wabaId && <InfoRow icon={Hash} label="WABA ID" value={account.wabaId} />}
@@ -948,7 +948,7 @@ export default function WhatsAppIntegrationPage() {
                                                 )}
                                             </div>
                                         ) : (
-                                            <p className="text-xs text-slate-500 leading-relaxed bg-[#FAF8F5] p-4 rounded-xl border border-[#EAE6DF]/60">
+                                            <p className="text-xs text-[#5F6B7A] leading-relaxed bg-[#F7F9FA] p-4 rounded-lg border border-[#E5E9EE]">
                                                 No active WhatsApp Business API account connected yet. Use the embedded Meta onboarding below to securely link your WhatsApp account.
                                             </p>
                                         )}
@@ -958,17 +958,17 @@ export default function WhatsAppIntegrationPage() {
                         </Card>
 
                         {/* Embed Sign Up Trigger Action */}
-                        <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
-                            <CardHeader className="border-b border-[#FAF8F5] pb-4">
-                                <CardTitle className="text-sm font-bold text-[#0B2E1E]">Onboard / Disconnect Portal</CardTitle>
-                                <CardDescription className="text-xs text-slate-400">Start onboard wizard using the Meta login SDK popover configuration.</CardDescription>
+                        <Card className="bg-white border border-[#E5E9EE] shadow-2xs rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4">
+                                <CardTitle className="text-sm font-semibold text-[#172033]">Onboard / Disconnect Portal</CardTitle>
+                                <CardDescription className="text-xs text-[#5F6B7A]">Start onboard wizard using the Meta login SDK popover configuration.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 {!isLoadingConfig && !configReady && (
                                     <div className="rounded-xl border border-amber-200 bg-[#FFFDF9] p-4 text-xs text-amber-800 flex gap-3">
                                         <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
                                         <div>
-                                            <strong className="font-bold text-[#785110]">Meta SDK Configuration Required:</strong>
+                                            <strong className="font-semibold text-[#785110]">Meta SDK Configuration Required:</strong>
                                             <p className="text-[#694B1B] mt-1 leading-relaxed">
                                                 The system cannot find <code className="font-mono bg-[#FAF1D6] px-1.5 py-0.5 rounded text-[11.5px]">META_APP_ID</code> and <code className="font-mono bg-[#FAF1D6] px-1.5 py-0.5 rounded text-[11.5px]">META_CONFIG_ID</code> in environment setups. Please make sure variables are configured to launch Meta signup.
                                             </p>
@@ -976,11 +976,11 @@ export default function WhatsAppIntegrationPage() {
                                     </div>
                                 )}
 
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-2.5">
                                     <Button
                                         onClick={launchEmbeddedSignup}
                                         disabled={isConnecting || exchangeToken.isPending || !configReady || isLoadingConfig}
-                                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-semibold text-xs h-10 px-5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-9 px-4 rounded-lg shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0"
                                     >
                                         {isConnecting || exchangeToken.isPending ? (
                                             <>
@@ -1004,27 +1004,27 @@ export default function WhatsAppIntegrationPage() {
                                         <DialogTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className="border-slate-200 text-slate-600 hover:bg-slate-50 text-xs h-10 px-4 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                className="border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] hover:bg-slate-50 text-xs h-9 px-3.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                                             >
-                                                <Key size={14} />
+                                                <Key size={13} />
                                                 Enter OAuth Code
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="sm:max-w-md">
+                                        <DialogContent className="sm:max-w-md rounded-xl border-[#E5E9EE] shadow-xl">
                                             <DialogHeader>
-                                                <DialogTitle className="text-base font-bold text-[#0B2E1E]">Manual Authorization Code</DialogTitle>
-                                                <DialogDescription className="text-xs text-slate-500">
+                                                <DialogTitle className="text-base font-semibold text-[#172033]">Manual Authorization Code</DialogTitle>
+                                                <DialogDescription className="text-xs text-[#5F6B7A]">
                                                     Paste an authorization code obtained from Meta Embedded Signup to link your WABA account.
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <form onSubmit={handleManualCodeSubmit} className="space-y-4 pt-2">
                                                 <div>
-                                                    <Label className="text-xs text-slate-600 mb-1 block font-semibold">Meta Authorization Code</Label>
+                                                    <Label className="text-xs text-[#172033] mb-1 block font-semibold">Meta Authorization Code</Label>
                                                     <Input
                                                         value={manualCodeInput}
                                                         onChange={(e) => setManualCodeInput(e.target.value)}
                                                         placeholder="AQD..."
-                                                        className="h-10 text-xs font-mono"
+                                                        className="h-9 text-xs font-mono border-[#E5E9EE] rounded-lg"
                                                         required
                                                     />
                                                 </div>
@@ -1033,14 +1033,14 @@ export default function WhatsAppIntegrationPage() {
                                                         type="button"
                                                         variant="ghost"
                                                         onClick={() => setManualCodeOpen(false)}
-                                                        className="text-xs h-9"
+                                                        className="text-xs h-9 rounded-lg"
                                                     >
                                                         Cancel
                                                     </Button>
                                                     <Button
                                                         type="submit"
                                                         disabled={exchangeToken.isPending || !manualCodeInput.trim()}
-                                                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg cursor-pointer"
+                                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-lg cursor-pointer shadow-xs"
                                                     >
                                                         {exchangeToken.isPending ? "Exchanging..." : "Exchange & Connect"}
                                                     </Button>
@@ -1055,74 +1055,74 @@ export default function WhatsAppIntegrationPage() {
                                                 <DialogTrigger asChild>
                                                     <Button
                                                         variant="outline"
-                                                        className="border-[#35877D]/30 text-[#35877D] hover:bg-[#35877D]/5 text-xs h-10 px-4 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                        className="border-[#BFE4DD] text-[#2F8F83] hover:bg-[#E8F6F3]/50 text-xs h-9 px-3.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                                                     >
-                                                        <Send size={14} />
+                                                        <Send size={13} />
                                                         Send Test Message
                                                     </Button>
                                                 </DialogTrigger>
-                                                <DialogContent className="sm:max-w-md">
+                                                <DialogContent className="sm:max-w-md rounded-xl border-[#E5E9EE] shadow-xl">
                                                     <DialogHeader>
-                                                        <DialogTitle className="text-base font-bold text-[#0B2E1E]">Send Test WhatsApp Message</DialogTitle>
-                                                        <DialogDescription className="text-xs text-slate-500">
+                                                        <DialogTitle className="text-base font-semibold text-[#172033]">Send Test WhatsApp Message</DialogTitle>
+                                                        <DialogDescription className="text-xs text-[#5F6B7A]">
                                                             Test your Meta Cloud API connection by sending a real WhatsApp message to a phone number.
                                                         </DialogDescription>
                                                     </DialogHeader>
                                                     <form onSubmit={handleSendTestMessage} className="space-y-4 py-2">
                                                         <div className="space-y-1.5">
-                                                            <Label className="text-xs font-semibold text-slate-700">Message Type</Label>
+                                                            <Label className="text-xs font-semibold text-[#172033]">Message Type</Label>
                                                             <div className="grid grid-cols-2 gap-2">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setTestMessageType("template")}
-                                                                    className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${testMessageType === "template"
-                                                                        ? "border-[#35877D] bg-emerald-50/50 text-[#35877D] shadow-2xs"
-                                                                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                                    className={`p-2.5 rounded-lg border text-xs font-medium text-left transition-all cursor-pointer ${testMessageType === "template"
+                                                                        ? "border-[#2F8F83] bg-[#E8F6F3] text-[#2F8F83] shadow-2xs"
+                                                                        : "border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
                                                                         }`}
                                                                 >
-                                                                    <div className="font-bold">hello_world Template</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">Pre-approved by Meta for testing</div>
+                                                                    <div className="font-semibold text-xs">hello_world Template</div>
+                                                                    <div className="text-[10px] text-[#5F6B7A] font-normal">Pre-approved by Meta for testing</div>
                                                                 </button>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setTestMessageType("text")}
-                                                                    className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${testMessageType === "text"
-                                                                        ? "border-[#35877D] bg-emerald-50/50 text-[#35877D] shadow-2xs"
-                                                                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                                    className={`p-2.5 rounded-lg border text-xs font-medium text-left transition-all cursor-pointer ${testMessageType === "text"
+                                                                        ? "border-[#2F8F83] bg-[#E8F6F3] text-[#2F8F83] shadow-2xs"
+                                                                        : "border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
                                                                         }`}
                                                                 >
-                                                                    <div className="font-bold">Custom Text</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">Requires active 24h window</div>
+                                                                    <div className="font-semibold text-xs">Custom Text</div>
+                                                                    <div className="text-[10px] text-[#5F6B7A] font-normal">Requires active 24h window</div>
                                                                 </button>
                                                             </div>
                                                         </div>
 
                                                         <div className="space-y-1.5">
-                                                            <Label className="text-xs font-semibold text-slate-700">Recipient Phone Number (with Country Code)</Label>
+                                                            <Label className="text-xs font-semibold text-[#172033]">Recipient Phone Number (with Country Code)</Label>
                                                             <Input
                                                                 placeholder="e.g. +919876543210"
                                                                 value={testPhone}
                                                                 onChange={(e) => setTestPhone(e.target.value)}
                                                                 required
-                                                                className="text-xs font-mono"
+                                                                className="text-xs font-mono h-9 rounded-lg border-[#E5E9EE]"
                                                             />
                                                         </div>
 
                                                         {testMessageType === "text" ? (
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-xs font-semibold text-slate-700">Message Body</Label>
+                                                                <Label className="text-xs font-semibold text-[#172033]">Message Body</Label>
                                                                 <Textarea
                                                                     rows={3}
                                                                     value={testBody}
                                                                     onChange={(e) => setTestBody(e.target.value)}
                                                                     required
-                                                                    className="text-xs resize-none"
+                                                                    className="text-xs resize-none rounded-lg border-[#E5E9EE]"
                                                                 />
                                                             </div>
                                                         ) : (
-                                                            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
-                                                                <div className="font-semibold text-slate-800">Template Preview:</div>
-                                                                <div className="italic bg-white p-2 rounded border border-slate-200 text-slate-700 font-sans">
+                                                            <div className="rounded-lg bg-[#F7F9FA] border border-[#E5E9EE] p-3 text-[11px] text-[#5F6B7A] space-y-1">
+                                                                <div className="font-semibold text-[#172033]">Template Preview:</div>
+                                                                <div className="italic bg-white p-2 rounded border border-[#E5E9EE] text-[#172033] font-sans">
                                                                     "Hello World! Welcome and congratulations! This message confirms your WhatsApp Business Cloud API integration is connected and functioning."
                                                                 </div>
                                                             </div>
@@ -1132,23 +1132,23 @@ export default function WhatsAppIntegrationPage() {
                                                                 type="button"
                                                                 variant="outline"
                                                                 onClick={() => setTestDialogOpen(false)}
-                                                                className="text-xs"
+                                                                className="text-xs h-9 rounded-lg border-[#E5E9EE]"
                                                             >
                                                                 Cancel
                                                             </Button>
                                                             <Button
                                                                 type="submit"
                                                                 disabled={isSendingTest}
-                                                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs font-semibold"
+                                                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs font-medium h-9 px-4 rounded-lg shadow-xs cursor-pointer"
                                                             >
                                                                 {isSendingTest ? (
                                                                     <>
-                                                                        <Loader2 className="animate-spin mr-1" size={13} />
+                                                                        <Loader2 className="animate-spin mr-1.5" size={13} />
                                                                         Sending...
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <Send className="mr-1" size={13} />
+                                                                        <Send className="mr-1.5" size={13} />
                                                                         Send Message
                                                                     </>
                                                                 )}
@@ -1162,16 +1162,16 @@ export default function WhatsAppIntegrationPage() {
                                                 variant="outline"
                                                 onClick={handleDisconnect}
                                                 disabled={disconnect.isPending}
-                                                className="border-red-200 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs h-10 px-5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                                                className="border-red-200 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs h-9 px-4 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                                             >
                                                 {disconnect.isPending ? (
                                                     <>
-                                                        <Loader2 className="animate-spin" size={14} />
+                                                        <Loader2 className="animate-spin" size={13} />
                                                         Disconnecting...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <WifiOff size={14} />
+                                                        <WifiOff size={13} />
                                                         Disconnect Account
                                                     </>
                                                 )}
@@ -1181,26 +1181,26 @@ export default function WhatsAppIntegrationPage() {
                                 </div>
 
                                 {configReady && !sdkLoaded && (
-                                    <p className="text-xs text-slate-400 animate-pulse">Initializing Facebook Client JavaScript SDK...</p>
+                                    <p className="text-xs text-[#8A95A3] animate-pulse">Initializing Facebook Client JavaScript SDK...</p>
                                 )}
 
                                 {/* Meta Error Diagnostic Modal */}
                                 <Dialog open={metaErrorModalOpen} onOpenChange={setMetaErrorModalOpen}>
-                                    <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+                                    <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto rounded-xl border-[#E5E9EE] shadow-xl">
                                         <DialogHeader>
                                             <div className="flex items-center gap-2 text-red-600 mb-1">
                                                 <ShieldAlert size={20} />
-                                                <DialogTitle className="text-base font-bold text-slate-900">
+                                                <DialogTitle className="text-base font-semibold text-[#172033]">
                                                     WhatsApp Connection Could Not Be Started
                                                 </DialogTitle>
                                             </div>
-                                            <DialogDescription className="text-xs text-slate-600 leading-relaxed">
+                                            <DialogDescription className="text-xs text-[#5F6B7A] leading-relaxed">
                                                 Meta rejected the Facebook Login / Embedded Signup popup before onboarding could complete.
                                             </DialogDescription>
                                         </DialogHeader>
 
                                         <div className="space-y-4 pt-2 text-xs">
-                                            <div className="rounded-xl border border-red-200 bg-red-50/70 p-3.5 space-y-1.5">
+                                            <div className="rounded-lg border border-red-200 bg-red-50/70 p-3.5 space-y-1.5">
                                                 <div className="font-semibold text-red-900 flex items-center gap-2">
                                                     <AlertTriangle size={15} className="text-red-600" />
                                                     Meta Error: "Feature unavailable"
@@ -1211,46 +1211,46 @@ export default function WhatsAppIntegrationPage() {
                                             </div>
 
                                             <div className="space-y-2">
-                                                <span className="font-bold text-slate-800 block text-xs">Why Meta Rejects This App / Configuration:</span>
-                                                <div className="space-y-2 text-slate-700">
-                                                    <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                                                        <strong className="text-slate-900 block font-semibold">1. App Mode & Unauthorized User</strong>
-                                                        <p className="text-[11.5px] text-slate-600">
+                                                <span className="font-semibold text-[#172033] block text-xs">Why Meta Rejects This App / Configuration:</span>
+                                                <div className="space-y-2 text-[#5F6B7A]">
+                                                    <div className="p-2.5 rounded-lg border border-[#E5E9EE] bg-[#F7F9FA] space-y-1">
+                                                        <strong className="text-[#172033] block font-semibold">1. App Mode & Unauthorized User</strong>
+                                                        <p className="text-[11.5px] text-[#5F6B7A]">
                                                             If the Meta App is in <strong>Development Mode</strong>, only registered App Admins, Developers, and Testers can log in. The logged-in Facebook account must be added under <strong>App Roles &gt; Roles</strong>.
                                                         </p>
                                                     </div>
 
-                                                    <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                                                        <strong className="text-slate-900 block font-semibold">2. App Domains & Allowed Domains Missing</strong>
-                                                        <p className="text-[11.5px] text-slate-600">
+                                                    <div className="p-2.5 rounded-lg border border-[#E5E9EE] bg-[#F7F9FA] space-y-1">
+                                                        <strong className="text-[#172033] block font-semibold">2. App Domains & Allowed Domains Missing</strong>
+                                                        <p className="text-[11.5px] text-[#5F6B7A]">
                                                             The active domain (<code className="font-mono bg-white px-1 py-0.5 border rounded">app.connectly360.com</code>) must be configured in Meta App Settings &gt; Basic (&quot;App Domains&quot;) and under Facebook Login for Business &gt; Settings (&quot;Allowed Domains for JavaScript SDK&quot;).
                                                         </p>
                                                     </div>
 
-                                                    <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                                                        <strong className="text-slate-900 block font-semibold">3. Standard vs Advanced Access for Permissions</strong>
-                                                        <p className="text-[11.5px] text-slate-600">
+                                                    <div className="p-2.5 rounded-lg border border-[#E5E9EE] bg-[#F7F9FA] space-y-1">
+                                                        <strong className="text-[#172033] block font-semibold">3. Standard vs Advanced Access for Permissions</strong>
+                                                        <p className="text-[11.5px] text-[#5F6B7A]">
                                                             In Live mode, Meta blocks login unless <code className="font-mono bg-white px-1 py-0.5 border rounded">public_profile</code> and <code className="font-mono bg-white px-1 py-0.5 border rounded">whatsapp_business_management</code> have <strong>Advanced Access</strong>.
                                                         </p>
                                                     </div>
 
-                                                    <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                                                        <strong className="text-slate-900 block font-semibold">4. Facebook Login for Business Configuration (v4)</strong>
-                                                        <p className="text-[11.5px] text-slate-600">
+                                                    <div className="p-2.5 rounded-lg border border-[#E5E9EE] bg-[#F7F9FA] space-y-1">
+                                                        <strong className="text-[#172033] block font-semibold">4. Facebook Login for Business Configuration (v4)</strong>
+                                                        <p className="text-[11.5px] text-[#5F6B7A]">
                                                             The Configuration ID (<code className="font-mono bg-white px-1 py-0.5 border rounded">{metaErrorDetails?.configIdMasked || '44152437****'}</code>) must be an active, approved Embedded Signup v4 configuration created inside the Meta Developer Dashboard.
                                                         </p>
                                                     </div>
 
-                                                    <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                                                        <strong className="text-slate-900 block font-semibold">5. Data Use Checkup (DUC) or Business Verification</strong>
-                                                        <p className="text-[11.5px] text-slate-600">
+                                                    <div className="p-2.5 rounded-lg border border-[#E5E9EE] bg-[#F7F9FA] space-y-1">
+                                                        <strong className="text-[#172033] block font-semibold">5. Data Use Checkup (DUC) or Business Verification</strong>
+                                                        <p className="text-[11.5px] text-[#5F6B7A]">
                                                             Meta requires an annual Data Use Checkup in the Developer Dashboard and Meta Business Verification for partner onboarding.
                                                         </p>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="border border-slate-200 rounded-xl p-3 bg-slate-900 text-slate-200 space-y-2">
+                                            <div className="border border-slate-800 rounded-lg p-3 bg-slate-900 text-slate-200 space-y-2">
                                                 <div className="flex items-center justify-between text-[11px] font-mono text-emerald-400">
                                                     <span>ADMIN TECHNICAL DIAGNOSTICS</span>
                                                     <span>Graph API: {metaErrorDetails?.graphApiVersion || "v22.0"}</span>
@@ -1273,7 +1273,7 @@ export default function WhatsAppIntegrationPage() {
                                             <Button
                                                 variant="outline"
                                                 onClick={() => setMetaErrorModalOpen(false)}
-                                                className="text-xs h-9"
+                                                className="text-xs h-9 rounded-lg border-[#E5E9EE]"
                                             >
                                                 Dismiss
                                             </Button>
@@ -1282,7 +1282,7 @@ export default function WhatsAppIntegrationPage() {
                                                     setMetaErrorModalOpen(false);
                                                     setDiagnosticsModalOpen(true);
                                                 }}
-                                                className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9 px-4 rounded-lg"
+                                                className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9 px-4 rounded-lg shadow-xs"
                                             >
                                                 View Full Checklist
                                             </Button>
@@ -1291,7 +1291,7 @@ export default function WhatsAppIntegrationPage() {
                                                     setMetaErrorModalOpen(false);
                                                     launchEmbeddedSignup();
                                                 }}
-                                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg"
+                                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-lg shadow-xs"
                                             >
                                                 Retry Connection
                                             </Button>
@@ -1301,53 +1301,53 @@ export default function WhatsAppIntegrationPage() {
 
                                 {/* Full Meta Developer Checklist Modal */}
                                 <Dialog open={diagnosticsModalOpen} onOpenChange={setDiagnosticsModalOpen}>
-                                    <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                                    <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl border-[#E5E9EE] shadow-xl">
                                         <DialogHeader>
-                                            <div className="flex items-center gap-2 text-[#35877D] mb-1">
-                                                <Sliders size={20} />
-                                                <DialogTitle className="text-base font-bold text-slate-900">
+                                            <div className="flex items-center gap-2 text-[#2F8F83] mb-1">
+                                                <Sliders size={18} />
+                                                <DialogTitle className="text-base font-semibold text-[#172033]">
                                                     Meta Embedded Signup v4 Checklist &amp; Diagnostics
                                                 </DialogTitle>
                                             </div>
-                                            <DialogDescription className="text-xs text-slate-600">
+                                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                                 Complete configuration status and checklist for WhatsApp Cloud API &amp; Embedded Signup v4.
                                             </DialogDescription>
                                         </DialogHeader>
 
                                         <div className="space-y-4 pt-2 text-xs">
-                                            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
-                                                <span className="font-semibold text-slate-800 block text-xs">Environment &amp; Meta Credentials Status</span>
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11.5px] text-slate-700">
+                                            <div className="border border-[#E5E9EE] rounded-lg p-3 bg-[#F7F9FA] space-y-2">
+                                                <span className="font-semibold text-[#172033] block text-xs">Environment &amp; Meta Credentials Status</span>
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11.5px] text-[#5F6B7A]">
                                                     <div>
-                                                        <span className="text-slate-500">App ID:</span>{" "}
-                                                        <strong className="font-mono text-slate-900">{metaConfig?.appId ? `${metaConfig.appId.slice(0, 4)}****${metaConfig.appId.slice(-4)}` : "Missing"}</strong>
+                                                        <span className="text-[#8A95A3]">App ID:</span>{" "}
+                                                        <strong className="font-mono text-[#172033]">{metaConfig?.appId ? `${metaConfig.appId.slice(0, 4)}****${metaConfig.appId.slice(-4)}` : "Missing"}</strong>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500">Config ID:</span>{" "}
-                                                        <strong className="font-mono text-slate-900">{metaConfig?.configId ? `${metaConfig.configId.slice(0, 4)}****${metaConfig.configId.slice(-4)}` : "Missing"}</strong>
+                                                        <span className="text-[#8A95A3]">Config ID:</span>{" "}
+                                                        <strong className="font-mono text-[#172033]">{metaConfig?.configId ? `${metaConfig.configId.slice(0, 4)}****${metaConfig.configId.slice(-4)}` : "Missing"}</strong>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500">Graph API Version:</span>{" "}
-                                                        <strong className="font-mono text-slate-900">{metaConfig?.graphApiVersion || "v22.0"}</strong>
+                                                        <span className="text-[#8A95A3]">Graph API Version:</span>{" "}
+                                                        <strong className="font-mono text-[#172033]">{metaConfig?.graphApiVersion || "v22.0"}</strong>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500">Redirect URI:</span>{" "}
-                                                        <strong className="font-mono text-slate-900">{metaConfig?.redirectUri || "https://app.connectly360.com/integrations/whatsapp"}</strong>
+                                                        <span className="text-[#8A95A3]">Redirect URI:</span>{" "}
+                                                        <strong className="font-mono text-[#172033]">{metaConfig?.redirectUri || "https://app.connectly360.com/integrations/whatsapp"}</strong>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500">Webhook Token:</span>{" "}
-                                                        <strong className="font-mono text-slate-900">{metaConfig?.verifyToken ? "Configured" : "Missing"}</strong>
+                                                        <span className="text-[#8A95A3]">Webhook Token:</span>{" "}
+                                                        <strong className="font-mono text-[#172033]">{metaConfig?.verifyToken ? "Configured" : "Missing"}</strong>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500">Debug Mode:</span>{" "}
+                                                        <span className="text-[#8A95A3]">Debug Mode:</span>{" "}
                                                         <strong className="font-mono text-emerald-700">{metaConfig?.debug ? "Enabled" : "Disabled"}</strong>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-3">
-                                                <span className="font-bold text-slate-800 block text-xs">Exact Meta Dashboard Setup Checklist:</span>
-                                                <div className="space-y-2 text-slate-700">
+                                                <span className="font-semibold text-[#172033] block text-xs">Exact Meta Dashboard Setup Checklist:</span>
+                                                <div className="space-y-2 text-[#5F6B7A]">
                                                     {[
                                                         { num: 1, title: "App Mode (Development vs Live)", desc: "If in Development mode, ensure your logged-in Facebook user account is added under App Roles > Roles as an Administrator, Developer, or Tester. In Live mode, ensure business verification is complete." },
                                                         { num: 2, title: "App Domains (Settings > Basic)", desc: "Add 'connectly360.com' and 'app.connectly360.com' to App Domains. Set Privacy Policy URL and Terms of Service URL." },
@@ -1356,21 +1356,21 @@ export default function WhatsAppIntegrationPage() {
                                                         { num: 5, title: "Required Permissions & Advanced Access", desc: "Ensure 'whatsapp_business_management' and 'whatsapp_business_messaging' are selected in the configuration. For Live mode, grant Advanced Access under App Review > Permissions and Features." },
                                                         { num: 6, title: "Webhooks (WhatsApp)", desc: "Callback URL: 'https://api.connectly360.com/api/whatsapp/webhook', Verify Token: 'connectly360_verify_token_secure_9ae7b3', subscribed fields: 'messages'." }
                                                     ].map(item => (
-                                                        <div key={item.num} className="p-3 rounded-lg border border-slate-200 bg-white space-y-1">
+                                                        <div key={item.num} className="p-3 rounded-lg border border-[#E5E9EE] bg-white space-y-1">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="h-5 w-5 rounded-full bg-[#35877D] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                                                                <span className="h-5 w-5 rounded-full bg-[#2F8F83] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                                                                     {item.num}
                                                                 </span>
-                                                                <strong className="text-slate-900 font-semibold text-xs">{item.title}</strong>
+                                                                <strong className="text-[#172033] font-semibold text-xs">{item.title}</strong>
                                                             </div>
-                                                            <p className="text-[11.5px] text-slate-600 pl-7 leading-relaxed">{item.desc}</p>
+                                                            <p className="text-[11.5px] text-[#5F6B7A] pl-7 leading-relaxed">{item.desc}</p>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
 
                                             {diagnosticLogs.length > 0 && (
-                                                <div className="border border-slate-200 rounded-xl p-3 bg-slate-950 text-slate-300 space-y-1.5">
+                                                <div className="border border-slate-800 rounded-lg p-3 bg-slate-950 text-slate-300 space-y-1.5">
                                                     <span className="text-[11px] font-mono text-emerald-400 block font-semibold">CLIENT SDK EVENT LOG STREAM:</span>
                                                     <div className="max-h-28 overflow-y-auto space-y-1 font-mono text-[10.5px]">
                                                         {diagnosticLogs.map((log, idx) => (
@@ -1387,7 +1387,7 @@ export default function WhatsAppIntegrationPage() {
                                             <Button
                                                 variant="outline"
                                                 onClick={() => setDiagnosticsModalOpen(false)}
-                                                className="text-xs h-9"
+                                                className="text-xs h-9 rounded-lg border-[#E5E9EE]"
                                             >
                                                 Close
                                             </Button>
@@ -1396,7 +1396,7 @@ export default function WhatsAppIntegrationPage() {
                                                     setDiagnosticsModalOpen(false);
                                                     launchEmbeddedSignup();
                                                 }}
-                                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-lg"
+                                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-lg shadow-xs"
                                             >
                                                 Launch Meta Signup
                                             </Button>
@@ -1410,20 +1410,20 @@ export default function WhatsAppIntegrationPage() {
 
                     {/* Right Side: Onboarding Walkthrough Steps */}
                     <div className="lg:col-span-5 space-y-6">
-                        <Card className="bg-white border border-[#EAE6DF] shadow-[0_2px_8px_-2px_rgba(10,30,10,0.04)] rounded-2xl overflow-hidden">
-                            <CardHeader className="border-b border-[#FAF8F5] pb-4">
+                        <Card className="bg-white border border-[#E5E9EE] shadow-2xs rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                                        <HelpCircle className="text-[#35877D]" size={18} />
+                                    <div className="p-2 rounded-lg bg-[#E8F6F3] text-[#2F8F83]">
+                                        <HelpCircle size={18} />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-sm font-bold text-[#0B2E1E]">How It Works</CardTitle>
-                                        <CardDescription className="text-xs text-slate-400">Step-by-step onboarding walkthrough.</CardDescription>
+                                        <CardTitle className="text-sm font-semibold text-[#172033]">How It Works</CardTitle>
+                                        <CardDescription className="text-xs text-[#5F6B7A]">Step-by-step onboarding walkthrough.</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-6">
-                                <div className="relative border-l border-emerald-100/70 ml-3 pl-6 space-y-6 py-1">
+                                <div className="relative border-l border-[#BFE4DD] ml-3 pl-6 space-y-6 py-1">
                                     {[
                                         "Click the 'Connect WhatsApp' button to launch Meta Embedded Signup Popup.",
                                         "Log in with Facebook and select the target Business Manager Profile.",
@@ -1432,16 +1432,16 @@ export default function WhatsAppIntegrationPage() {
                                         "Configure the Callback URL & Verify Token inside Meta Console webhook settings.",
                                     ].map((step, i) => (
                                         <div key={i} className="relative flex items-start">
-                                            <span className="absolute left-[-34px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#35877D] text-white text-xs font-medium border-2 border-white shadow-sm shrink-0">
+                                            <span className="absolute left-[-34px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#2F8F83] text-white text-xs font-medium border-2 border-white shadow-xs shrink-0">
                                                 {i + 1}
                                             </span>
                                             <div>
-                                                <p className="text-xs text-slate-600 font-medium leading-relaxed">{step}</p>
+                                                <p className="text-xs text-[#5F6B7A] font-medium leading-relaxed">{step}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#35877D] font-semibold">
+                                <div className="mt-6 pt-4 border-t border-[#E5E9EE] flex items-center justify-between text-xs text-[#2F8F83] font-medium">
                                     <a href="https://developers.facebook.com/docs/whatsapp/embedded-signup/" target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:underline">
                                         Meta Embedded Documentation
                                         <ArrowUpRight size={13} />
@@ -1459,12 +1459,12 @@ export default function WhatsAppIntegrationPage() {
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
     return (
-        <div className="flex items-center justify-between border-b border-[#FAF8F5] py-3.5 px-4 last:border-none last:pb-3 text-xs">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
-                <Icon size={14} className="text-slate-400 shrink-0" />
+        <div className="flex items-center justify-between border-b border-[#E5E9EE] py-3 px-4 last:border-none last:pb-3 text-xs">
+            <div className="flex items-center gap-2 text-[#5F6B7A] font-medium">
+                <Icon size={14} className="text-[#8A95A3] shrink-0" />
                 <span>{label}</span>
             </div>
-            <code className="font-mono text-xs text-[#0B2E1E] bg-[#FAF8F5] border border-[#EAE6DF] px-2.5 py-1 rounded-lg break-all select-all font-semibold">
+            <code className="font-mono text-xs text-[#172033] bg-[#F7F9FA] border border-[#E5E9EE] px-2 py-0.5 rounded-md break-all select-all font-semibold">
                 {value}
             </code>
         </div>

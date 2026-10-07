@@ -246,7 +246,7 @@ export default function RechargeCreditsPage() {
                 modal: {
                     ondismiss: () => setLoadingPack(null)
                 },
-                theme: { color: "#378179" }
+                theme: { color: "#2F8F83" }
             };
 
             const rzp = new window.Razorpay(options);
@@ -359,7 +359,7 @@ export default function RechargeCreditsPage() {
                 modal: {
                     ondismiss: () => setIsProcessingCustom(false)
                 },
-                theme: { color: "#378179" }
+                theme: { color: "#2F8F83" }
             };
 
             const rzp = new window.Razorpay(options);
@@ -538,15 +538,15 @@ export default function RechargeCreditsPage() {
     };
 
     return (
-        <div className="space-y-6 pb-12">
+        <div className="space-y-6 pb-12 w-full">
             <PageHeader
                 icon={Zap}
                 title="Recharge Credits"
                 description="Purchase predefined packages, enter a custom recharge amount, or configure auto recharge safety thresholds."
                 actions={
-                    <div className="flex items-center gap-2 bg-[#EAF7F2] border border-[#A8E0D0] px-4 py-2 rounded-2xl text-xs font-bold text-[#0B2E1E] shadow-2xs">
-                        <Coins size={15} className="text-[#378179]" />
-                        <span>Wallet Balance: <strong className="text-[#378179] font-black">{user?.credits !== undefined ? Number(user.credits).toLocaleString() : 0} Credits</strong></span>
+                    <div className="flex items-center gap-2 bg-[#E8F6F3] border border-[#BFE4DD] px-4 py-2 rounded-xl text-xs font-semibold text-[#172033] shadow-2xs">
+                        <Coins size={15} className="text-[#2F8F83]" />
+                        <span>Wallet Balance: <strong className="text-[#2F8F83] font-bold">{user?.credits !== undefined ? Number(user.credits).toLocaleString() : 0} Credits</strong></span>
                     </div>
                 }
             />
@@ -554,11 +554,11 @@ export default function RechargeCreditsPage() {
             {/* Predefined Credit Packages Grid */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                        <Sparkles size={16} className="text-[#378179]" />
+                    <h2 className="text-xs font-semibold text-[#172033] uppercase tracking-wider flex items-center gap-2">
+                        <Sparkles size={16} className="text-[#2F8F83]" />
                         Predefined Credit Packages
                     </h2>
-                    <span className="text-[11px] font-semibold text-slate-400">Instant Wallet Delivery • No Commitments</span>
+                    <span className="text-[11px] font-medium text-[#8A95A3]">Instant Wallet Delivery • No Commitments</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -570,26 +570,26 @@ export default function RechargeCreditsPage() {
                         return (
                             <Card
                                 key={pkg.id}
-                                className={`rounded-[24px] border p-5 flex flex-col justify-between transition-all duration-200 bg-white relative ${
+                                className={`rounded-xl border p-5 flex flex-col justify-between transition-all duration-200 bg-white relative ${
                                     pkg.is_popular
-                                        ? "border-[#378179] shadow-md ring-2 ring-[#378179]/15 bg-gradient-to-b from-[#EAF7F2]/40 to-white"
-                                        : "border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs"
+                                        ? "border-[#2F8F83] shadow-xs ring-2 ring-[#2F8F83]/15 bg-gradient-to-b from-[#E8F6F3]/40 to-white"
+                                        : "border-[#E5E9EE] shadow-2xs hover:border-slate-300 hover:shadow-xs"
                                 }`}
                             >
                                 {pkg.is_popular && (
-                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-[#378179] to-[#2c6f66] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-2xl shadow-2xs">
+                                    <div className="absolute top-0 right-0 bg-[#2F8F83] text-white text-[9px] font-semibold uppercase tracking-widest px-3 py-1 rounded-bl-xl shadow-2xs">
                                         Most Popular
                                     </div>
                                 )}
 
                                 <div className="space-y-1">
-                                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">{pkg.name}</span>
-                                    <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">{totalCredits.toLocaleString()}</p>
-                                    <p className="text-xs text-slate-400 font-extrabold uppercase tracking-wider">Credits</p>
+                                    <span className="text-[10px] text-[#8A95A3] font-semibold uppercase tracking-wider">{pkg.name}</span>
+                                    <p className="text-2xl font-bold text-[#172033] tracking-tight mt-1">{totalCredits.toLocaleString()}</p>
+                                    <p className="text-xs text-[#8A95A3] font-semibold uppercase tracking-wider">Credits</p>
                                 </div>
 
                                 {pkg.bonus_credits && pkg.bonus_credits > 0 ? (
-                                    <p className="text-[11px] font-extrabold text-[#378179] mt-2 flex items-center gap-1 bg-[#EAF7F2] p-1.5 rounded-xl border border-[#A8E0D0]/60">
+                                    <p className="text-[11px] font-semibold text-[#2F8F83] mt-2 flex items-center gap-1 bg-[#E8F6F3] p-1.5 rounded-lg border border-[#BFE4DD]">
                                         <Gift size={12} />
                                         <span>+{pkg.bonus_credits.toLocaleString()} Bonus Included!</span>
                                     </p>
@@ -597,15 +597,15 @@ export default function RechargeCreditsPage() {
                                     <div className="h-6" />
                                 )}
 
-                                <div className="py-2.5 my-2 border-y border-slate-100 flex items-baseline justify-between">
-                                    <span className="text-2xl font-black text-slate-900">₹{pkg.price.toLocaleString()}</span>
-                                    <span className="text-[10px] font-semibold text-slate-400">₹{perCredit} / credit</span>
+                                <div className="py-2.5 my-2 border-y border-[#E5E9EE] flex items-baseline justify-between">
+                                    <span className="text-2xl font-bold text-[#172033]">₹{pkg.price.toLocaleString()}</span>
+                                    <span className="text-[10px] font-medium text-[#8A95A3]">₹{perCredit} / credit</span>
                                 </div>
 
                                 <Button
                                     onClick={() => handlePackagePurchase(pkg)}
                                     disabled={!!loadingPack}
-                                    className="w-full h-11 rounded-2xl text-xs font-extrabold transition-all bg-[#378179] hover:bg-[#2c6f66] text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-1"
+                                    className="w-full h-10 rounded-xl text-xs font-semibold transition-all bg-[#2F8F83] hover:bg-[#267A70] text-white shadow-2xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-1"
                                 >
                                     {isLoading ? (
                                         <>
@@ -626,13 +626,13 @@ export default function RechargeCreditsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
                 {/* Custom Recharge Card (7 cols) */}
                 <div className="lg:col-span-7">
-                    <Card className="p-6 bg-white border border-slate-200/80 rounded-[24px] space-y-5 shadow-2xs">
-                        <CardHeader className="p-0 pb-3 border-b border-slate-100">
-                            <CardTitle className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                                <Coins size={18} className="text-[#378179]" />
+                    <Card className="p-6 bg-white border border-[#E5E9EE] rounded-xl space-y-5 shadow-2xs">
+                        <CardHeader className="p-0 pb-3 border-b border-[#E5E9EE]">
+                            <CardTitle className="text-base font-semibold text-[#172033] flex items-center gap-2">
+                                <Coins size={18} className="text-[#2F8F83]" />
                                 Custom Credit Recharge
                             </CardTitle>
-                            <CardDescription className="text-xs text-slate-500 font-medium">
+                            <CardDescription className="text-xs text-[#5F6B7A]">
                                 Enter any custom INR amount to purchase credits with automated tier bonus calculation.
                             </CardDescription>
                         </CardHeader>
@@ -640,15 +640,15 @@ export default function RechargeCreditsPage() {
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-extrabold text-slate-800">
+                                    <label className="text-xs font-semibold text-[#172033]">
                                         Enter Amount in INR (₹)
                                     </label>
-                                    <span className="text-[11px] font-semibold text-slate-400">Min ₹50 • Max ₹100,000</span>
+                                    <span className="text-[11px] font-medium text-[#8A95A3]">Min ₹50 • Max ₹100,000</span>
                                 </div>
 
                                 {/* Custom Input */}
                                 <div className="relative">
-                                    <span className="absolute left-4 top-3 text-lg font-black text-[#378179]">₹</span>
+                                    <span className="absolute left-4 top-3 text-lg font-bold text-[#2F8F83]">₹</span>
                                     <Input
                                         type="number"
                                         min={50}
@@ -656,13 +656,13 @@ export default function RechargeCreditsPage() {
                                         value={customAmountStr}
                                         onChange={(e) => setCustomAmountStr(e.target.value)}
                                         placeholder="500"
-                                        className="h-12 pl-9 bg-slate-50/80 border-slate-200 text-slate-900 text-lg font-black rounded-2xl focus-visible:ring-[#378179] focus-visible:bg-white transition-all shadow-inner"
+                                        className="h-12 pl-9 bg-slate-50/70 border-[#E5E9EE] text-[#172033] text-lg font-bold rounded-xl focus-visible:ring-[#2F8F83] focus-visible:bg-white transition-all"
                                     />
                                 </div>
 
                                 {/* Quick Presets */}
                                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mr-1">Quick Select:</span>
+                                    <span className="text-[10px] font-semibold text-[#8A95A3] uppercase tracking-wider mr-1">Quick Select:</span>
                                     {PRESET_AMOUNTS.map((amt) => {
                                         const isSelected = customAmountStr === amt.toString();
                                         return (
@@ -670,10 +670,10 @@ export default function RechargeCreditsPage() {
                                                 key={amt}
                                                 type="button"
                                                 onClick={() => setCustomAmountStr(amt.toString())}
-                                                className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
+                                                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
                                                     isSelected
-                                                        ? "bg-[#378179] text-white border-[#378179] shadow-2xs"
-                                                        : "bg-slate-100/80 text-slate-700 border-slate-200/80 hover:bg-slate-200/80"
+                                                        ? "bg-[#2F8F83] text-white border-[#2F8F83] shadow-2xs"
+                                                        : "bg-slate-100/80 text-[#5F6B7A] border-[#E5E9EE] hover:bg-slate-200/80"
                                                 }`}
                                             >
                                                 ₹{amt.toLocaleString()}
@@ -685,43 +685,43 @@ export default function RechargeCreditsPage() {
 
                             {/* Live calculation display */}
                             {isCalculatingCustom ? (
-                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500 font-medium">
-                                    <Loader2 size={16} className="animate-spin text-[#378179]" />
+                                <div className="p-5 bg-slate-50 rounded-xl border border-[#E5E9EE] flex items-center justify-center gap-2 text-xs text-[#5F6B7A]">
+                                    <Loader2 size={16} className="animate-spin text-[#2F8F83]" />
                                     <span>Calculating effective rates...</span>
                                 </div>
                             ) : customCalc ? (
-                                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#EAF7F2] via-emerald-50/40 to-white border border-[#A8E0D0] space-y-3 shadow-2xs">
-                                    <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-[#E8F6F3] via-emerald-50/30 to-white border border-[#BFE4DD] space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between text-xs text-[#5F6B7A] font-medium">
                                         <span>Calculated Base Credits</span>
-                                        <span className="font-extrabold text-slate-900">{customCalc.base_credits.toLocaleString()}</span>
+                                        <span className="font-semibold text-[#172033]">{customCalc.base_credits.toLocaleString()}</span>
                                     </div>
                                     {customCalc.bonus_credits > 0 ? (
-                                        <div className="flex items-center justify-between text-xs text-[#378179] font-bold">
+                                        <div className="flex items-center justify-between text-xs text-[#2F8F83] font-semibold">
                                             <span>
                                                 Bonus Credits {customCalc.tier_name ? `(${customCalc.tier_name})` : "(Volume Discount)"}
                                             </span>
-                                            <span className="bg-[#378179]/15 text-[#378179] px-2 py-0.5 rounded-lg text-xs font-black">
+                                            <span className="bg-[#E8F6F3] text-[#2F8F83] px-2 py-0.5 rounded-md text-xs font-bold border border-[#BFE4DD]">
                                                 +{customCalc.bonus_credits.toLocaleString()}
                                             </span>
                                         </div>
                                     ) : null}
 
                                     {/* Total Highlight */}
-                                    <div className="pt-3 border-t border-[#A8E0D0]/80 flex items-center justify-between bg-white/90 p-3 rounded-xl border border-[#A8E0D0]/60 shadow-2xs">
+                                    <div className="pt-3 border-t border-[#BFE4DD] flex items-center justify-between bg-white/90 p-3 rounded-lg border border-[#BFE4DD] shadow-2xs">
                                         <div>
-                                            <p className="text-xs font-black text-slate-900">Total Credits Received</p>
-                                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                                Effective Rate: <span className="font-bold text-slate-700">₹{customCalc.rate_per_credit.toFixed(2)} / credit</span>
+                                            <p className="text-xs font-semibold text-[#172033]">Total Credits Received</p>
+                                            <p className="text-[10px] text-[#5F6B7A] font-medium mt-0.5">
+                                                Effective Rate: <span className="font-semibold text-[#172033]">₹{customCalc.rate_per_credit.toFixed(2)} / credit</span>
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-2xl font-black text-[#378179] tracking-tight">{customCalc.total_credits.toLocaleString()}</span>
-                                            <span className="text-xs font-bold text-slate-400 ml-1">Credits</span>
+                                            <span className="text-2xl font-bold text-[#2F8F83] tracking-tight">{customCalc.total_credits.toLocaleString()}</span>
+                                            <span className="text-xs font-medium text-[#8A95A3] ml-1">Credits</span>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs text-amber-800 font-semibold text-center">
+                                <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-800 font-medium text-center">
                                     Enter an amount between ₹50 and ₹100,000.
                                 </div>
                             )}
@@ -729,7 +729,7 @@ export default function RechargeCreditsPage() {
                             <Button
                                 onClick={handleCustomPurchase}
                                 disabled={isProcessingCustom || !customCalc}
-                                className="w-full h-12 bg-gradient-to-r from-[#378179] to-[#2c6f66] hover:opacity-95 text-white rounded-2xl text-xs font-extrabold shadow-md shadow-[#378179]/20 cursor-pointer border-0 transition-all flex items-center justify-center gap-2"
+                                className="w-full h-11 bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl text-xs font-semibold shadow-2xs cursor-pointer border-0 transition-all flex items-center justify-center gap-2"
                             >
                                 {isProcessingCustom ? (
                                     <>
@@ -738,7 +738,7 @@ export default function RechargeCreditsPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <Sparkles size={16} className="text-emerald-300" />
+                                        <Sparkles size={16} className="text-emerald-200" />
                                         <span>Continue to Razorpay Checkout (₹{customCalc ? customCalc.amount_inr.toLocaleString() : customAmountStr})</span>
                                     </>
                                 )}
@@ -749,13 +749,13 @@ export default function RechargeCreditsPage() {
 
                 {/* Auto Recharge Settings Card (5 cols) */}
                 <div className="lg:col-span-5">
-                    <Card className="p-6 bg-white border border-slate-200/80 rounded-[24px] space-y-4 shadow-2xs">
-                        <CardHeader className="p-0 pb-3 border-b border-slate-100">
-                            <CardTitle className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                                <Settings size={18} className="text-[#378179]" />
+                    <Card className="p-6 bg-white border border-[#E5E9EE] rounded-xl space-y-4 shadow-2xs">
+                        <CardHeader className="p-0 pb-3 border-b border-[#E5E9EE]">
+                            <CardTitle className="text-base font-semibold text-[#172033] flex items-center gap-2">
+                                <Settings size={18} className="text-[#2F8F83]" />
                                 Auto Recharge Controls
                             </CardTitle>
-                            <CardDescription className="text-xs text-slate-500 font-medium">
+                            <CardDescription className="text-xs text-[#5F6B7A]">
                                 Automatically trigger recharges when balance falls below threshold.
                             </CardDescription>
                         </CardHeader>
@@ -763,9 +763,9 @@ export default function RechargeCreditsPage() {
                         <div className="space-y-4 pt-1">
                             {autoEnabled && (autoStatus === "ACTIVE" || autoStatus === "AUTHORIZED") ? (
                                 <>
-                                    <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200">
+                                    <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200">
                                         <div>
-                                            <p className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                                            <p className="text-xs font-semibold text-emerald-950 flex items-center gap-1.5">
                                                 <CheckCircle2 size={15} className="text-emerald-600" />
                                                 Auto Recharge Active
                                             </p>
@@ -773,53 +773,53 @@ export default function RechargeCreditsPage() {
                                                 {paymentSourceInfo?.masked_display || "UPI AutoPay / Card"}
                                             </p>
                                         </div>
-                                        <span className="bg-emerald-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                                        <span className="bg-emerald-600 text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full">
                                             ✓ Authorized
                                         </span>
                                     </div>
 
-                                    <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-2 text-slate-700">
+                                    <div className="p-3.5 bg-slate-50 border border-[#E5E9EE] rounded-xl text-xs space-y-2 text-[#5F6B7A]">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-slate-500 font-medium">Recharge Threshold:</span>
-                                            <span className="font-extrabold text-slate-900">{autoThreshold} credits</span>
+                                            <span className="text-[#5F6B7A] font-medium">Recharge Threshold:</span>
+                                            <span className="font-semibold text-[#172033]">{autoThreshold} credits</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-slate-500 font-medium">Recharge Amount:</span>
-                                            <span className="font-extrabold text-slate-900">₹{autoAmount}</span>
+                                            <span className="text-[#5F6B7A] font-medium">Recharge Amount:</span>
+                                            <span className="font-semibold text-[#172033]">₹{autoAmount}</span>
                                         </div>
-                                        <div className="flex justify-between items-center border-t border-slate-200/60 pt-2">
-                                            <span className="text-slate-500 font-medium">Today's Auto Charges:</span>
-                                            <span className="font-extrabold text-[#378179]">{autoRechargesToday} / {autoMaxDaily}</span>
+                                        <div className="flex justify-between items-center border-t border-[#E5E9EE] pt-2">
+                                            <span className="text-[#5F6B7A] font-medium">Today's Auto Charges:</span>
+                                            <span className="font-semibold text-[#2F8F83]">{autoRechargesToday} / {autoMaxDaily}</span>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Recharge Threshold (Credits)</label>
                                         <Input
                                             type="number"
                                             value={autoThreshold}
                                             onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-semibold text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Recharge Amount (₹)</label>
                                         <Input
                                             type="number"
                                             value={autoAmount}
                                             onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-semibold text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Max Auto Recharges Per Day</label>
                                         <Input
                                             type="number"
                                             value={autoMaxDaily}
                                             onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-medium text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
@@ -827,7 +827,7 @@ export default function RechargeCreditsPage() {
                                         <Button
                                             onClick={handleSaveAutoRecharge}
                                             disabled={isSavingAuto}
-                                            className="w-full h-10 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
+                                            className="w-full h-10 bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-2xs border-0 transition-colors"
                                         >
                                             {isSavingAuto ? "Saving..." : "Save Settings"}
                                         </Button>
@@ -836,7 +836,7 @@ export default function RechargeCreditsPage() {
                                                 variant="outline"
                                                 onClick={handleDisableAutoRecharge}
                                                 disabled={isSavingAuto}
-                                                className="h-9 border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold cursor-pointer"
+                                                className="h-9 border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-medium cursor-pointer"
                                             >
                                                 Disable Auto Recharge
                                             </Button>
@@ -844,7 +844,7 @@ export default function RechargeCreditsPage() {
                                                 variant="outline"
                                                 onClick={handleAuthorizeAutoRecharge}
                                                 disabled={isSavingAuto}
-                                                className="h-9 border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold cursor-pointer"
+                                                className="h-9 border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50 hover:text-[#172033] rounded-xl text-xs font-medium cursor-pointer"
                                             >
                                                 Re-Authorize
                                             </Button>
@@ -853,46 +853,46 @@ export default function RechargeCreditsPage() {
                                 </>
                             ) : (
                                 <>
-                                    <div className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                                    <div className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-[#E5E9EE]">
                                         <div>
-                                            <p className="text-xs font-extrabold text-slate-900">Auto Recharge</p>
-                                            <p className="text-[10px] text-slate-500 font-medium">Prevent campaign &amp; AI interruption</p>
+                                            <p className="text-xs font-semibold text-[#172033]">Auto Recharge</p>
+                                            <p className="text-[10px] text-[#5F6B7A] font-medium">Prevent campaign &amp; AI interruption</p>
                                         </div>
-                                        <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                                        <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full">
                                             Not Authorized
                                         </span>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Recharge Threshold (Credits)</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Recharge Threshold (Credits)</label>
                                         <Input
                                             type="number"
                                             value={autoThreshold}
                                             onChange={(e) => setAutoThreshold(parseInt(e.target.value) || 0)}
                                             placeholder="500"
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-semibold text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Recharge Amount (₹)</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Recharge Amount (₹)</label>
                                         <Input
                                             type="number"
                                             value={autoAmount}
                                             onChange={(e) => setAutoAmount(parseInt(e.target.value) || 0)}
                                             placeholder="500"
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-extrabold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-semibold text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-800">Max Auto Recharges Per Day</label>
+                                        <label className="text-xs font-semibold text-[#172033]">Max Auto Recharges Per Day</label>
                                         <Input
                                             type="number"
                                             value={autoMaxDaily}
                                             onChange={(e) => setAutoMaxDaily(parseInt(e.target.value) || 1)}
                                             placeholder="3"
-                                            className="h-10 bg-slate-50/80 border-slate-200 text-xs font-semibold rounded-xl focus-visible:ring-[#378179]"
+                                            className="h-10 bg-slate-50/70 border-[#E5E9EE] text-xs font-medium text-[#172033] rounded-xl focus-visible:ring-[#2F8F83]"
                                         />
                                     </div>
 
@@ -902,7 +902,7 @@ export default function RechargeCreditsPage() {
                                                 type="checkbox"
                                                 checked={autoConsent}
                                                 onChange={(e) => setAutoConsent(e.target.checked)}
-                                                className="h-4 w-4 mt-0.5 accent-[#378179] rounded cursor-pointer shrink-0"
+                                                className="h-4 w-4 mt-0.5 accent-[#2F8F83] rounded cursor-pointer shrink-0"
                                             />
                                             <span className="text-[11px] text-amber-900 font-medium leading-tight">
                                                 I explicitly authorize Connectly360 to automatically charge my authorized Razorpay payment method when my wallet balance drops below {autoThreshold} credits.
@@ -913,7 +913,7 @@ export default function RechargeCreditsPage() {
                                     <Button
                                         onClick={handleAuthorizeAutoRecharge}
                                         disabled={isSavingAuto}
-                                        className="w-full h-11 bg-[#378179] hover:bg-[#2c6f66] text-white text-xs font-extrabold rounded-xl cursor-pointer shadow-xs border-0"
+                                        className="w-full h-11 bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs font-semibold rounded-xl cursor-pointer shadow-2xs border-0 transition-colors"
                                     >
                                         {isSavingAuto ? "Initiating Razorpay Authorization..." : "Authorize Auto Recharge"}
                                     </Button>
@@ -925,12 +925,12 @@ export default function RechargeCreditsPage() {
             </div>
 
             {/* Security Guarantee Note */}
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-[#E5E9EE] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#5F6B7A]">
                 <div className="flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-[#378179]" />
-                    <span className="font-semibold">Razorpay Verified 256-bit Encrypted Payments</span>
+                    <ShieldCheck size={18} className="text-[#2F8F83]" />
+                    <span className="font-semibold text-[#172033]">Razorpay Verified 256-bit Encrypted Payments</span>
                 </div>
-                <span className="font-medium text-slate-500">Official GST invoice generated automatically after purchase.</span>
+                <span className="font-medium text-[#8A95A3]">Official GST invoice generated automatically after purchase.</span>
             </div>
         </div>
     );

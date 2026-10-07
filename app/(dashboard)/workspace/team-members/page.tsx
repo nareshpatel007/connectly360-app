@@ -375,7 +375,7 @@ export default function TeamMembersPage() {
     const selectedInviteRoleObj = availableRoles.find((r) => r.name === inviteRole);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={Users}
                 title="Team Members"
@@ -384,30 +384,30 @@ export default function TeamMembersPage() {
 
             {/* Summary Count Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white rounded-2xl border border-[#EAE6DF] p-4 flex items-center justify-between shadow-xs">
+                <div className="bg-white rounded-xl border border-[#E5E9EE] p-4 flex items-center justify-between shadow-2xs">
                     <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Members</p>
-                        <p className="text-2xl font-black text-slate-900 mt-1">{counts.active || members.filter(m => m.status === 'active').length}</p>
+                        <p className="text-xs font-semibold text-[#8A95A3] uppercase tracking-wider">Active Members</p>
+                        <p className="text-2xl font-bold text-[#172033] mt-1">{counts.active || members.filter(m => m.status === 'active').length}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                         <UserCheck size={20} />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#EAE6DF] p-4 flex items-center justify-between shadow-xs">
+                <div className="bg-white rounded-xl border border-[#E5E9EE] p-4 flex items-center justify-between shadow-2xs">
                     <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Invites</p>
-                        <p className="text-2xl font-black text-amber-600 mt-1">{counts.pending || invitations.length}</p>
+                        <p className="text-xs font-semibold text-[#8A95A3] uppercase tracking-wider">Pending Invites</p>
+                        <p className="text-2xl font-bold text-amber-600 mt-1">{counts.pending || invitations.length}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
                         <Mail size={20} />
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#EAE6DF] p-4 flex items-center justify-between shadow-xs">
+                <div className="bg-white rounded-xl border border-[#E5E9EE] p-4 flex items-center justify-between shadow-2xs">
                     <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suspended</p>
-                        <p className="text-2xl font-black text-slate-700 mt-1">{counts.suspended || members.filter(m => m.status === 'suspended').length}</p>
+                        <p className="text-xs font-semibold text-[#8A95A3] uppercase tracking-wider">Suspended</p>
+                        <p className="text-2xl font-bold text-[#172033] mt-1">{counts.suspended || members.filter(m => m.status === 'suspended').length}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
                         <Ban size={20} />
@@ -416,40 +416,40 @@ export default function TeamMembersPage() {
             </div>
 
             {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-2xl border border-[#EAE6DF]">
-                    <Loader2 className="animate-spin text-[#378179]" size={36} />
-                    <p className="text-sm font-semibold text-slate-500">Loading workspace team members...</p>
+                <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-xl border border-[#E5E9EE]">
+                    <Loader2 className="animate-spin text-[#2F8F83]" size={36} />
+                    <p className="text-sm font-medium text-[#5F6B7A]">Loading workspace team members...</p>
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Active Team Members Card */}
-                    <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                        <CardHeader className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+                        <CardHeader className="border-b border-[#E5E9EE] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <CardTitle className="text-base font-bold text-slate-800">Active Members</CardTitle>
-                                <CardDescription className="text-slate-500 text-sm mt-0.5">
+                                <CardTitle className="text-base font-semibold text-[#172033]">Active Members</CardTitle>
+                                <CardDescription className="text-[#5F6B7A] text-xs mt-0.5">
                                     Users who currently have active access to this workspace.
                                 </CardDescription>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2.5">
                                 {/* Status Filter Tabs */}
-                                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-bold text-slate-600">
+                                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-medium text-[#5F6B7A]">
                                     <button
                                         onClick={() => setStatusFilter("all")}
-                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "all" ? "bg-white text-slate-900 shadow-xs" : "hover:text-slate-900"}`}
+                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "all" ? "bg-white text-[#172033] shadow-2xs font-semibold" : "hover:text-[#172033]"}`}
                                     >
                                         All
                                     </button>
                                     <button
                                         onClick={() => setStatusFilter("active")}
-                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "active" ? "bg-white text-slate-900 shadow-xs" : "hover:text-slate-900"}`}
+                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "active" ? "bg-white text-[#172033] shadow-2xs font-semibold" : "hover:text-[#172033]"}`}
                                     >
                                         Active
                                     </button>
                                     <button
                                         onClick={() => setStatusFilter("suspended")}
-                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "suspended" ? "bg-white text-slate-900 shadow-xs" : "hover:text-slate-900"}`}
+                                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${statusFilter === "suspended" ? "bg-white text-[#172033] shadow-2xs font-semibold" : "hover:text-[#172033]"}`}
                                     >
                                         Suspended
                                     </button>
@@ -461,7 +461,7 @@ export default function TeamMembersPage() {
                                     <Input
                                         type="search"
                                         placeholder="Search members..."
-                                        className="pl-9 h-9 text-xs text-slate-600 rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                        className="pl-9 h-9 text-xs text-[#172033] rounded-xl border-[#E5E9EE] bg-slate-50/70 focus:bg-white focus-visible:ring-[#2F8F83]"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
@@ -474,7 +474,7 @@ export default function TeamMembersPage() {
                                             setInviteError(null);
                                             setInviteOpen(true);
                                         }}
-                                        className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-semibold cursor-pointer shadow-xs"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-medium cursor-pointer shadow-2xs transition-colors"
                                     >
                                         <UserPlus size={14} />
                                         Invite Member
@@ -486,18 +486,18 @@ export default function TeamMembersPage() {
                         <CardContent className="p-0">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                                        <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pl-6">Member</TableHead>
-                                        <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Role</TableHead>
-                                        <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Status</TableHead>
-                                        <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Joined</TableHead>
-                                        <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider text-right pr-6">Actions</TableHead>
+                                    <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 border-b border-[#E5E9EE]">
+                                        <TableHead className="font-semibold text-[#172033] text-[10px] uppercase tracking-wider pl-6">Member</TableHead>
+                                        <TableHead className="font-semibold text-[#172033] text-[10px] uppercase tracking-wider">Role</TableHead>
+                                        <TableHead className="font-semibold text-[#172033] text-[10px] uppercase tracking-wider">Status</TableHead>
+                                        <TableHead className="font-semibold text-[#172033] text-[10px] uppercase tracking-wider">Joined</TableHead>
+                                        <TableHead className="font-semibold text-[#172033] text-[10px] uppercase tracking-wider text-right pr-6">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredMembers.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="h-32 text-center text-slate-500 text-xs pl-6 pr-6">
+                                            <TableCell colSpan={5} className="h-32 text-center text-[#5F6B7A] text-xs pl-6 pr-6">
                                                 No team members found matching your search.
                                             </TableCell>
                                         </TableRow>
@@ -507,45 +507,45 @@ export default function TeamMembersPage() {
                                             const isWorkspaceOwner = m.is_owner || m.role.toLowerCase() === "owner";
 
                                             return (
-                                                <TableRow key={m.id} className="hover:bg-slate-50/40 transition-colors">
+                                                <TableRow key={m.id} className="hover:bg-slate-50/40 transition-colors border-b border-[#E5E9EE]">
                                                     <TableCell className="py-3.5 pl-6">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#378179] to-[#2c6f66] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#2F8F83] to-[#267A70] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                                                                 {getInitials(m.name)}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="text-xs font-semibold text-slate-800 truncate flex items-center gap-1.5">
+                                                                <p className="text-xs font-semibold text-[#172033] truncate flex items-center gap-1.5">
                                                                     <span>{m.name}</span>
                                                                     {isCurrentUser && (
-                                                                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold">
+                                                                        <span className="text-[10px] bg-slate-100 text-[#5F6B7A] px-1.5 py-0.2 rounded font-semibold">
                                                                             You
                                                                         </span>
                                                                     )}
                                                                 </p>
-                                                                <p className="text-xs text-slate-400 truncate mt-0.5">{m.email}</p>
+                                                                <p className="text-xs text-[#8A95A3] truncate mt-0.5">{m.email}</p>
                                                             </div>
                                                         </div>
                                                     </TableCell>
 
                                                     <TableCell className="py-3.5">
-                                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${getRoleBadgeClass(m.role)}`}>
+                                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(m.role)}`}>
                                                             {m.role_display}
                                                         </span>
                                                     </TableCell>
 
                                                     <TableCell className="py-3.5">
                                                         {m.status === "suspended" ? (
-                                                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">
+                                                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
                                                                 Suspended
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                                                                 Active
                                                             </span>
                                                         )}
                                                     </TableCell>
 
-                                                    <TableCell className="py-3.5 text-xs text-slate-500 font-medium">
+                                                    <TableCell className="py-3.5 text-xs text-[#5F6B7A] font-medium">
                                                         {m.joined_at ? new Date(m.joined_at).toLocaleDateString("en-IN") : "-"}
                                                     </TableCell>
 
@@ -614,10 +614,10 @@ export default function TeamMembersPage() {
 
                     {/* Pending Invitations Section */}
                     {filteredInvitations.length > 0 && (
-                        <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                            <CardHeader className="border-b border-slate-100 pb-4">
-                                <CardTitle className="text-base font-bold text-slate-800">Pending Invitations</CardTitle>
-                                <CardDescription className="text-slate-500 text-sm mt-0.5">
+                        <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4">
+                                <CardTitle className="text-sm font-semibold text-[#172033]">Pending Invitations</CardTitle>
+                                <CardDescription className="text-[#5F6B7A] text-xs mt-0.5">
                                     Invitations sent that are waiting for acceptance.
                                 </CardDescription>
                             </CardHeader>
@@ -625,26 +625,26 @@ export default function TeamMembersPage() {
                             <CardContent className="p-0">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                                            <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pl-6">Invited Email</TableHead>
-                                            <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Role</TableHead>
-                                            <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Status</TableHead>
-                                            <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Expires</TableHead>
-                                            <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider text-right pr-6">Actions</TableHead>
+                                        <TableRow className="bg-[#F7F9FA] hover:bg-[#F7F9FA] border-b border-[#E5E9EE]">
+                                            <TableHead className="font-semibold text-[#5F6B7A] text-[11px] uppercase tracking-wider pl-6">Invited Email</TableHead>
+                                            <TableHead className="font-semibold text-[#5F6B7A] text-[11px] uppercase tracking-wider">Role</TableHead>
+                                            <TableHead className="font-semibold text-[#5F6B7A] text-[11px] uppercase tracking-wider">Status</TableHead>
+                                            <TableHead className="font-semibold text-[#5F6B7A] text-[11px] uppercase tracking-wider">Expires</TableHead>
+                                            <TableHead className="font-semibold text-[#5F6B7A] text-[11px] uppercase tracking-wider text-right pr-6">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {filteredInvitations.map((i) => (
-                                            <TableRow key={i.id} className="hover:bg-slate-50/40 transition-colors">
+                                            <TableRow key={i.id} className="hover:bg-slate-50/60 border-b border-[#E5E9EE] transition-colors">
                                                 <TableCell className="py-3.5 pl-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 font-bold">
-                                                            <Mail size={16} />
+                                                        <div className="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/60 font-medium">
+                                                            <Mail size={15} />
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="text-xs font-semibold text-slate-800 truncate">{i.email}</p>
+                                                            <p className="text-xs font-semibold text-[#172033] truncate">{i.email}</p>
                                                             {i.invited_by && (
-                                                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                                                <p className="text-[11px] text-[#5F6B7A] truncate mt-0.5">
                                                                     Invited by {i.invited_by.name}
                                                                 </p>
                                                             )}
@@ -653,18 +653,18 @@ export default function TeamMembersPage() {
                                                 </TableCell>
 
                                                 <TableCell className="py-3.5">
-                                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${getRoleBadgeClass(i.role)}`}>
+                                                    <span className={`inline-flex px-2.5 py-0.5 rounded-md text-xs font-medium border ${getRoleBadgeClass(i.role)}`}>
                                                         {i.role_display}
                                                     </span>
                                                 </TableCell>
 
                                                 <TableCell className="py-3.5">
-                                                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">
+                                                    <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                                                         Pending
                                                     </span>
                                                 </TableCell>
 
-                                                <TableCell className="py-3.5 text-xs text-slate-500 font-medium">
+                                                <TableCell className="py-3.5 text-xs text-[#5F6B7A] font-medium">
                                                     {i.expires_at ? new Date(i.expires_at).toLocaleDateString("en-IN") : "In 7 days"}
                                                 </TableCell>
 
@@ -676,7 +676,7 @@ export default function TeamMembersPage() {
                                                                 size="sm"
                                                                 onClick={() => handleResendInvite(i)}
                                                                 disabled={resendingInviteId === i.id}
-                                                                className="h-8 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg font-medium cursor-pointer flex items-center gap-1"
+                                                                className="h-7 px-2.5 text-xs text-[#5F6B7A] hover:text-[#172033] hover:bg-slate-100 rounded-lg font-medium cursor-pointer flex items-center gap-1"
                                                             >
                                                                 <RotateCw size={12} className={resendingInviteId === i.id ? "animate-spin" : ""} />
                                                                 Resend
@@ -691,10 +691,10 @@ export default function TeamMembersPage() {
                                                                     setInviteToCancel(i);
                                                                     setCancelInviteOpen(true);
                                                                 }}
-                                                                className="h-8 w-8 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                                                                className="h-7 w-7 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
                                                                 title="Cancel Invitation"
                                                             >
-                                                                <Trash2 size={14} />
+                                                                <Trash2 size={13} />
                                                             </Button>
                                                         )}
                                                     </div>
@@ -711,27 +711,29 @@ export default function TeamMembersPage() {
 
             {/* INVITE MEMBER MODAL */}
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-                <DialogContent className="sm:max-w-md rounded-3xl p-6 border-slate-100 bg-white shadow-xl">
+                <DialogContent className="sm:max-w-md rounded-xl p-6 border-[#E5E9EE] bg-white shadow-xl">
                     <DialogHeader className="space-y-1">
-                        <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <UserPlus className="text-[#378179]" size={20} />
+                        <DialogTitle className="text-base font-semibold text-[#172033] flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-lg bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center shrink-0">
+                                <UserPlus size={16} />
+                            </div>
                             Invite Team Member
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500 text-sm font-medium">
+                        <DialogDescription className="text-[#5F6B7A] text-xs">
                             Send a secure invitation to collaborate on this workspace.
                         </DialogDescription>
                     </DialogHeader>
 
                     {inviteError && (
-                        <div className="flex items-center gap-2 p-3 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-semibold">
-                            <AlertTriangle size={16} className="shrink-0" />
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                            <AlertTriangle size={15} className="shrink-0" />
                             <span>{inviteError}</span>
                         </div>
                     )}
 
                     <form onSubmit={handleInvite} className="space-y-4 pt-1">
                         <div className="space-y-1.5">
-                            <label htmlFor="email" className="text-xs font-bold text-slate-700">
+                            <label htmlFor="email" className="text-xs font-semibold text-[#172033]">
                                 Email Address *
                             </label>
                             <Input
@@ -741,22 +743,22 @@ export default function TeamMembersPage() {
                                 required
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
-                                className="h-11 border-slate-200 focus-visible:ring-[#378179] focus-visible:border-[#378179] rounded-xl font-medium"
+                                className="h-9 border-[#E5E9EE] focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83] rounded-lg text-xs"
                                 disabled={isInviting}
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label htmlFor="role" className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                            <label htmlFor="role" className="text-xs font-semibold text-[#172033] flex items-center justify-between">
                                 <span>Assign Workspace Role *</span>
-                                <span className="text-[11px] text-slate-400 font-normal">Spatie RBAC</span>
+                                <span className="text-[11px] text-[#5F6B7A] font-normal">Spatie RBAC</span>
                             </label>
 
                             <select
                                 id="role"
                                 value={inviteRole}
                                 onChange={(e) => setInviteRole(e.target.value)}
-                                className="h-11 w-full border border-slate-200 focus:ring-[#378179] focus:border-[#378179] focus:outline-none rounded-xl bg-slate-50 font-medium px-3 text-sm text-slate-900"
+                                className="h-9 w-full border border-[#E5E9EE] focus:ring-[#2F8F83] focus:border-[#2F8F83] focus:outline-none rounded-lg bg-white font-medium px-3 text-xs text-[#172033]"
                                 disabled={isInviting}
                             >
                                 {availableRoles
@@ -771,19 +773,19 @@ export default function TeamMembersPage() {
 
                         {/* Role Capability Preview */}
                         {selectedInviteRoleObj && (
-                            <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 text-xs space-y-2">
-                                <p className="font-bold text-slate-700 flex items-center gap-1.5">
-                                    <Shield size={14} className="text-[#378179]" />
+                            <div className="bg-[#F7F9FA] rounded-lg p-3 border border-[#E5E9EE] text-xs space-y-2">
+                                <p className="font-semibold text-[#172033] flex items-center gap-1.5">
+                                    <Shield size={14} className="text-[#2F8F83]" />
                                     <span>{selectedInviteRoleObj.display_name} Capabilities:</span>
                                 </p>
-                                <p className="text-slate-500 text-[11px] leading-relaxed">
+                                <p className="text-[#5F6B7A] text-[11px] leading-relaxed">
                                     {selectedInviteRoleObj.description}
                                 </p>
                                 {selectedInviteRoleObj.capabilities && selectedInviteRoleObj.capabilities.length > 0 && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
                                         {selectedInviteRoleObj.capabilities.slice(0, 4).map((cap, idx) => (
-                                            <div key={idx} className="flex items-center gap-1 text-[11px] text-slate-700">
-                                                <CheckCircle2 size={12} className="text-[#378179] shrink-0" />
+                                            <div key={idx} className="flex items-center gap-1 text-[11px] text-[#172033]">
+                                                <CheckCircle2 size={12} className="text-[#2F8F83] shrink-0" />
                                                 <span className="truncate">{cap}</span>
                                             </div>
                                         ))}
@@ -797,19 +799,19 @@ export default function TeamMembersPage() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setInviteOpen(false)}
-                                className="h-11 rounded-xl font-bold border-slate-200 text-slate-600 cursor-pointer"
+                                className="h-9 rounded-lg font-medium border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] text-xs cursor-pointer"
                                 disabled={isInviting}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                className="h-11 bg-[#378179] hover:bg-[#2c6f66] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                                className="h-9 bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium rounded-lg text-xs shadow-xs cursor-pointer"
                                 disabled={isInviting}
                             >
                                 {isInviting ? (
                                     <>
-                                        <Loader2 className="animate-spin mr-2" size={16} />
+                                        <Loader2 className="animate-spin mr-1.5" size={14} />
                                         Sending Invite...
                                     </>
                                 ) : (
@@ -823,32 +825,34 @@ export default function TeamMembersPage() {
 
             {/* CHANGE ROLE DIALOG */}
             <Dialog open={roleChangeOpen} onOpenChange={setRoleChangeOpen}>
-                <DialogContent className="sm:max-w-md rounded-3xl p-6 border-slate-100 bg-white shadow-xl">
+                <DialogContent className="sm:max-w-md rounded-xl p-6 border-[#E5E9EE] bg-white shadow-xl">
                     <DialogHeader className="space-y-1">
-                        <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <Shield className="text-[#378179]" size={20} />
+                        <DialogTitle className="text-base font-semibold text-[#172033] flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-lg bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center shrink-0">
+                                <Shield size={16} />
+                            </div>
                             Change Member Role
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500 text-sm font-medium">
-                            Update access permissions for <strong className="text-slate-800">{selectedMember?.name}</strong>.
+                        <DialogDescription className="text-[#5F6B7A] text-xs">
+                            Update access permissions for <strong className="text-[#172033]">{selectedMember?.name}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 pt-2">
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
-                            <span className="text-slate-500">Current Role:</span>
-                            <span className="font-bold text-slate-800">{selectedMember?.role_display}</span>
+                        <div className="bg-[#F7F9FA] p-3 rounded-lg border border-[#E5E9EE] text-xs flex items-center justify-between">
+                            <span className="text-[#5F6B7A]">Current Role:</span>
+                            <span className="font-semibold text-[#172033]">{selectedMember?.role_display}</span>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label htmlFor="newRole" className="text-xs font-bold text-slate-700">
+                            <label htmlFor="newRole" className="text-xs font-semibold text-[#172033]">
                                 Select New Role
                             </label>
                             <select
                                 id="newRole"
                                 value={newRole}
                                 onChange={(e) => setNewRole(e.target.value)}
-                                className="h-11 w-full border border-slate-200 focus:ring-[#378179] focus:border-[#378179] focus:outline-none rounded-xl bg-slate-50 font-medium px-3 text-sm text-slate-900"
+                                className="h-9 w-full border border-[#E5E9EE] focus:ring-[#2F8F83] focus:border-[#2F8F83] focus:outline-none rounded-lg bg-white font-medium px-3 text-xs text-[#172033]"
                                 disabled={isUpdatingRole}
                             >
                                 {availableRoles
@@ -861,7 +865,7 @@ export default function TeamMembersPage() {
                             </select>
                         </div>
 
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-[#5F6B7A]">
                             Changing their role will update their effective permissions immediately without requiring a logout.
                         </p>
 
@@ -870,19 +874,19 @@ export default function TeamMembersPage() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setRoleChangeOpen(false)}
-                                className="h-11 rounded-xl font-bold border-slate-200 text-slate-600 cursor-pointer"
+                                className="h-9 rounded-lg font-medium border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] text-xs cursor-pointer"
                                 disabled={isUpdatingRole}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleUpdateRole}
-                                className="h-11 bg-[#378179] hover:bg-[#2c6f66] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                                className="h-9 bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium rounded-lg text-xs shadow-xs cursor-pointer"
                                 disabled={isUpdatingRole}
                             >
                                 {isUpdatingRole ? (
                                     <>
-                                        <Loader2 className="animate-spin mr-2" size={16} />
+                                        <Loader2 className="animate-spin mr-1.5" size={14} />
                                         Updating...
                                     </>
                                 ) : (
@@ -896,46 +900,46 @@ export default function TeamMembersPage() {
 
             {/* SUSPEND / REACTIVATE CONFIRMATION DIALOG */}
             <Dialog open={suspendOpen} onOpenChange={setSuspendOpen}>
-                <DialogContent className="sm:max-w-[420px] rounded-3xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-amber-50/60 border-b border-amber-100 px-6 py-4 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                            <Ban size={20} />
+                <DialogContent className="sm:max-w-[420px] rounded-xl overflow-hidden p-0 border border-[#E5E9EE] shadow-xl bg-white">
+                    <div className="bg-amber-50/60 border-b border-amber-200/60 px-5 py-4 flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                            <Ban size={18} />
                         </div>
                         <div>
-                            <DialogTitle className="text-sm font-bold text-slate-800">
+                            <DialogTitle className="text-sm font-semibold text-[#172033]">
                                 {memberToSuspend?.status === "suspended" ? "Reactivate Member Access" : "Suspend Member Access"}
                             </DialogTitle>
-                            <DialogDescription className="text-slate-500 text-[11px] mt-0.5">
+                            <DialogDescription className="text-[#5F6B7A] text-xs mt-0.5">
                                 Workspace access control
                             </DialogDescription>
                         </div>
                     </div>
-                    <div className="px-6 py-5 space-y-4">
-                        <p className="text-xs text-slate-700 leading-relaxed">
+                    <div className="px-5 py-4 space-y-4">
+                        <p className="text-xs text-[#5F6B7A] leading-relaxed">
                             {memberToSuspend?.status === "suspended" ? (
                                 <>
-                                    Reactivate workspace access for <strong className="text-slate-900">{memberToSuspend?.name}</strong>? They will be able to access all assigned resources immediately.
+                                    Reactivate workspace access for <strong className="text-[#172033]">{memberToSuspend?.name}</strong>? They will be able to access all assigned resources immediately.
                                 </>
                             ) : (
                                 <>
-                                    Are you sure you want to suspend <strong className="text-slate-900">{memberToSuspend?.name}</strong>? Suspended members cannot call workspace APIs or view workspace data.
+                                    Are you sure you want to suspend <strong className="text-[#172033]">{memberToSuspend?.name}</strong>? Suspended members cannot call workspace APIs or view workspace data.
                                 </>
                             )}
                         </p>
-                        <div className="flex justify-end gap-2.5">
+                        <div className="flex justify-end gap-2 pt-1">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setSuspendOpen(false)}
                                 disabled={isSuspending}
-                                className="text-xs rounded-xl h-10 px-4 font-semibold cursor-pointer"
+                                className="text-xs rounded-lg h-9 px-3.5 font-medium border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] cursor-pointer"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="button"
                                 onClick={handleToggleSuspend}
-                                className={`text-white text-xs rounded-xl h-10 px-5 font-semibold border-0 cursor-pointer ${
+                                className={`text-white text-xs rounded-lg h-9 px-4 font-medium border-0 cursor-pointer ${
                                     memberToSuspend?.status === "suspended"
                                         ? "bg-emerald-600 hover:bg-emerald-700"
                                         : "bg-amber-600 hover:bg-amber-700"
@@ -953,36 +957,36 @@ export default function TeamMembersPage() {
 
             {/* REMOVE MEMBER CONFIRMATION DIALOG */}
             <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
-                <DialogContent className="sm:max-w-[420px] rounded-3xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-rose-50/60 border-b border-rose-100 px-6 py-4 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                            <AlertTriangle size={20} />
+                <DialogContent className="sm:max-w-[420px] rounded-xl overflow-hidden p-0 border border-[#E5E9EE] shadow-xl bg-white">
+                    <div className="bg-rose-50/60 border-b border-rose-200/60 px-5 py-4 flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={18} />
                         </div>
                         <div>
-                            <DialogTitle className="text-sm font-bold text-slate-800">Remove from Workspace</DialogTitle>
-                            <DialogDescription className="text-slate-500 text-[11px] mt-0.5">
+                            <DialogTitle className="text-sm font-semibold text-[#172033]">Remove from Workspace</DialogTitle>
+                            <DialogDescription className="text-[#5F6B7A] text-xs mt-0.5">
                                 Membership revocation
                             </DialogDescription>
                         </div>
                     </div>
-                    <div className="px-6 py-5 space-y-4">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                            Are you sure you want to remove <strong className="text-slate-900">{memberToRemove?.name}</strong> ({memberToRemove?.email}) from this workspace? Their workspace membership and role will be revoked, but their global account will not be deleted.
+                    <div className="px-5 py-4 space-y-4">
+                        <p className="text-xs text-[#5F6B7A] leading-relaxed">
+                            Are you sure you want to remove <strong className="text-[#172033]">{memberToRemove?.name}</strong> ({memberToRemove?.email}) from this workspace? Their workspace membership and role will be revoked, but their global account will not be deleted.
                         </p>
-                        <div className="flex justify-end gap-2.5">
+                        <div className="flex justify-end gap-2 pt-1">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setRemoveOpen(false)}
                                 disabled={isRemoving}
-                                className="text-xs rounded-xl h-10 px-4 font-semibold cursor-pointer"
+                                className="text-xs rounded-lg h-9 px-3.5 font-medium border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] cursor-pointer"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="button"
                                 onClick={handleRemoveMember}
-                                className="bg-rose-600 hover:bg-rose-700 text-white text-xs rounded-xl h-10 px-5 font-semibold border-0 cursor-pointer"
+                                className="bg-rose-600 hover:bg-rose-700 text-white text-xs rounded-lg h-9 px-4 font-medium border-0 cursor-pointer"
                                 disabled={isRemoving}
                             >
                                 {isRemoving ? (
@@ -996,36 +1000,36 @@ export default function TeamMembersPage() {
 
             {/* CANCEL INVITATION CONFIRMATION DIALOG */}
             <Dialog open={cancelInviteOpen} onOpenChange={setCancelInviteOpen}>
-                <DialogContent className="sm:max-w-[420px] rounded-3xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-rose-50/60 border-b border-rose-100 px-6 py-4 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                            <AlertTriangle size={20} />
+                <DialogContent className="sm:max-w-[420px] rounded-xl overflow-hidden p-0 border border-[#E5E9EE] shadow-xl bg-white">
+                    <div className="bg-rose-50/60 border-b border-rose-200/60 px-5 py-4 flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={18} />
                         </div>
                         <div>
-                            <DialogTitle className="text-sm font-bold text-slate-800">Cancel Invitation</DialogTitle>
-                            <DialogDescription className="text-slate-500 text-[11px] mt-0.5">
+                            <DialogTitle className="text-sm font-semibold text-[#172033]">Cancel Invitation</DialogTitle>
+                            <DialogDescription className="text-[#5F6B7A] text-xs mt-0.5">
                                 Invalidate pending invitation token
                             </DialogDescription>
                         </div>
                     </div>
-                    <div className="px-6 py-5 space-y-4">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                            Are you sure you want to cancel the invitation sent to <strong className="text-slate-900">{inviteToCancel?.email}</strong>? The invitation token will be cancelled.
+                    <div className="px-5 py-4 space-y-4">
+                        <p className="text-xs text-[#5F6B7A] leading-relaxed">
+                            Are you sure you want to cancel the invitation sent to <strong className="text-[#172033]">{inviteToCancel?.email}</strong>? The invitation token will be cancelled.
                         </p>
-                        <div className="flex justify-end gap-2.5">
+                        <div className="flex justify-end gap-2 pt-1">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setCancelInviteOpen(false)}
                                 disabled={isCancellingInvite}
-                                className="text-xs rounded-xl h-10 px-4 font-semibold cursor-pointer"
+                                className="text-xs rounded-lg h-9 px-3.5 font-medium border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] cursor-pointer"
                             >
                                 Keep Invite
                             </Button>
                             <Button
                                 type="button"
                                 onClick={handleCancelInvite}
-                                className="bg-rose-600 hover:bg-rose-700 text-white text-xs rounded-xl h-10 px-5 font-semibold border-0 cursor-pointer"
+                                className="bg-rose-600 hover:bg-rose-700 text-white text-xs rounded-lg h-9 px-4 font-medium border-0 cursor-pointer"
                                 disabled={isCancellingInvite}
                             >
                                 {isCancellingInvite ? (

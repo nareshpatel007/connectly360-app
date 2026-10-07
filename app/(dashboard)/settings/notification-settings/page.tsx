@@ -129,7 +129,7 @@ export default function NotificationSettingsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-5xl">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={BellRing}
                 title="Notification Settings"
@@ -137,11 +137,11 @@ export default function NotificationSettingsPage() {
             />
 
             {/* Browser Notifications Permission Card */}
-            <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                <CardHeader className="border-b border-slate-100 pb-4">
+            <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-[#E5E9EE] pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0 text-[#35877D] shadow-2xs mt-0.5">
+                            <div className="h-9 w-9 rounded-xl bg-[#E8F6F3] border border-[#BFE4DD] flex items-center justify-center shrink-0 text-[#2F8F83] shadow-2xs mt-0.5">
                                 <Monitor size={18} />
                             </div>
                             <div>
@@ -177,7 +177,7 @@ export default function NotificationSettingsPage() {
                                     onClick={handleEnableBrowser}
                                     disabled={requestingBrowser}
                                     variant="outline"
-                                    className="border-[#378179]/30 text-[#378179] hover:bg-teal-50 text-xs h-8 px-3 rounded-xl font-semibold cursor-pointer"
+                                    className="border-[#BFE4DD] text-[#2F8F83] hover:bg-[#E8F6F3] text-xs h-8 px-3 rounded-xl font-semibold cursor-pointer"
                                 >
                                     {requestingBrowser ? (
                                         <>
@@ -205,7 +205,7 @@ export default function NotificationSettingsPage() {
             {/* Notification Category Groups */}
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="animate-spin text-[#378179]" size={36} />
+                    <Loader2 className="animate-spin text-[#2F8F83]" size={36} />
                     <p className="text-sm font-medium text-slate-500">Loading notification preferences...</p>
                 </div>
             ) : (
@@ -213,9 +213,9 @@ export default function NotificationSettingsPage() {
                     {categoryGroups.map((group) => (
                         <Card
                             key={group.id}
-                            className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden"
+                            className="border border-[#E5E9EE] bg-white shadow-2xs rounded-2xl overflow-hidden"
                         >
-                            <CardHeader className="border-b border-slate-100 pb-4">
+                            <CardHeader className="border-b border-[#E5E9EE] pb-4">
                                 <CardTitle className="text-base font-bold text-slate-800">
                                     {group.name}
                                 </CardTitle>
@@ -223,7 +223,7 @@ export default function NotificationSettingsPage() {
                                     {group.description}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="p-0 divide-y divide-slate-100">
+                            <CardContent className="p-0 divide-y divide-[#E5E9EE]">
                                 {group.items.map((item) => {
                                     const isMasterActive =
                                         item.in_app || item.toast || item.browser;
@@ -240,7 +240,7 @@ export default function NotificationSettingsPage() {
                                                     </p>
                                                     {item.locked && (
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                                                            <Lock size={10} />
+                                                             <Lock size={10} />
                                                             Required Security Policy
                                                         </span>
                                                     )}
@@ -265,7 +265,7 @@ export default function NotificationSettingsPage() {
                                                             onClick={() => toggleChannel(item.key, "in_app")}
                                                             className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer border ${
                                                                 item.in_app
-                                                                    ? "bg-teal-50 text-[#378179] border-teal-200"
+                                                                    ? "bg-[#E8F6F3] text-[#2F8F83] border-[#BFE4DD]"
                                                                     : "bg-slate-50 text-slate-400 border-slate-200"
                                                             }`}
                                                             title="Toggle In-App center notification"
@@ -277,7 +277,7 @@ export default function NotificationSettingsPage() {
                                                             onClick={() => toggleChannel(item.key, "toast")}
                                                             className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer border ${
                                                                 item.toast
-                                                                    ? "bg-teal-50 text-[#378179] border-teal-200"
+                                                                    ? "bg-[#E8F6F3] text-[#2F8F83] border-[#BFE4DD]"
                                                                     : "bg-slate-50 text-slate-400 border-slate-200"
                                                             }`}
                                                             title="Toggle popup toast"
@@ -289,7 +289,7 @@ export default function NotificationSettingsPage() {
                                                             onClick={() => toggleChannel(item.key, "browser")}
                                                             className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer border ${
                                                                 item.browser
-                                                                    ? "bg-teal-50 text-[#378179] border-teal-200"
+                                                                    ? "bg-[#E8F6F3] text-[#2F8F83] border-[#BFE4DD]"
                                                                     : "bg-slate-50 text-slate-400 border-slate-200"
                                                             }`}
                                                             title="Toggle Browser desktop notification"
@@ -301,7 +301,7 @@ export default function NotificationSettingsPage() {
                                                             onClick={() => toggleChannel(item.key, "email")}
                                                             className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer border ${
                                                                 item.email
-                                                                    ? "bg-teal-50 text-[#378179] border-teal-200"
+                                                                    ? "bg-[#E8F6F3] text-[#2F8F83] border-[#BFE4DD]"
                                                                     : "bg-slate-50 text-slate-400 border-slate-200"
                                                             }`}
                                                             title="Toggle Email notification"
@@ -320,7 +320,7 @@ export default function NotificationSettingsPage() {
                                                     onClick={() => toggleMaster(item.key)}
                                                     className={`h-6 w-11 rounded-full ${
                                                         isMasterActive || item.locked
-                                                            ? "bg-[#378179]"
+                                                            ? "bg-[#2F8F83]"
                                                             : "bg-slate-200"
                                                     } relative transition-colors ${
                                                         item.locked ? "opacity-75 cursor-not-allowed" : "cursor-pointer"
@@ -359,7 +359,7 @@ export default function NotificationSettingsPage() {
                         <Button
                             onClick={handleSave}
                             disabled={updateMutation.isPending || !isDirty}
-                            className="bg-[#378179] hover:bg-[#2c6f66] text-white text-xs h-9 px-5 rounded-xl border-0 font-semibold cursor-pointer shadow-xs disabled:opacity-50"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-5 rounded-xl border-0 font-semibold cursor-pointer shadow-xs disabled:opacity-50"
                         >
                             {updateMutation.isPending ? (
                                 <>

@@ -353,13 +353,13 @@ export default function AutoReplyRulesPage() {
                             onClick={() => handleOpenTest()}
                             className="border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl h-9 px-3.5 text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
                         >
-                            <Play size={13} className="text-[#35877D]" />
+                            <Play size={13} className="text-[#2F8F83]" />
                             <span>Test Simulator</span>
                         </Button>
                         <Button
                             size="sm"
                             onClick={handleOpenCreate}
-                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs border-0"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs border-0"
                         >
                             <Plus size={14} />
                             <span>New Auto-Reply Rule</span>
@@ -370,33 +370,33 @@ export default function AutoReplyRulesPage() {
 
             {/* Metrics Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-white border border-[#EAE6DF] rounded-2xl shadow-xs">
+                <Card className="bg-white border border-[#E5E9EE] rounded-2xl shadow-2xs">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Rules</p>
-                            <h3 className="text-xl font-bold text-[#0B2E1E] mt-0.5">{totalRules}</h3>
+                            <h3 className="text-xl font-bold text-[#172033] mt-0.5">{totalRules}</h3>
                             <p className="text-[11px] text-slate-500 mt-0.5">Configured keyword triggers</p>
                         </div>
-                        <div className="h-10 w-10 rounded-xl bg-teal-50 text-[#35877D] flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center border border-[#BFE4DD]">
                             <MessageSquare size={18} />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-[#EAE6DF] rounded-2xl shadow-xs">
+                <Card className="bg-white border border-[#E5E9EE] rounded-2xl shadow-2xs">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Rules</p>
                             <h3 className="text-xl font-bold text-emerald-700 mt-0.5">{activeRulesCount}</h3>
                             <p className="text-[11px] text-slate-500 mt-0.5">Evaluating incoming chats</p>
                         </div>
-                        <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                             <CheckCircle2 size={18} />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-[#EAE6DF] rounded-2xl shadow-xs">
+                <Card className="bg-white border border-[#E5E9EE] rounded-2xl shadow-2xs">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Dispatched</p>

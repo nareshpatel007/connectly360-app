@@ -70,7 +70,7 @@ export default function DashboardPage() {
     const isWhatsappConnected = whatsappStatus?.status === "connected";
 
     return (
-        <div className="space-y-5 pb-12 font-sans max-w-7xl mx-auto">
+        <div className="space-y-5 pb-12 font-sans w-full">
             {/* 1. COMPACT PAGE HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5E9EE] pb-4">
                 <div>

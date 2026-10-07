@@ -80,7 +80,7 @@ export default function BillingOverviewPage() {
     const isLowCredits = balance > 0 && balance <= 100;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Standard PageHeader */}
             <PageHeader
                 icon={Wallet}
@@ -90,7 +90,7 @@ export default function BillingOverviewPage() {
                     <div className="flex items-center gap-2">
                         <Button
                             onClick={() => setIsBuyModalOpen(true)}
-                            className="bg-[#378179] hover:bg-[#2c6f66] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-semibold cursor-pointer shadow-xs"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-medium cursor-pointer shadow-2xs transition-colors"
                         >
                             <Zap size={14} className="fill-white" />
                             Buy Credits
@@ -98,7 +98,7 @@ export default function BillingOverviewPage() {
                         <Button
                             variant="outline"
                             asChild
-                            className="text-xs font-semibold text-slate-700 border-slate-200 h-9 rounded-xl cursor-pointer"
+                            className="text-xs font-medium text-[#5F6B7A] border-[#E5E9EE] h-9 rounded-xl cursor-pointer hover:bg-slate-50 hover:text-[#172033]"
                         >
                             <Link href="/billing/credit-history">View History</Link>
                         </Button>
@@ -108,11 +108,11 @@ export default function BillingOverviewPage() {
 
             {/* Low / Zero Alert */}
             {isZeroCredits && !isAlertDismissed ? (
-                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="text-rose-600 shrink-0" size={20} />
                         <div>
-                            <p className="text-xs font-bold text-rose-900">Wallet balance is 0 credits</p>
+                            <p className="text-xs font-semibold text-rose-900">Wallet balance is 0 credits</p>
                             <p className="text-[11px] text-rose-700">AI replies, incoming resolutions, and broadcasts are currently paused.</p>
                         </div>
                     </div>
@@ -120,7 +120,7 @@ export default function BillingOverviewPage() {
                         <Button 
                             size="sm"
                             onClick={() => setIsBuyModalOpen(true)}
-                            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
+                            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg h-8 cursor-pointer"
                         >
                             Refill Now
                         </Button>
@@ -134,11 +134,11 @@ export default function BillingOverviewPage() {
                     </div>
                 </div>
             ) : isLowCredits && !isAlertDismissed ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="text-amber-600 shrink-0" size={20} />
                         <div>
-                            <p className="text-xs font-bold text-amber-900">Low credits warning: {balance} credits left</p>
+                            <p className="text-xs font-semibold text-amber-900">Low credits warning: {balance} credits left</p>
                             <p className="text-[11px] text-amber-700">Recharge before your balance reaches zero to prevent service disruptions.</p>
                         </div>
                     </div>
@@ -146,7 +146,7 @@ export default function BillingOverviewPage() {
                         <Button 
                             size="sm"
                             onClick={() => setIsBuyModalOpen(true)}
-                            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg h-8 cursor-pointer"
+                            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg h-8 cursor-pointer"
                         >
                             Add Credits
                         </Button>
@@ -164,12 +164,12 @@ export default function BillingOverviewPage() {
             {/* Top Cards: Wallet Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Available Balance Card */}
-                <Card className="p-5 rounded-2xl bg-gradient-to-br from-[#378179] via-[#2c6f66] to-[#00382B] text-white shadow-xs relative overflow-hidden flex flex-col justify-between border-0">
+                <Card className="p-5 rounded-xl bg-gradient-to-br from-[#2F8F83] via-[#267A70] to-[#14423C] text-white shadow-2xs relative overflow-hidden flex flex-col justify-between border-0">
                     <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200">Current Wallet Balance</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-200">Current Wallet Balance</span>
                         <div className="flex items-baseline gap-2 pt-1">
-                            <span className="text-3xl font-extrabold tracking-tight">{(balance ?? 0).toLocaleString()}</span>
-                            <span className="text-xs font-semibold text-emerald-200">Credits</span>
+                            <span className="text-3xl font-bold tracking-tight">{(balance ?? 0).toLocaleString()}</span>
+                            <span className="text-xs font-medium text-emerald-200">Credits</span>
                         </div>
                     </div>
                     <div className="pt-4 flex items-center justify-between border-t border-white/10 mt-4">
@@ -177,7 +177,7 @@ export default function BillingOverviewPage() {
                         <Button 
                             size="sm" 
                             onClick={() => setIsBuyModalOpen(true)}
-                            className="bg-white hover:bg-emerald-50 text-[#378179] text-xs font-bold h-7.5 px-3 rounded-lg border-0 shadow-xs cursor-pointer"
+                            className="bg-white hover:bg-emerald-50 text-[#2F8F83] text-xs font-semibold h-7.5 px-3 rounded-lg border-0 shadow-2xs cursor-pointer"
                         >
                             + Recharge
                         </Button>
@@ -185,49 +185,49 @@ export default function BillingOverviewPage() {
                 </Card>
 
                 {/* Lifetime Purchased */}
-                <Card className="p-5 rounded-2xl bg-white border border-[#EAE6DF] shadow-xs flex flex-col justify-between">
+                <Card className="p-5 rounded-xl bg-white border border-[#E5E9EE] shadow-2xs flex flex-col justify-between">
                     <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lifetime Purchased</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A95A3]">Lifetime Purchased</span>
                         <div className="flex items-baseline gap-2 pt-1">
-                            <span className="text-2xl font-black text-slate-800 tracking-tight">
+                            <span className="text-2xl font-bold text-[#172033] tracking-tight">
                                 {summary?.lifetime_purchased?.toLocaleString() ?? "0"}
                             </span>
-                            <span className="text-xs font-semibold text-slate-400">Credits</span>
+                            <span className="text-xs font-medium text-[#8A95A3]">Credits</span>
                         </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-100 flex items-center text-xs text-slate-500 gap-1 mt-3">
+                    <div className="pt-3 border-t border-[#E5E9EE] flex items-center text-xs text-[#5F6B7A] gap-1 mt-3">
                         <ArrowDownLeft size={13} className="text-emerald-500" />
                         <span>Paid packs added to balance</span>
                     </div>
                 </Card>
 
                 {/* Lifetime Used */}
-                <Card className="p-5 rounded-2xl bg-white border border-[#EAE6DF] shadow-xs flex flex-col justify-between">
+                <Card className="p-5 rounded-xl bg-white border border-[#E5E9EE] shadow-2xs flex flex-col justify-between">
                     <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Credits Consumed</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A95A3]">Total Credits Consumed</span>
                         <div className="flex items-baseline gap-2 pt-1">
-                            <span className="text-2xl font-black text-slate-800 tracking-tight">
+                            <span className="text-2xl font-bold text-[#172033] tracking-tight">
                                 {summary?.lifetime_used?.toLocaleString() ?? "0"}
                             </span>
-                            <span className="text-xs font-semibold text-slate-400">Credits</span>
+                            <span className="text-xs font-medium text-[#8A95A3]">Credits</span>
                         </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-100 flex items-center text-xs text-slate-500 gap-1 mt-3">
+                    <div className="pt-3 border-t border-[#E5E9EE] flex items-center text-xs text-[#5F6B7A] gap-1 mt-3">
                         <ArrowUpRight size={13} className="text-amber-500" />
                         <span>This Month: {summary?.this_month_used?.toLocaleString() ?? "0"}</span>
                     </div>
                 </Card>
 
                 {/* Free Welcome Bonus */}
-                <Card className="p-5 rounded-2xl bg-white border border-[#EAE6DF] shadow-xs flex flex-col justify-between">
+                <Card className="p-5 rounded-xl bg-white border border-[#E5E9EE] shadow-2xs flex flex-col justify-between">
                     <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Free Welcome Credits</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A95A3]">Free Welcome Credits</span>
                         <div className="flex items-baseline gap-2 pt-1">
-                            <span className="text-2xl font-black text-[#378179] tracking-tight">50</span>
-                            <span className="text-xs font-semibold text-slate-400">Granted</span>
+                            <span className="text-2xl font-bold text-[#2F8F83] tracking-tight">50</span>
+                            <span className="text-xs font-medium text-[#8A95A3]">Granted</span>
                         </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-100 flex items-center text-xs text-emerald-600 font-semibold gap-1 mt-3">
+                    <div className="pt-3 border-t border-[#E5E9EE] flex items-center text-xs text-emerald-600 font-medium gap-1 mt-3">
                         <CheckCircle2 size={13} />
                         <span>No monthly fee required</span>
                     </div>
@@ -238,68 +238,68 @@ export default function BillingOverviewPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left 8 Cols: Credit Consumption Rules */}
                 <div className="lg:col-span-8">
-                    <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                        <CardHeader className="border-b border-slate-100 pb-4 flex flex-row items-center justify-between">
+                    <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+                        <CardHeader className="border-b border-[#E5E9EE] pb-4 flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-base font-bold text-slate-800">Credit Pricing &amp; Rates</CardTitle>
-                                <CardDescription className="text-slate-500 text-sm mt-0.5">Transparent, fixed rates per action. Zero hidden fees.</CardDescription>
+                                 <CardTitle className="text-base font-semibold text-[#172033]">Credit Pricing &amp; Rates</CardTitle>
+                                 <CardDescription className="text-[#5F6B7A] text-xs mt-0.5">Transparent, fixed rates per action. Zero hidden fees.</CardDescription>
                             </div>
-                            <span className="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
+                            <span className="text-[11px] font-semibold bg-[#E8F6F3] text-[#2F8F83] px-2.5 py-1 rounded-full border border-[#BFE4DD]">
                                 Official Rates
                             </span>
                         </CardHeader>
-                        <CardContent className="p-0 divide-y divide-slate-100">
+                        <CardContent className="p-0 divide-y divide-[#E5E9EE]">
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">Incoming Messages from Customers</p>
-                                    <p className="text-xs text-slate-400">Any inbound customer chat message</p>
+                                    <p className="text-xs font-semibold text-[#172033]">Incoming Messages from Customers</p>
+                                    <p className="text-xs text-[#8A95A3]">Any inbound customer chat message</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
                                     FREE (0 Credits)
                                 </span>
                             </div>
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">AI Chatbot Resolution / Reply</p>
-                                    <p className="text-xs text-slate-400">GPT / Claude autonomous customer response</p>
+                                    <p className="text-xs font-semibold text-[#172033]">AI Chatbot Resolution / Reply</p>
+                                    <p className="text-xs text-[#8A95A3]">GPT / Claude autonomous customer response</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs font-semibold text-[#172033] bg-slate-100 px-2.5 py-1 rounded-lg">
                                     1 Credit
                                 </span>
                             </div>
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">Knowledge Base AI Search</p>
-                                    <p className="text-xs text-slate-400">Deep semantic search across PDFs and documents</p>
+                                    <p className="text-xs font-semibold text-[#172033]">Knowledge Base AI Search</p>
+                                    <p className="text-xs text-[#8A95A3]">Deep semantic search across PDFs and documents</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs font-semibold text-[#172033] bg-slate-100 px-2.5 py-1 rounded-lg">
                                     2 Credits
                                 </span>
                             </div>
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">Automated Lead Capture</p>
-                                    <p className="text-xs text-slate-400">Extracting and saving verified contact details to CRM</p>
+                                    <p className="text-xs font-semibold text-[#172033]">Automated Lead Capture</p>
+                                    <p className="text-xs text-[#8A95A3]">Extracting and saving verified contact details to CRM</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs font-semibold text-[#172033] bg-slate-100 px-2.5 py-1 rounded-lg">
                                     1 Credit
                                 </span>
                             </div>
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">Media Messages (Images, Videos, PDFs)</p>
-                                    <p className="text-xs text-slate-400">Sending documents, product brochures, or images</p>
+                                    <p className="text-xs font-semibold text-[#172033]">Media Messages (Images, Videos, PDFs)</p>
+                                    <p className="text-xs text-[#8A95A3]">Sending documents, product brochures, or images</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs font-semibold text-[#172033] bg-slate-100 px-2.5 py-1 rounded-lg">
                                     2 Credits
                                 </span>
                             </div>
                             <div className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-800">Marketing Broadcast Campaign</p>
-                                    <p className="text-xs text-slate-400">Mass promotional message to verified recipients</p>
+                                    <p className="text-xs font-semibold text-[#172033]">Marketing Broadcast Campaign</p>
+                                    <p className="text-xs text-[#8A95A3]">Mass promotional message to verified recipients</p>
                                 </div>
-                                <span className="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs font-semibold text-[#172033] bg-slate-100 px-2.5 py-1 rounded-lg">
                                     1 Credit / Recipient
                                 </span>
                             </div>
@@ -310,35 +310,35 @@ export default function BillingOverviewPage() {
                 {/* Right 4 Cols: Quick Navigation & Pack Info */}
                 <div className="lg:col-span-4 space-y-6">
                     {/* Navigation shortcuts */}
-                    <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden p-5 space-y-3">
-                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Quick Management</h3>
+                    <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden p-5 space-y-3">
+                        <h3 className="text-xs font-semibold text-[#172033] uppercase tracking-wider">Quick Management</h3>
                         <div className="space-y-2">
                             <Link 
                                 href="/billing/buy-credits" 
-                                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-[#378179]/30 hover:bg-[#378179]/5 transition-all text-xs font-semibold text-slate-700 group"
+                                className="flex items-center justify-between p-3 rounded-xl border border-[#E5E9EE] hover:border-[#2F8F83]/40 hover:bg-[#E8F6F3]/40 transition-all text-xs font-medium text-[#172033] group"
                             >
                                 <div className="flex items-center gap-2.5">
-                                    <Zap size={15} className="text-[#378179]" />
+                                    <Zap size={15} className="text-[#2F8F83]" />
                                     <span>Buy Credit Packs</span>
                                 </div>
                                 <ArrowRight size={13} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                             </Link>
                             <Link 
                                 href="/billing/credit-history" 
-                                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-[#378179]/30 hover:bg-[#378179]/5 transition-all text-xs font-semibold text-slate-700 group"
+                                className="flex items-center justify-between p-3 rounded-xl border border-[#E5E9EE] hover:border-[#2F8F83]/40 hover:bg-[#E8F6F3]/40 transition-all text-xs font-medium text-[#172033] group"
                             >
                                 <div className="flex items-center gap-2.5">
-                                    <History size={15} className="text-[#378179]" />
+                                    <History size={15} className="text-[#2F8F83]" />
                                     <span>Credit Transaction History</span>
                                 </div>
                                 <ArrowRight size={13} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                             </Link>
                             <Link 
                                 href="/billing/invoices" 
-                                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-[#378179]/30 hover:bg-[#378179]/5 transition-all text-xs font-semibold text-slate-700 group"
+                                className="flex items-center justify-between p-3 rounded-xl border border-[#E5E9EE] hover:border-[#2F8F83]/40 hover:bg-[#E8F6F3]/40 transition-all text-xs font-medium text-[#172033] group"
                             >
                                 <div className="flex items-center gap-2.5">
-                                    <Receipt size={15} className="text-[#378179]" />
+                                    <Receipt size={15} className="text-[#2F8F83]" />
                                     <span>Invoices &amp; Receipts</span>
                                 </div>
                                 <ArrowRight size={13} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -347,12 +347,12 @@ export default function BillingOverviewPage() {
                     </Card>
 
                     {/* Security & Guarantee Note */}
-                    <Card className="border border-[#EAE6DF] bg-slate-50/50 shadow-xs rounded-2xl p-5 space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                            <ShieldCheck size={16} className="text-[#378179]" />
+                    <Card className="border border-[#E5E9EE] bg-slate-50/70 shadow-2xs rounded-xl p-5 space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-[#172033]">
+                            <ShieldCheck size={16} className="text-[#2F8F83]" />
                             <span>100% Secure Payments</span>
                         </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
+                        <p className="text-xs text-[#5F6B7A] leading-relaxed">
                             All credit recharges are processed via Razorpay with instant wallet crediting and GST invoices. Unused credits never expire.
                         </p>
                     </Card>

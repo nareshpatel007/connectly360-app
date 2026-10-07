@@ -343,7 +343,7 @@ export default function APIKeysPage() {
             featureName="Developer API Access"
             description="Integrate Connectly360 with your proprietary CRMs, websites, and databases using secure API access."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 {/* Page Header */}
                 <PageHeader
                     icon={Key}
@@ -356,7 +356,7 @@ export default function APIKeysPage() {
                     actions={
                         <Button
                             onClick={() => setIsCreateOpen(true)}
-                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer font-semibold text-xs h-10 px-4"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg shadow-2xs flex items-center gap-2 cursor-pointer font-semibold text-xs h-9 px-4"
                         >
                             <Plus size={16} />
                             Generate New Key
@@ -365,11 +365,11 @@ export default function APIKeysPage() {
                 />
 
                 {/* Security Advice Notice Banner */}
-                <div className="bg-teal-50/60 border border-teal-200/60 rounded-2xl p-4 flex items-start gap-3 text-slate-700">
-                    <ShieldCheck className="text-[#35877D] shrink-0 mt-0.5" size={18} />
+                <div className="bg-[#E8F6F3] border border-[#BFE4DD] rounded-xl p-4 flex items-start gap-3 text-[#172033]">
+                    <ShieldCheck className="text-[#2F8F83] shrink-0 mt-0.5" size={18} />
                     <div className="text-xs space-y-0.5">
-                        <p className="font-bold text-slate-900">Zero-Plaintext Security Architecture</p>
-                        <p className="text-slate-600 leading-relaxed">
+                        <p className="font-bold text-[#172033]">Zero-Plaintext Security Architecture</p>
+                        <p className="text-[#5F6B7A] leading-relaxed">
                             API keys carry workspace authority and are hashed via SHA-256 upon generation. Plaintext secrets are revealed strictly once and cannot be recovered later. Never commit credentials to public code repositories or client-side bundles.
                         </p>
                     </div>
@@ -379,35 +379,35 @@ export default function APIKeysPage() {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Status Tabs */}
-                        <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
+                        <div className="inline-flex p-1 bg-[#F1F3F5] rounded-lg text-xs font-semibold text-[#5F6B7A]">
                             <button
                                 onClick={() => setStatusFilter("all")}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    statusFilter === "all" ? "bg-white text-[#172033] shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 All ({counts.total})
                             </button>
                             <button
                                 onClick={() => setStatusFilter("active")}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    statusFilter === "active" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    statusFilter === "active" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 Active ({counts.active})
                             </button>
                             <button
                                 onClick={() => setStatusFilter("revoked")}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    statusFilter === "revoked" ? "bg-white text-rose-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    statusFilter === "revoked" ? "bg-white text-rose-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 Revoked ({counts.revoked})
                             </button>
                             <button
                                 onClick={() => setStatusFilter("expired")}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    statusFilter === "expired" ? "bg-white text-amber-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    statusFilter === "expired" ? "bg-white text-amber-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 Expired ({counts.expired})
@@ -415,27 +415,27 @@ export default function APIKeysPage() {
                         </div>
 
                         {/* Environment Selector */}
-                        <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
+                        <div className="inline-flex p-1 bg-[#F1F3F5] rounded-lg text-xs font-semibold text-[#5F6B7A]">
                             <button
                                 onClick={() => setEnvFilter("all")}
-                                className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    envFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    envFilter === "all" ? "bg-white text-[#172033] shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 All Envs
                             </button>
                             <button
                                 onClick={() => setEnvFilter("live")}
-                                className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    envFilter === "live" ? "bg-white text-[#35877D] shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    envFilter === "live" ? "bg-white text-[#2F8F83] shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 Live
                             </button>
                             <button
                                 onClick={() => setEnvFilter("test")}
-                                className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                                    envFilter === "test" ? "bg-white text-amber-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                                className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
+                                    envFilter === "test" ? "bg-white text-amber-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                                 }`}
                             >
                                 Test
@@ -445,13 +445,13 @@ export default function APIKeysPage() {
 
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1 sm:w-64">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A95A3]" />
                             <input
                                 type="text"
                                 placeholder="Search by name or prefix..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#35877D]"
+                                className="w-full pl-9 pr-3 py-1.5 bg-white border border-[#E5E9EE] rounded-lg text-xs font-medium text-[#172033] placeholder:text-[#8A95A3] focus:outline-none focus:border-[#2F8F83]"
                             />
                         </div>
 
@@ -459,26 +459,26 @@ export default function APIKeysPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => fetchKeys(true)}
-                            className="h-8 px-2.5 border-slate-200 rounded-xl text-slate-600 cursor-pointer"
+                            className="h-8 px-2.5 border-[#E5E9EE] rounded-lg text-[#5F6B7A] cursor-pointer hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             title="Refresh Keys"
                         >
-                            <RefreshCw size={13} className={isRefreshing ? "animate-spin text-[#35877D]" : ""} />
+                            <RefreshCw size={13} className={isRefreshing ? "animate-spin text-[#2F8F83]" : ""} />
                         </Button>
                     </div>
                 </div>
 
                 {/* Primary Keys Card */}
-                <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
-                    <CardHeader className="border-b border-slate-100 pb-4">
-                        <CardTitle className="text-base font-bold text-slate-900">Active API Keys</CardTitle>
-                        <CardDescription className="text-xs text-slate-500">
+                <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs overflow-hidden">
+                    <CardHeader className="border-b border-[#E5E9EE] pb-4">
+                        <CardTitle className="text-base font-bold text-[#172033]">Active API Keys</CardTitle>
+                        <CardDescription className="text-xs text-[#5F6B7A]">
                             Keys carry full workspace authority. Keep them secret and never expose them in client-side code.
                         </CardDescription>
                     </CardHeader>
 
                     <CardContent className="p-0">
                         {isLoading ? (
-                            <div className="divide-y divide-slate-100 p-4 space-y-4">
+                            <div className="divide-y divide-[#E5E9EE] p-4 space-y-4">
                                 {[1, 2].map((i) => (
                                     <div key={i} className="flex items-center justify-between pt-2">
                                         <div className="space-y-2">
@@ -492,11 +492,11 @@ export default function APIKeysPage() {
                             </div>
                         ) : keys.length === 0 ? (
                             <div className="py-16 flex flex-col items-center justify-center text-center px-4">
-                                <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center mb-3">
-                                    <Key size={26} className="text-[#35877D]" />
+                                <div className="h-14 w-14 rounded-2xl bg-[#E8F6F3] border border-[#BFE4DD] flex items-center justify-center mb-3">
+                                    <Key size={26} className="text-[#2F8F83]" />
                                 </div>
-                                <p className="text-sm font-bold text-slate-900">No API keys found</p>
-                                <p className="text-xs text-slate-500 max-w-sm mt-1 leading-relaxed">
+                                <p className="text-sm font-bold text-[#172033]">No API keys found</p>
+                                <p className="text-xs text-[#5F6B7A] max-w-sm mt-1 leading-relaxed">
                                     {searchQuery || statusFilter !== "all" || envFilter !== "all"
                                         ? "No keys match the selected filters. Try resetting search criteria."
                                         : "Generate an API key to begin programmatically connecting your apps, CRMs, and webhooks to Connectly360."}
@@ -504,7 +504,7 @@ export default function APIKeysPage() {
                                 {statusFilter === "all" && !searchQuery && (
                                     <Button
                                         onClick={() => setIsCreateOpen(true)}
-                                        className="mt-4 bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold cursor-pointer h-9 px-4"
+                                        className="mt-4 bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold cursor-pointer h-9 px-4"
                                     >
                                         <Plus size={14} className="mr-1.5" />
                                         Generate New Key
@@ -512,7 +512,7 @@ export default function APIKeysPage() {
                                 )}
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-100">
+                            <div className="divide-y divide-[#E5E9EE]">
                                 {keys.map((k) => (
                                     <div
                                         key={k.id}
@@ -520,7 +520,7 @@ export default function APIKeysPage() {
                                     >
                                         <div className="space-y-1.5">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-xs font-bold text-slate-900">{k.name}</p>
+                                                <p className="text-xs font-bold text-[#172033]">{k.name}</p>
 
                                                 {/* Environment Badge */}
                                                 <Badge
@@ -550,7 +550,7 @@ export default function APIKeysPage() {
 
                                                 {/* Expiration tag if set */}
                                                 {k.expires_at && (
-                                                    <span className="text-[10px] text-slate-400">
+                                                    <span className="text-[10px] text-[#8A95A3]">
                                                         Expires: {new Date(k.expires_at).toLocaleDateString()}
                                                     </span>
                                                 )}
@@ -558,12 +558,12 @@ export default function APIKeysPage() {
 
                                             {/* Masked Prefix Display */}
                                             <div className="flex items-center gap-2">
-                                                <p className="font-mono text-xs text-slate-600 tracking-wider font-semibold">
+                                                <p className="font-mono text-xs text-[#5F6B7A] tracking-wider font-semibold">
                                                     {k.key_masked}
                                                 </p>
                                                 <button
                                                     onClick={() => handleCopyPrefix(k)}
-                                                    className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer text-[11px] flex items-center gap-1"
+                                                    className="text-[#8A95A3] hover:text-[#172033] transition-colors cursor-pointer text-[11px] flex items-center gap-1"
                                                     title="Copy key prefix"
                                                 >
                                                     {copiedPrefixId === k.id ? (
@@ -575,16 +575,16 @@ export default function APIKeysPage() {
                                             </div>
 
                                             {/* Metadata row */}
-                                            <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                                            <div className="flex items-center gap-3 text-[11px] text-[#8A95A3] flex-wrap">
                                                 <span>Created: {k.created_at_human}</span>
                                                 <span>•</span>
-                                                <span className={k.last_used_human !== "Never" ? "text-slate-600 font-medium" : ""}>
+                                                <span className={k.last_used_human !== "Never" ? "text-[#172033] font-medium" : ""}>
                                                     Last used: {k.last_used_human}
                                                 </span>
                                                 {k.scopes && k.scopes.length > 0 && (
                                                     <>
                                                         <span>•</span>
-                                                        <span className="text-slate-500">
+                                                        <span className="text-[#5F6B7A]">
                                                             {k.scopes.length} {k.scopes.length === 1 ? "scope" : "scopes"}
                                                         </span>
                                                     </>
@@ -602,9 +602,9 @@ export default function APIKeysPage() {
                                                     setSelectedKey(k);
                                                     setIsDetailsOpen(true);
                                                 }}
-                                                className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 hover:text-slate-900 cursor-pointer"
+                                                className="h-8 px-3 rounded-lg text-xs font-semibold border-[#E5E9EE] text-[#172033] hover:text-[#172033] hover:border-[#2F8F83] cursor-pointer"
                                             >
-                                                <Eye size={13} className="mr-1.5 text-slate-400" />
+                                                <Eye size={13} className="mr-1.5 text-[#8A95A3]" />
                                                 Details
                                             </Button>
 
@@ -618,9 +618,9 @@ export default function APIKeysPage() {
                                                         setRotateRevokeOld(false);
                                                         setIsRotateOpen(true);
                                                     }}
-                                                    className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 hover:text-[#35877D] hover:border-[#35877D] cursor-pointer"
+                                                    className="h-8 px-3 rounded-lg text-xs font-semibold border-[#E5E9EE] text-[#172033] hover:text-[#2F8F83] hover:border-[#2F8F83] cursor-pointer"
                                                 >
-                                                    <RotateCw size={13} className="mr-1.5 text-slate-400" />
+                                                    <RotateCw size={13} className="mr-1.5 text-[#8A95A3]" />
                                                     Rotate
                                                 </Button>
                                             )}
@@ -634,7 +634,7 @@ export default function APIKeysPage() {
                                                         setSelectedKey(k);
                                                         setIsRevokeOpen(true);
                                                     }}
-                                                    className="h-8 px-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer text-xs font-semibold"
+                                                    className="h-8 px-2.5 text-[#8A95A3] hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer text-xs font-semibold"
                                                     title="Revoke key"
                                                 >
                                                     <Ban size={14} className="mr-1" />
@@ -651,13 +651,13 @@ export default function APIKeysPage() {
 
                 {/* 1. Generate Key Modal */}
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogContent className="sm:max-w-xl rounded-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-xl rounded-xl bg-white p-6 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <Key className="text-[#35877D]" size={18} />
+                            <DialogTitle className="text-base font-bold text-[#172033] flex items-center gap-2">
+                                <Key className="text-[#2F8F83]" size={18} />
                                 Generate New API Key
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 Configure credentials, environment isolation, and granular permission scopes.
                             </DialogDescription>
                         </DialogHeader>
@@ -665,7 +665,7 @@ export default function APIKeysPage() {
                         <form onSubmit={handleCreateKey} className="space-y-4 pt-2">
                             {/* Key Name */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-800">
+                                <label className="text-xs font-bold text-[#172033]">
                                     Key Name <span className="text-rose-500">*</span>
                                 </label>
                                 <input
@@ -674,18 +674,18 @@ export default function APIKeysPage() {
                                     placeholder="e.g. Production REST API, Zapier Sync, Mobile App"
                                     value={formName}
                                     onChange={(e) => setFormName(e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#35877D] focus:bg-white"
+                                    className="w-full px-3 py-2 bg-slate-50/50 border border-[#E5E9EE] rounded-lg text-xs font-medium text-[#172033] placeholder:text-[#8A95A3] focus:outline-none focus:border-[#2F8F83] focus:bg-white"
                                 />
                             </div>
 
                             {/* Environment & Expiry Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-800">Environment</label>
+                                    <label className="text-xs font-bold text-[#172033]">Environment</label>
                                     <select
                                         value={formEnv}
                                         onChange={(e) => setFormEnv(e.target.value as "live" | "test")}
-                                        className="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#35877D] focus:bg-white cursor-pointer"
+                                        className="w-full px-3 py-2 bg-slate-50/50 border border-[#E5E9EE] rounded-lg text-xs font-semibold text-[#172033] focus:outline-none focus:border-[#2F8F83] focus:bg-white cursor-pointer"
                                     >
                                         <option value="live">Live / Production (c360_live_)</option>
                                         <option value="test">Test / Sandbox (c360_test_)</option>
@@ -693,11 +693,11 @@ export default function APIKeysPage() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-800">Expiration</label>
+                                    <label className="text-xs font-bold text-[#172033]">Expiration</label>
                                     <select
                                         value={formExpiryDays}
                                         onChange={(e) => setFormExpiryDays(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#35877D] focus:bg-white cursor-pointer"
+                                        className="w-full px-3 py-2 bg-slate-50/50 border border-[#E5E9EE] rounded-lg text-xs font-semibold text-[#172033] focus:outline-none focus:border-[#2F8F83] focus:bg-white cursor-pointer"
                                     >
                                         <option value="never">Never expires</option>
                                         <option value="30">30 days</option>
@@ -708,15 +708,15 @@ export default function APIKeysPage() {
                             </div>
 
                             {/* Scopes Section */}
-                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                            <div className="space-y-2 pt-2 border-t border-[#E5E9EE]">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-slate-800">
+                                    <label className="text-xs font-bold text-[#172033]">
                                         API Scopes & Permissions
                                     </label>
                                     <button
                                         type="button"
                                         onClick={handleSelectAllScopes}
-                                        className="text-[11px] font-semibold text-[#35877D] hover:underline cursor-pointer"
+                                        className="text-[11px] font-semibold text-[#2F8F83] hover:underline cursor-pointer"
                                     >
                                         Toggle All
                                     </button>
@@ -725,7 +725,7 @@ export default function APIKeysPage() {
                                 <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                     {SCOPE_GROUPS.map((group) => (
                                         <div key={group.name} className="space-y-1.5">
-                                            <p className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
+                                            <p className="text-[10px] font-extrabold uppercase text-[#8A95A3] tracking-wider">
                                                 {group.name}
                                             </p>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -734,21 +734,21 @@ export default function APIKeysPage() {
                                                     return (
                                                         <label
                                                             key={item.key}
-                                                            className={`p-2 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                                                            className={`p-2 rounded-lg border flex items-start gap-2.5 cursor-pointer transition-all ${
                                                                 isSelected
-                                                                    ? "border-[#35877D] bg-teal-50/40 text-slate-900"
-                                                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                                                    ? "border-[#2F8F83] bg-[#E8F6F3] text-[#172033]"
+                                                                    : "border-[#E5E9EE] bg-white text-[#5F6B7A] hover:bg-slate-50"
                                                             }`}
                                                         >
                                                             <input
                                                                 type="checkbox"
                                                                 checked={isSelected}
                                                                 onChange={() => toggleScope(item.key)}
-                                                                className="mt-0.5 rounded text-[#35877D] focus:ring-[#35877D] cursor-pointer"
+                                                                className="mt-0.5 rounded text-[#2F8F83] focus:ring-[#2F8F83] cursor-pointer"
                                                             />
                                                             <div className="text-[11px] leading-tight">
                                                                 <p className="font-bold">{item.label}</p>
-                                                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{item.key}</p>
+                                                                <p className="text-[10px] text-[#8A95A3] font-mono mt-0.5">{item.key}</p>
                                                             </div>
                                                         </label>
                                                     );
@@ -759,19 +759,19 @@ export default function APIKeysPage() {
                                 </div>
                             </div>
 
-                            <DialogFooter className="pt-3 border-t border-slate-100">
+                            <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => setIsCreateOpen(false)}
-                                    className="rounded-xl text-xs font-semibold border-slate-200"
+                                    className="rounded-lg text-xs font-semibold border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold"
+                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold h-9 px-4 cursor-pointer"
                                 >
                                     {isSubmitting ? "Generating..." : "Generate API Key"}
                                 </Button>
@@ -784,15 +784,15 @@ export default function APIKeysPage() {
                 <Dialog open={isSecretRevealOpen} onOpenChange={(open) => {
                     if (!open) handleCloseRevealModal();
                 }}>
-                    <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6">
+                    <DialogContent className="sm:max-w-lg rounded-xl bg-white p-6">
                         <DialogHeader>
-                            <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center mb-2">
-                                <ShieldCheck className="text-[#35877D]" size={22} />
+                            <div className="h-10 w-10 rounded-xl bg-[#E8F6F3] border border-[#BFE4DD] flex items-center justify-center mb-2">
+                                <ShieldCheck className="text-[#2F8F83]" size={22} />
                             </div>
-                            <DialogTitle className="text-base font-bold text-slate-900">
+                            <DialogTitle className="text-base font-bold text-[#172033]">
                                 API Key Created
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 Credentials for &apos;{revealedKeyName}&apos; have been generated securely.
                             </DialogDescription>
                         </DialogHeader>
@@ -824,7 +824,7 @@ export default function APIKeysPage() {
                             <div className="flex items-center gap-2">
                                 <Button
                                     onClick={handleCopySecret}
-                                    className="flex-1 bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold h-9"
+                                    className="flex-1 bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold h-9 cursor-pointer"
                                 >
                                     {isSecretCopied ? (
                                         <>
@@ -841,19 +841,19 @@ export default function APIKeysPage() {
                                 <Button
                                     variant="outline"
                                     onClick={handleDownloadSecret}
-                                    className="rounded-xl border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold h-9"
+                                    className="rounded-lg border-[#E5E9EE] text-[#172033] hover:text-[#172033] hover:border-[#2F8F83] text-xs font-semibold h-9 cursor-pointer"
                                 >
-                                    <Download size={14} className="mr-1.5 text-slate-500" />
+                                    <Download size={14} className="mr-1.5 text-[#5F6B7A]" />
                                     Download .txt
                                 </Button>
                             </div>
                         </div>
 
-                        <DialogFooter className="pt-3 border-t border-slate-100">
+                        <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                             <Button
                                 onClick={handleCloseRevealModal}
                                 variant="outline"
-                                className="w-full rounded-xl text-xs font-semibold border-slate-200"
+                                className="w-full rounded-lg text-xs font-semibold border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 I have stored this key securely
                             </Button>
@@ -863,50 +863,50 @@ export default function APIKeysPage() {
 
                 {/* 3. Rotate Key Modal */}
                 <Dialog open={isRotateOpen} onOpenChange={setIsRotateOpen}>
-                    <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6">
+                    <DialogContent className="sm:max-w-md rounded-xl bg-white p-6">
                         <DialogHeader>
-                            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <RotateCw className="text-[#35877D]" size={18} />
+                            <DialogTitle className="text-base font-bold text-[#172033] flex items-center gap-2">
+                                <RotateCw className="text-[#2F8F83]" size={18} />
                                 Rotate API Key
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 Safely rotate credentials for &apos;{selectedKey?.name}&apos;.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="space-y-3 py-2 text-xs text-slate-600">
-                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                                <p className="font-bold text-slate-900">Zero-Downtime Safe Rotation</p>
-                                <p className="text-slate-500 leading-relaxed">
+                        <div className="space-y-3 py-2 text-xs text-[#5F6B7A]">
+                            <div className="p-3 bg-[#F7F9FA] rounded-xl border border-[#E5E9EE] space-y-1">
+                                <p className="font-bold text-[#172033]">Zero-Downtime Safe Rotation</p>
+                                <p className="text-[#5F6B7A] leading-relaxed">
                                     A replacement key will be created with the same permissions. The existing key remains active until you test and confirm the replacement.
                                 </p>
                             </div>
 
-                            <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                            <label className="flex items-center gap-2 p-2 rounded-lg border border-[#E5E9EE] hover:bg-slate-50 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={rotateRevokeOld}
                                     onChange={(e) => setRotateRevokeOld(e.target.checked)}
-                                    className="rounded text-[#35877D] focus:ring-[#35877D] cursor-pointer"
+                                    className="rounded text-[#2F8F83] focus:ring-[#2F8F83] cursor-pointer"
                                 />
-                                <span className="font-semibold text-slate-800">
+                                <span className="font-semibold text-[#172033]">
                                     Revoke current key immediately (causes downtime if in use)
                                 </span>
                             </label>
                         </div>
 
-                        <DialogFooter className="pt-3 border-t border-slate-100">
+                        <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                             <Button
                                 variant="outline"
                                 onClick={() => setIsRotateOpen(false)}
-                                className="rounded-xl text-xs font-semibold border-slate-200"
+                                className="rounded-lg text-xs font-semibold border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleConfirmRotate}
                                 disabled={isSubmitting}
-                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold h-9 px-4 cursor-pointer"
                             >
                                 {isSubmitting ? "Rotating..." : "Generate Replacement"}
                             </Button>
@@ -916,15 +916,15 @@ export default function APIKeysPage() {
 
                 {/* 4. Revoke Key Confirmation Modal */}
                 <Dialog open={isRevokeOpen} onOpenChange={setIsRevokeOpen}>
-                    <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6">
+                    <DialogContent className="sm:max-w-md rounded-xl bg-white p-6">
                         <DialogHeader>
                             <div className="h-10 w-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-2">
                                 <Ban className="text-rose-600" size={20} />
                             </div>
-                            <DialogTitle className="text-base font-bold text-slate-900">
+                            <DialogTitle className="text-base font-bold text-[#172033]">
                                 Revoke API Key?
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 This will immediately stop all API requests using &apos;{selectedKey?.name}&apos;.
                             </DialogDescription>
                         </DialogHeader>
@@ -933,18 +933,18 @@ export default function APIKeysPage() {
                             Any server, script, or integration authenticating with prefix <code className="font-mono font-bold">{selectedKey?.key_prefix}</code> will immediately receive a <strong>401 Unauthorized</strong> response. This state transition is irreversible.
                         </div>
 
-                        <DialogFooter className="pt-3 border-t border-slate-100">
+                        <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                             <Button
                                 variant="outline"
                                 onClick={() => setIsRevokeOpen(false)}
-                                className="rounded-xl text-xs font-semibold border-slate-200"
+                                className="rounded-lg text-xs font-semibold border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleConfirmRevoke}
                                 disabled={isSubmitting}
-                                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold"
+                                className="bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold h-9 px-4 cursor-pointer"
                             >
                                 {isSubmitting ? "Revoking..." : "Revoke Key"}
                             </Button>
@@ -954,21 +954,21 @@ export default function APIKeysPage() {
 
                 {/* 5. Key Details Modal */}
                 <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                    <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6">
+                    <DialogContent className="sm:max-w-md rounded-xl bg-white p-6">
                         <DialogHeader>
-                            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <Info className="text-[#35877D]" size={18} />
+                            <DialogTitle className="text-base font-bold text-[#172033] flex items-center gap-2">
+                                <Info className="text-[#2F8F83]" size={18} />
                                 API Key Security Details
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 Metadata and telemetry for &apos;{selectedKey?.name}&apos;.
                             </DialogDescription>
                         </DialogHeader>
 
                         {selectedKey && (
-                            <div className="space-y-3 py-2 text-xs divide-y divide-slate-100">
+                            <div className="space-y-3 py-2 text-xs divide-y divide-[#E5E9EE]">
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-400 font-medium">Status</span>
+                                    <span className="text-[#8A95A3] font-medium">Status</span>
                                     <Badge
                                         variant="outline"
                                         className={`text-[10px] font-semibold ${
@@ -982,58 +982,58 @@ export default function APIKeysPage() {
                                 </div>
 
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-400 font-medium">Environment</span>
-                                    <span className="font-bold uppercase text-slate-700">{selectedKey.environment}</span>
+                                    <span className="text-[#8A95A3] font-medium">Environment</span>
+                                    <span className="font-bold uppercase text-[#172033]">{selectedKey.environment}</span>
                                 </div>
 
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-400 font-medium">Key Prefix</span>
-                                    <span className="font-mono font-bold text-slate-800">{selectedKey.key_prefix}</span>
+                                    <span className="text-[#8A95A3] font-medium">Key Prefix</span>
+                                    <span className="font-mono font-bold text-[#172033]">{selectedKey.key_prefix}</span>
                                 </div>
 
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-400 font-medium">Created</span>
-                                    <span className="text-slate-700">{selectedKey.created_at_human}</span>
+                                    <span className="text-[#8A95A3] font-medium">Created</span>
+                                    <span className="text-[#172033]">{selectedKey.created_at_human}</span>
                                 </div>
 
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-400 font-medium">Last Used</span>
-                                    <span className="text-slate-700 font-medium">{selectedKey.last_used_human}</span>
+                                    <span className="text-[#8A95A3] font-medium">Last Used</span>
+                                    <span className="text-[#172033] font-medium">{selectedKey.last_used_human}</span>
                                 </div>
 
                                 {selectedKey.last_used_ip && (
                                     <div className="flex justify-between py-1.5">
-                                        <span className="text-slate-400 font-medium">Last Used From</span>
-                                        <span className="font-mono text-slate-700">{selectedKey.last_used_ip}</span>
+                                        <span className="text-[#8A95A3] font-medium">Last Used From</span>
+                                        <span className="font-mono text-[#172033]">{selectedKey.last_used_ip}</span>
                                     </div>
                                 )}
 
                                 <div className="py-2 space-y-1.5">
-                                    <span className="text-slate-400 font-medium block">Authorized Scopes</span>
+                                    <span className="text-[#8A95A3] font-medium block">Authorized Scopes</span>
                                     <div className="flex flex-wrap gap-1">
                                         {selectedKey.scopes && selectedKey.scopes.length > 0 ? (
                                             selectedKey.scopes.map((s) => (
                                                 <Badge
                                                     key={s}
                                                     variant="secondary"
-                                                    className="text-[10px] font-mono bg-slate-100 text-slate-700"
+                                                    className="text-[10px] font-mono bg-[#F1F3F5] text-[#172033] border border-[#E5E9EE]"
                                                 >
                                                     {s}
                                                 </Badge>
                                             ))
                                         ) : (
-                                            <span className="text-slate-400">No specific scopes</span>
+                                            <span className="text-[#8A95A3]">No specific scopes</span>
                                         )}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        <DialogFooter className="pt-3 border-t border-slate-100">
+                        <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                             <Button
                                 onClick={() => setIsDetailsOpen(false)}
                                 variant="outline"
-                                className="w-full rounded-xl text-xs font-semibold border-slate-200"
+                                className="w-full rounded-lg text-xs font-semibold border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 Close
                             </Button>

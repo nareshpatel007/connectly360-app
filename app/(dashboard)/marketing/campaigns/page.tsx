@@ -110,7 +110,7 @@ export default function CampaignsPage() {
             featureName="Bulk Campaigns"
             description="Send broadcast campaigns, target user segments, and schedule bulk notifications to your lists."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 {/* Page Header */}
                 <PageHeader
                     icon={Megaphone}
@@ -119,7 +119,7 @@ export default function CampaignsPage() {
                     breadcrumbs={[{ label: "Engagement" }, { label: "Campaigns" }]}
                     actions={
                         <Button
-                            className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl shadow-2xs flex items-center gap-2 cursor-pointer font-semibold text-xs h-9 px-4"
                             onClick={() => router.push("/marketing/campaigns/new")}
                         >
                             <Plus className="h-4 w-4" />
@@ -175,7 +175,7 @@ export default function CampaignsPage() {
                     <CardContent className="p-0">
                         {isLoading ? (
                             <div className="flex h-48 items-center justify-center">
-                                <Loader2 className="h-6 w-6 animate-spin text-[#35877D]" />
+                                <Loader2 className="h-6 w-6 animate-spin text-[#2F8F83]" />
                             </div>
                         ) : error ? (
                             <div className="flex h-48 flex-col items-center justify-center gap-2 px-4">
@@ -191,7 +191,7 @@ export default function CampaignsPage() {
                                 <p className="text-sm font-medium">No campaigns yet</p>
                                 <p className="text-xs text-muted-foreground">Create your first campaign to reach your contacts at scale.</p>
                                 <Button
-                                    className="mt-1 bg-[#35877D] hover:bg-[#2c6f66] text-white"
+                                    className="mt-1 bg-[#2F8F83] hover:bg-[#267A70] text-white"
                                     onClick={() => router.push("/marketing/campaigns/new")}
                                 >
                                     <Plus className="h-4 w-4 mr-1" /> New Campaign
@@ -240,7 +240,7 @@ export default function CampaignsPage() {
                                                 </TableCell>
                                                 <TableCell className="hidden lg:table-cell">
                                                     <div className="flex flex-col gap-0.5">
-                                                        <RateBar value={c.delivered_count} total={c.total_recipients} color="bg-[#35877D]" />
+                                                        <RateBar value={c.delivered_count} total={c.total_recipients} color="bg-[#2F8F83]" />
                                                         <span className="text-[10px] text-muted-foreground ml-11">
                                                             {c.delivered_count} / {c.total_recipients}
                                                         </span>

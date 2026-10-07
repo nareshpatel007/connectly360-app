@@ -327,7 +327,7 @@ export default function CustomersPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Standard PageHeader */}
             <PageHeader
                 icon={Users}
@@ -355,7 +355,7 @@ export default function CustomersPage() {
                         </Button>
                         <Button
                             onClick={() => setIsOpen(true)}
-                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-bold cursor-pointer shadow-xs"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-semibold cursor-pointer shadow-2xs"
                         >
                             <Plus size={15} />
                             Add Contact
@@ -367,9 +367,9 @@ export default function CustomersPage() {
             {/* Create Contact Dialog */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#35877D]/10 border-b border-[#35877D]/20 px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#35877D]/20 flex items-center justify-center">
-                            <Plus size={16} className="text-[#35877D]" />
+                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                            <Plus size={16} className="text-[#2F8F83]" />
                         </div>
                         <div>
                             <DialogTitle className="text-base font-bold text-slate-800">Create New Contact</DialogTitle>
@@ -437,7 +437,7 @@ export default function CustomersPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#35877D] hover:bg-[#2c6761] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
                                 disabled={createCustomerMutation.isPending}
                             >
                                 {createCustomerMutation.isPending ? (
@@ -462,7 +462,7 @@ export default function CustomersPage() {
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="h-9 px-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#378179] cursor-pointer"
+                            className="h-9 px-2 border border-[#E5E9EE] bg-white rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2F8F83] cursor-pointer"
                         >
                             <option value="last_updated">Last Updated</option>
                             <option value="name">Name</option>
@@ -474,7 +474,7 @@ export default function CustomersPage() {
                         <Input
                             type="search"
                             placeholder="Search contacts"
-                            className="pr-9 h-9 text-xs text-slate-600 bg-white border-slate-200 rounded-lg focus-visible:ring-1 focus-visible:ring-[#378179]"
+                            className="pr-9 h-9 text-xs text-slate-600 bg-white border-[#E5E9EE] rounded-lg focus-visible:ring-1 focus-visible:ring-[#2F8F83]"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -499,7 +499,7 @@ export default function CustomersPage() {
             </div>
 
             {/* Table Container */}
-            <Card className="border border-[#EAE6DF] bg-white shadow-sm rounded-xl overflow-hidden">
+            <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
@@ -508,7 +508,7 @@ export default function CustomersPage() {
                                     <Checkbox
                                         checked={filteredCustomers?.length > 0 && selectedIds.length === filteredCustomers.length}
                                         onCheckedChange={handleSelectAll}
-                                        className="h-4 w-4 rounded border-slate-300 text-[#378179] focus:ring-[#378179]"
+                                        className="h-4 w-4 rounded border-slate-300 text-[#2F8F83] focus:ring-[#2F8F83]"
                                     />
                                 </TableHead>
                                 <TableHead className="font-semibold text-slate-700 text-xs">Basic info</TableHead>
@@ -534,7 +534,7 @@ export default function CustomersPage() {
                             ) : filteredCustomers?.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-32 text-center text-slate-500 text-xs pl-6 pr-6">
-                                        No contacts found. Click "+ Add New" to manually create a contact.
+                                        No contacts found. Click "+ Add Contact" to manually create a contact.
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -551,14 +551,14 @@ export default function CustomersPage() {
                                                 <Checkbox
                                                     checked={isSelected}
                                                     onCheckedChange={(checked) => handleSelect(customer.id, !!checked)}
-                                                    className="h-4 w-4 rounded border-slate-300 text-[#378179] focus:ring-[#378179]"
+                                                    className="h-4 w-4 rounded border-slate-300 text-[#2F8F83] focus:ring-[#2F8F83]"
                                                 />
                                             </TableCell>
                                             <TableCell className="py-3">
                                                 <div className="flex flex-col">
                                                     <button
                                                         onClick={e => { e.stopPropagation(); openCrmPanel(customer); }}
-                                                        className="text-slate-700 hover:text-[#35877D] hover:underline font-semibold text-xs transition-colors text-left cursor-pointer"
+                                                        className="text-slate-700 hover:text-[#2F8F83] hover:underline font-semibold text-xs transition-colors text-left cursor-pointer"
                                                     >
                                                         {customer.name || "WhatsApp User"}
                                                     </button>
@@ -570,7 +570,7 @@ export default function CustomersPage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="py-3">
-                                                <span className="text-xs font-semibold border border-slate-200 text-slate-600 px-2 py-0.5 bg-slate-50 rounded-md">
+                                                <span className="text-xs font-semibold border border-[#E5E9EE] text-slate-600 px-2 py-0.5 bg-slate-50 rounded-md">
                                                     Connectly360
                                                 </span>
                                             </TableCell>
@@ -580,12 +580,12 @@ export default function CustomersPage() {
                                             <TableCell className="py-3">
                                                 <div className="flex flex-wrap items-center gap-1.5 text-xs">
                                                     {Object.entries(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).slice(0, 2).map(([k, v]) => (
-                                                        <span key={k} className="bg-slate-50 text-slate-600 px-2 py-0.5 rounded font-medium border border-slate-200 max-w-[130px] truncate">
+                                                        <span key={k} className="bg-slate-50 text-slate-600 px-2 py-0.5 rounded font-medium border border-[#E5E9EE] max-w-[130px] truncate">
                                                             {k}: {String(v)}
                                                         </span>
                                                     ))}
                                                     {Object.keys(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).length > 2 && (
-                                                        <span className="text-[10px] font-semibold text-[#35877D] cursor-pointer hover:underline" onClick={e => { e.stopPropagation(); openCrmPanel(customer); }}>
+                                                        <span className="text-[10px] font-semibold text-[#2F8F83] cursor-pointer hover:underline" onClick={e => { e.stopPropagation(); openCrmPanel(customer); }}>
                                                             +{Object.keys(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).length - 2} more
                                                         </span>
                                                     )}
@@ -663,9 +663,9 @@ export default function CustomersPage() {
             {/* EDIT CONTACT DIALOG */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#378179]/5 border-b border-[#378179]/10 px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#378179]/10 flex items-center justify-center">
-                            <Edit2 size={15} className="text-[#378179]" />
+                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                            <Edit2 size={15} className="text-[#2F8F83]" />
                         </div>
                         <div>
                             <DialogTitle className="text-base font-bold text-slate-800">Edit Contact</DialogTitle>
@@ -722,7 +722,7 @@ export default function CustomersPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
                             >
                                 Save Changes
                             </Button>
@@ -734,9 +734,9 @@ export default function CustomersPage() {
             {/* IMPORT CONTACTS DIALOG */}
             <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
                 <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#378179]/5 border-b border-[#378179]/10 px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#378179]/10 flex items-center justify-center">
-                            <Download size={16} className="text-[#378179]" />
+                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                            <Download size={16} className="text-[#2F8F83]" />
                         </div>
                         <div>
                             <DialogTitle className="text-base font-bold text-slate-800">Import Contacts</DialogTitle>
@@ -748,7 +748,7 @@ export default function CustomersPage() {
 
                     <form onSubmit={handleFileUpload} className="p-6 space-y-5">
                         {/* Sample file download area */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                        <div className="bg-slate-50 border border-[#E5E9EE] rounded-xl p-3.5 flex items-center justify-between gap-3">
                             <div className="space-y-0.5">
                                 <p className="text-xs font-semibold text-slate-700">Need a template?</p>
                                 <p className="text-[11px] text-slate-500">Download our sample CSV to format your data.</p>
@@ -767,7 +767,7 @@ export default function CustomersPage() {
                         {/* File Upload input */}
                         <div className="space-y-1.5">
                             <Label htmlFor="csvFile" className="text-xs font-semibold text-slate-700">Select File</Label>
-                            <div className="border-2 border-dashed border-slate-200 hover:border-[#378179]/65 transition-colors rounded-xl p-6 text-center cursor-pointer relative bg-slate-50/50">
+                            <div className="border-2 border-dashed border-slate-200 hover:border-[#2F8F83]/65 transition-colors rounded-xl p-6 text-center cursor-pointer relative bg-slate-50/50">
                                 <input
                                     type="file"
                                     id="csvFile"
@@ -804,7 +804,7 @@ export default function CustomersPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#378179] hover:bg-[#2c6761] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
                                 disabled={isImporting || !importFile}
                             >
                                 {isImporting ? (

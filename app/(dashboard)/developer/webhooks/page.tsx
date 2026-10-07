@@ -371,7 +371,7 @@ export default function WebhooksPage() {
             featureName="Webhooks"
             description="Configure real-time webhooks to automatically forward WhatsApp events, campaigns, and workspace alerts to your server."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 <PageHeader
                     icon={Webhook}
                     title="Realtime Webhooks"
@@ -385,16 +385,16 @@ export default function WebhooksPage() {
                             <Link href="/developer/webhook-logs">
                                 <Button
                                     variant="outline"
-                                    className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                    className="border-[#E5E9EE] text-[#172033] hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer h-9 px-4 hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                 >
-                                    <Activity size={14} className="text-[#35877D]" />
+                                    <Activity size={14} className="text-[#2F8F83]" />
                                     Delivery Logs
                                 </Button>
                             </Link>
 
                             <Button
                                 onClick={handleOpenAdd}
-                                className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer text-xs font-semibold"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg shadow-2xs flex items-center gap-2 cursor-pointer text-xs font-semibold h-9 px-4"
                             >
                                 <Plus size={16} />
                                 Add Webhook Endpoint
@@ -404,26 +404,26 @@ export default function WebhooksPage() {
                 />
 
                 {/* Main Endpoints Card */}
-                <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
-                    <CardHeader className="border-b border-slate-100 pb-4 flex flex-row items-center justify-between gap-4">
+                <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs overflow-hidden">
+                    <CardHeader className="border-b border-[#E5E9EE] pb-4 flex flex-row items-center justify-between gap-4">
                         <div>
-                            <CardTitle className="text-base font-bold text-slate-900">Configured Endpoints</CardTitle>
-                            <CardDescription className="text-xs text-slate-500 mt-0.5">
+                            <CardTitle className="text-base font-bold text-[#172033]">Configured Endpoints</CardTitle>
+                            <CardDescription className="text-xs text-[#5F6B7A] mt-0.5">
                                 Connectly360 sends POST requests signed with your workspace HMAC secret.
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-400 font-medium">
+                            <span className="text-xs text-[#8A95A3] font-medium">
                                 {endpoints.length} {endpoints.length === 1 ? "endpoint" : "endpoints"}
                             </span>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => refetchEndpoints()}
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                                className="h-8 w-8 p-0 text-[#8A95A3] hover:text-[#172033] rounded-lg cursor-pointer"
                                 title="Refresh"
                             >
-                                <RefreshCw size={13} className={isEndpointsLoading ? "animate-spin" : ""} />
+                                <RefreshCw size={13} className={isEndpointsLoading ? "animate-spin text-[#2F8F83]" : ""} />
                             </Button>
                         </div>
                     </CardHeader>
@@ -432,7 +432,7 @@ export default function WebhooksPage() {
                         {isEndpointsLoading ? (
                             <div className="p-6 space-y-4">
                                 {[1, 2].map((i) => (
-                                    <div key={i} className="p-5 border border-slate-100 rounded-xl space-y-3">
+                                    <div key={i} className="p-5 border border-[#E5E9EE] rounded-xl space-y-3">
                                         <div className="flex items-center justify-between">
                                             <Skeleton className="h-5 w-48 rounded" />
                                             <Skeleton className="h-6 w-20 rounded-full" />
@@ -455,23 +455,23 @@ export default function WebhooksPage() {
                             </div>
                         ) : endpoints.length === 0 ? (
                             <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
-                                <div className="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center text-[#35877D] mb-3 border border-teal-100">
+                                <div className="w-14 h-14 rounded-2xl bg-[#E8F6F3] flex items-center justify-center text-[#2F8F83] mb-3 border border-[#BFE4DD]">
                                     <Webhook size={28} />
                                 </div>
-                                <h3 className="text-base font-bold text-slate-900">No webhook endpoints configured</h3>
-                                <p className="text-xs text-slate-500 max-w-md mt-1 mb-6 leading-relaxed">
+                                <h3 className="text-base font-bold text-[#172033]">No webhook endpoints configured</h3>
+                                <p className="text-xs text-[#5F6B7A] max-w-md mt-1 mb-6 leading-relaxed">
                                     Connectly360 can send real-time events to your systems when messages, campaigns, payments, and other workspace events occur.
                                 </p>
                                 <Button
                                     onClick={handleOpenAdd}
-                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer h-9 px-4"
                                 >
                                     <Plus size={15} />
                                     Add Webhook Endpoint
                                 </Button>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-100">
+                            <div className="divide-y divide-[#E5E9EE]">
                                 {endpoints.map((ep) => {
                                     const totalDeliveries = ep.success_count + ep.failure_count;
                                     const successRate = totalDeliveries > 0
@@ -488,7 +488,7 @@ export default function WebhooksPage() {
                                             <div className="space-y-3 flex-1 min-w-0">
                                                 {/* Header row: Name, Status badge, Health */}
                                                 <div className="flex flex-wrap items-center gap-2.5">
-                                                    <h3 className="text-sm font-bold text-slate-900 truncate">
+                                                    <h3 className="text-sm font-bold text-[#172033] truncate">
                                                         {ep.name}
                                                     </h3>
 
@@ -506,14 +506,14 @@ export default function WebhooksPage() {
                                                             Disabled
                                                         </Badge>
                                                     ) : (
-                                                        <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-600 border-slate-200 font-semibold px-2 py-0.5">
+                                                        <Badge variant="outline" className="text-[10px] bg-[#F1F3F5] text-[#5F6B7A] border-[#E5E9EE] font-semibold px-2 py-0.5">
                                                             Paused
                                                         </Badge>
                                                     )}
 
                                                     {/* Health / Success Rate */}
                                                     {totalDeliveries > 0 && (
-                                                        <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                                        <span className="text-[11px] text-[#5F6B7A] flex items-center gap-1">
                                                             <span className={`w-1.5 h-1.5 rounded-full ${successRate >= 95 ? "bg-emerald-500" : successRate >= 80 ? "bg-amber-500" : "bg-rose-500"}`} />
                                                             {successRate}% success ({totalDeliveries} calls)
                                                         </span>
@@ -522,14 +522,14 @@ export default function WebhooksPage() {
 
                                                 {/* URL and copy */}
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <div className="flex items-center gap-1.5 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/60 font-mono text-xs text-slate-800 max-w-full overflow-hidden text-ellipsis">
-                                                        <Globe size={13} className="text-slate-400 shrink-0" />
+                                                    <div className="flex items-center gap-1.5 bg-[#F1F3F5] px-2.5 py-1 rounded-lg border border-[#E5E9EE] font-mono text-xs text-[#172033] max-w-full overflow-hidden text-ellipsis">
+                                                        <Globe size={13} className="text-[#8A95A3] shrink-0" />
                                                         <span className="truncate">{ep.url}</span>
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => copyToClipboard(ep.url, "Endpoint URL copied")}
-                                                        className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors"
+                                                        className="text-[#8A95A3] hover:text-[#172033] p-1 rounded transition-colors cursor-pointer"
                                                         title="Copy URL"
                                                     >
                                                         <Copy size={13} />
@@ -540,8 +540,8 @@ export default function WebhooksPage() {
                                                 <div className="flex flex-wrap items-center gap-1.5">
                                                     {(ep.events || []).map((ev) => (
                                                         <span
-                                                            key={ev}
-                                                            className="text-[10px] px-2 py-0.5 rounded-md bg-teal-50/70 text-[#2c6f66] border border-teal-100 font-mono font-medium"
+                                                             key={ev}
+                                                             className="text-[10px] px-2 py-0.5 rounded-md bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD] font-mono font-medium"
                                                         >
                                                             {ev}
                                                         </span>
@@ -549,9 +549,9 @@ export default function WebhooksPage() {
                                                 </div>
 
                                                 {/* Meta row: Masked secret and Last Delivery */}
-                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[11px] text-slate-400 pt-0.5">
+                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[11px] text-[#8A95A3] pt-0.5">
                                                     <span className="flex items-center gap-1 font-mono">
-                                                        <Key size={11} className="text-slate-400" />
+                                                        <Key size={11} className="text-[#8A95A3]" />
                                                         Signing Secret: {ep.masked_secret || "whsec_••••••••••••••••"}
                                                     </span>
 
@@ -614,9 +614,9 @@ export default function WebhooksPage() {
                                                     size="sm"
                                                     onClick={() => handleTestPing(ep)}
                                                     disabled={testPingMutation.isPending}
-                                                    className="h-8.5 px-3 rounded-xl text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                                                    className="h-8 px-3 rounded-lg text-xs font-semibold border-[#E5E9EE] text-[#172033] hover:bg-slate-50 cursor-pointer shadow-2xs hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                                 >
-                                                    <Send size={12} className={`mr-1.5 ${isTesting ? "animate-spin text-[#35877D]" : "text-slate-500"}`} />
+                                                    <Send size={12} className={`mr-1.5 ${isTesting ? "animate-spin text-[#2F8F83]" : "text-[#5F6B7A]"}`} />
                                                     {isTesting ? "Testing..." : "Test Ping"}
                                                 </Button>
 
@@ -624,10 +624,10 @@ export default function WebhooksPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8.5 px-2.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl cursor-pointer"
+                                                        className="h-8 px-2.5 text-xs font-medium text-[#5F6B7A] hover:text-[#172033] rounded-lg cursor-pointer"
                                                         title="View Logs"
                                                     >
-                                                        <Activity size={13} className="mr-1 text-slate-400" />
+                                                        <Activity size={13} className="mr-1 text-[#8A95A3]" />
                                                         Logs
                                                     </Button>
                                                 </Link>
@@ -637,7 +637,7 @@ export default function WebhooksPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8.5 w-8.5 p-0 text-slate-400 hover:text-slate-700 rounded-xl cursor-pointer"
+                                                            className="h-8 w-8 p-0 text-[#8A95A3] hover:text-[#172033] rounded-lg cursor-pointer"
                                                         >
                                                             <MoreVertical size={15} />
                                                         </Button>
@@ -697,36 +697,36 @@ export default function WebhooksPage() {
                 </Card>
 
                 {/* Developer Documentation Card */}
-                <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs overflow-hidden">
+                <Card className="border border-[#E5E9EE] bg-white rounded-xl shadow-2xs overflow-hidden">
                     <CardHeader
                         className="py-4 px-6 flex flex-row items-center justify-between cursor-pointer select-none hover:bg-slate-50/50 transition-colors"
                         onClick={() => setShowDocs(!showDocs)}
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#35877D] flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-lg bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center font-bold">
                                 <Code2 size={16} />
                             </div>
                             <div>
-                                <CardTitle className="text-sm font-bold text-slate-900">Webhook Signature Verification Guide</CardTitle>
-                                <CardDescription className="text-xs text-slate-500">
+                                <CardTitle className="text-sm font-bold text-[#172033]">Webhook Signature Verification Guide</CardTitle>
+                                <CardDescription className="text-xs text-[#5F6B7A]">
                                     How to verify payload signatures using HMAC-SHA256 in Node.js, PHP, or Python
                                 </CardDescription>
                             </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[#8A95A3]">
                             {showDocs ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         </Button>
                     </CardHeader>
 
                     {showDocs && (
-                        <CardContent className="p-6 border-t border-slate-100 text-xs space-y-5 bg-slate-50/30">
+                        <CardContent className="p-6 border-t border-[#E5E9EE] text-xs space-y-5 bg-[#F7F9FA]">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2 p-3.5 bg-white border border-slate-200/70 rounded-xl">
-                                    <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                                        <Lock size={13} className="text-[#35877D]" />
+                                <div className="space-y-2 p-3.5 bg-white border border-[#E5E9EE] rounded-xl">
+                                    <p className="font-bold text-[#172033] flex items-center gap-1.5">
+                                        <Lock size={13} className="text-[#2F8F83]" />
                                         Request Headers
                                     </p>
-                                    <ul className="space-y-1 font-mono text-[11px] text-slate-600">
+                                    <ul className="space-y-1 font-mono text-[11px] text-[#5F6B7A]">
                                         <li><code>X-Connectly-Signature</code>: t=&lt;timestamp&gt;,v1=&lt;hmac&gt;</li>
                                         <li><code>X-Connectly-Event-Id</code>: evt_01J... (Idempotency Key)</li>
                                         <li><code>X-Connectly-Event-Type</code>: message.received</li>
@@ -785,12 +785,12 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
 
                 {/* Add / Edit Webhook Dialog */}
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogContent className="sm:max-w-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-xl rounded-xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle className="text-base font-bold text-slate-900">
+                            <DialogTitle className="text-base font-bold text-[#172033]">
                                 {editingEndpoint ? "Edit Webhook Endpoint" : "Add Webhook Endpoint"}
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
                                 Enter your HTTPS destination URL and choose which real-time platform events should be delivered.
                             </DialogDescription>
                         </DialogHeader>
@@ -798,7 +798,7 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                         <form onSubmit={handleSaveEndpoint} className="space-y-5 pt-2">
                             {/* Webhook Name */}
                             <div className="space-y-1.5">
-                                <Label htmlFor="ep-name" className="text-xs font-bold text-slate-700">
+                                <Label htmlFor="ep-name" className="text-xs font-bold text-[#172033]">
                                     Webhook Name <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -807,13 +807,13 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                     placeholder="e.g. Production CRM, Order System"
                                     value={formName}
                                     onChange={(e) => setFormName(e.target.value)}
-                                    className="rounded-xl border-slate-200 text-xs"
+                                    className="rounded-lg border-[#E5E9EE] text-xs focus:border-[#2F8F83]"
                                 />
                             </div>
 
                             {/* Endpoint URL */}
                             <div className="space-y-1.5">
-                                <Label htmlFor="ep-url" className="text-xs font-bold text-slate-700">
+                                <Label htmlFor="ep-url" className="text-xs font-bold text-[#172033]">
                                     Endpoint URL (HTTPS) <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -823,9 +823,9 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                     placeholder="https://api.yourdomain.com/webhooks/connectly360"
                                     value={formUrl}
                                     onChange={(e) => setFormUrl(e.target.value)}
-                                    className="rounded-xl border-slate-200 text-xs font-mono"
+                                    className="rounded-lg border-[#E5E9EE] text-xs font-mono focus:border-[#2F8F83]"
                                 />
-                                <p className="text-[10px] text-slate-400">
+                                <p className="text-[10px] text-[#8A95A3]">
                                     Must be a valid HTTPS URL. SSRF protection prevents loopback and private networks.
                                 </p>
                             </div>
@@ -833,15 +833,15 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                             {/* Event Subscriptions */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs font-bold text-slate-700">
+                                    <Label className="text-xs font-bold text-[#172033]">
                                         Subscribed Events <span className="text-rose-500">*</span>
                                     </Label>
-                                    <span className="text-[11px] text-[#35877D] font-medium">
+                                    <span className="text-[11px] text-[#2F8F83] font-medium">
                                         {selectedEvents.length} selected
                                     </span>
                                 </div>
 
-                                <div className="border border-slate-200 rounded-xl p-3 max-h-56 overflow-y-auto space-y-4 bg-slate-50/30">
+                                <div className="border border-[#E5E9EE] rounded-xl p-3 max-h-56 overflow-y-auto space-y-4 bg-[#F7F9FA]">
                                     {isEventsLoading ? (
                                         <div className="space-y-2 p-2">
                                             <Skeleton className="h-4 w-32" />
@@ -853,14 +853,14 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
 
                                             return (
                                                 <div key={category} className="space-y-2">
-                                                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-1">
-                                                        <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                                                    <div className="flex items-center justify-between border-b border-[#E5E9EE] pb-1">
+                                                        <span className="text-[11px] font-bold text-[#172033] uppercase tracking-wider">
                                                             {category}
                                                         </span>
                                                         <button
                                                             type="button"
                                                             onClick={() => handleToggleCategory(events)}
-                                                            className="text-[10px] text-[#35877D] hover:underline font-semibold"
+                                                            className="text-[10px] text-[#2F8F83] hover:underline font-semibold cursor-pointer"
                                                         >
                                                             {allSelected ? "Deselect All" : "Select All"}
                                                         </button>
@@ -874,19 +874,19 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                                                     key={ev.key}
                                                                     className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
                                                                         isChecked
-                                                                            ? "bg-teal-50/50 border-teal-200 text-teal-900"
-                                                                            : "bg-white border-slate-200/70 text-slate-600 hover:bg-slate-50"
+                                                                            ? "bg-[#E8F6F3] border-[#BFE4DD] text-[#172033]"
+                                                                            : "bg-white border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
                                                                     }`}
                                                                 >
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={isChecked}
                                                                         onChange={() => handleToggleEvent(ev.key)}
-                                                                        className="rounded text-[#35877D] focus:ring-[#35877D] mt-0.5"
+                                                                        className="rounded text-[#2F8F83] focus:ring-[#2F8F83] mt-0.5"
                                                                     />
                                                                     <div className="min-w-0">
                                                                         <p className="font-semibold text-[11px] font-mono leading-tight">{ev.key}</p>
-                                                                        <p className="text-[10px] text-slate-400 leading-tight mt-0.5 truncate">{ev.description}</p>
+                                                                        <p className="text-[10px] text-[#8A95A3] leading-tight mt-0.5 truncate">{ev.description}</p>
                                                                     </div>
                                                                 </label>
                                                             );
@@ -901,28 +901,28 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
 
                             {/* Description (Optional) */}
                             <div className="space-y-1.5">
-                                <Label htmlFor="ep-desc" className="text-xs font-bold text-slate-700">
-                                    Description <span className="text-slate-400 font-normal">(Optional)</span>
+                                <Label htmlFor="ep-desc" className="text-xs font-bold text-[#172033]">
+                                    Description <span className="text-[#8A95A3] font-normal">(Optional)</span>
                                 </Label>
                                 <Input
                                     id="ep-desc"
                                     placeholder="Internal notes about this endpoint integration"
                                     value={formDescription}
                                     onChange={(e) => setFormDescription(e.target.value)}
-                                    className="rounded-xl border-slate-200 text-xs"
+                                    className="rounded-lg border-[#E5E9EE] text-xs focus:border-[#2F8F83]"
                                 />
                             </div>
 
                             {/* Custom Headers (Optional) */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs font-bold text-slate-700">
-                                        Custom Headers <span className="text-slate-400 font-normal">(Optional)</span>
+                                    <Label className="text-xs font-bold text-[#172033]">
+                                        Custom Headers <span className="text-[#8A95A3] font-normal">(Optional)</span>
                                     </Label>
                                     <button
                                         type="button"
                                         onClick={handleAddHeaderRow}
-                                        className="text-[11px] text-[#35877D] hover:underline font-semibold"
+                                        className="text-[11px] text-[#2F8F83] hover:underline font-semibold cursor-pointer"
                                     >
                                         + Add Header
                                     </button>
@@ -931,25 +931,25 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                 {customHeadersList.length > 0 && (
                                     <div className="space-y-2">
                                         {customHeadersList.map((header, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
+                                             <div key={idx} className="flex items-center gap-2">
                                                 <Input
                                                     placeholder="Header Name (e.g. X-Api-Key)"
                                                     value={header.key}
                                                     onChange={(e) => handleUpdateHeaderRow(idx, "key", e.target.value)}
-                                                    className="rounded-xl border-slate-200 text-xs h-8"
+                                                    className="rounded-lg border-[#E5E9EE] text-xs h-8 focus:border-[#2F8F83]"
                                                 />
                                                 <Input
                                                     placeholder="Header Value"
                                                     value={header.value}
                                                     onChange={(e) => handleUpdateHeaderRow(idx, "value", e.target.value)}
-                                                    className="rounded-xl border-slate-200 text-xs h-8"
+                                                    className="rounded-lg border-[#E5E9EE] text-xs h-8 focus:border-[#2F8F83]"
                                                 />
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleRemoveHeaderRow(idx)}
-                                                    className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 rounded-lg"
+                                                    className="h-8 w-8 p-0 text-[#8A95A3] hover:text-rose-600 rounded-lg"
                                                 >
                                                     <Trash2 size={13} />
                                                 </Button>
@@ -959,19 +959,19 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                 )}
                             </div>
 
-                            <DialogFooter className="pt-3 border-t border-slate-100">
+                            <DialogFooter className="pt-3 border-t border-[#E5E9EE]">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => setIsAddOpen(false)}
-                                    className="rounded-xl text-xs"
+                                    className="rounded-lg text-xs border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={createMutation.isPending || updateMutation.isPending}
-                                    className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer h-9 px-4"
                                 >
                                     {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingEndpoint ? "Update Endpoint" : "Register Endpoint"}
                                 </Button>
@@ -982,16 +982,16 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
 
                 {/* One-Time Secret Reveal Modal */}
                 <Dialog open={!!revealedSecret} onOpenChange={(open) => !open && setRevealedSecret(null)}>
-                    <DialogContent className="sm:max-w-md rounded-2xl">
+                    <DialogContent className="sm:max-w-md rounded-xl">
                         <DialogHeader>
                             <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1">
                                 <Key size={20} />
                             </div>
-                            <DialogTitle className="text-base font-bold text-slate-900">
+                            <DialogTitle className="text-base font-bold text-[#172033]">
                                 Webhook Signing Secret
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
-                                Endpoint: <strong className="text-slate-800">{revealedSecret?.name}</strong>
+                            <DialogDescription className="text-xs text-[#5F6B7A]">
+                                Endpoint: <strong className="text-[#172033]">{revealedSecret?.name}</strong>
                             </DialogDescription>
                         </DialogHeader>
 
@@ -1007,9 +1007,9 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-700">Signing Secret</Label>
+                                <Label className="text-xs font-bold text-[#172033]">Signing Secret</Label>
                                 <div className="flex items-center gap-2">
-                                    <div className="flex-1 p-2.5 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl overflow-x-auto select-all">
+                                    <div className="flex-1 p-2.5 bg-slate-900 text-emerald-400 font-mono text-xs rounded-lg overflow-x-auto select-all">
                                         {revealedSecret?.secret}
                                     </div>
                                     <Button
@@ -1020,7 +1020,7 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                                                 setHasCopiedSecret(true);
                                             }
                                         }}
-                                        className="h-10 px-3 bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl text-xs font-semibold shrink-0 cursor-pointer"
+                                        className="h-9 px-3 bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg text-xs font-semibold shrink-0 cursor-pointer"
                                     >
                                         {hasCopiedSecret ? <Check size={14} className="mr-1" /> : <Copy size={14} className="mr-1" />}
                                         {hasCopiedSecret ? "Copied" : "Copy"}
@@ -1033,7 +1033,7 @@ function verifyWebhookSignature(rawBody, signatureHeader, secret) {
                             <Button
                                 type="button"
                                 onClick={() => setRevealedSecret(null)}
-                                className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold"
+                                className="w-full bg-[#172033] hover:bg-[#25324d] text-white rounded-lg text-xs font-bold h-9"
                             >
                                 Done, I have saved the secret
                             </Button>

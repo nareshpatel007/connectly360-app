@@ -84,7 +84,7 @@ export default function ApiLogsPage() {
     }, [searchQuery]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={Terminal}
                 title="API Request Logs"
@@ -97,9 +97,9 @@ export default function ApiLogsPage() {
                     <Button
                         variant="outline"
                         onClick={() => fetchLogs(true)}
-                        className="rounded-xl border-slate-200 text-xs font-semibold cursor-pointer h-9 px-4"
+                        className="rounded-lg border-[#E5E9EE] text-xs font-semibold cursor-pointer h-9 px-4 hover:border-[#2F8F83] hover:text-[#2F8F83]"
                     >
-                        <RefreshCw size={14} className={`mr-1.5 ${isRefreshing ? "animate-spin text-[#35877D]" : "text-slate-500"}`} />
+                        <RefreshCw size={14} className={`mr-1.5 ${isRefreshing ? "animate-spin text-[#2F8F83]" : "text-[#5F6B7A]"}`} />
                         Refresh Logs
                     </Button>
                 }
@@ -108,37 +108,37 @@ export default function ApiLogsPage() {
             {/* Filter and Search Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div className="relative flex-1 max-w-md">
-                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A95A3]" />
                     <input
                         type="text"
                         placeholder="Filter by endpoint, request ID or path..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#35877D]"
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-[#E5E9EE] rounded-lg text-xs font-semibold text-[#172033] placeholder:text-[#8A95A3] focus:outline-none focus:border-[#2F8F83]"
                     />
                 </div>
 
-                <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
+                <div className="inline-flex p-1 bg-[#F1F3F5] rounded-lg text-xs font-semibold text-[#5F6B7A]">
                     <button
                         onClick={() => setStatusFilter("all")}
-                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                            statusFilter === "all" ? "bg-white text-slate-900 shadow-2xs font-bold" : "hover:text-slate-900"
+                        className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                            statusFilter === "all" ? "bg-white text-[#172033] shadow-2xs font-bold" : "hover:text-[#172033]"
                         }`}
                     >
                         All Statuses
                     </button>
                     <button
                         onClick={() => setStatusFilter("200")}
-                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                            statusFilter === "200" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                        className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                            statusFilter === "200" ? "bg-white text-emerald-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                         }`}
                     >
                         200 OK
                     </button>
                     <button
                         onClick={() => setStatusFilter("401")}
-                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                            statusFilter === "401" ? "bg-white text-rose-700 shadow-2xs font-bold" : "hover:text-slate-900"
+                        className={`px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                            statusFilter === "401" ? "bg-white text-rose-700 shadow-2xs font-bold" : "hover:text-[#172033]"
                         }`}
                     >
                         401 / 403 Errors
@@ -147,10 +147,10 @@ export default function ApiLogsPage() {
             </div>
 
             {/* Logs Table */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+            <div className="bg-white border border-[#E5E9EE] rounded-xl shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs font-sans">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold uppercase text-slate-400">
+                        <thead className="bg-[#F7F9FA] border-b border-[#E5E9EE] text-[10px] font-extrabold uppercase text-[#8A95A3]">
                             <tr>
                                 <th className="px-4 py-3">Status</th>
                                 <th className="px-4 py-3">Method</th>
@@ -175,8 +175,8 @@ export default function ApiLogsPage() {
                                 <tr>
                                     <td colSpan={7} className="py-12 text-center text-slate-400">
                                         <Terminal size={32} className="mx-auto text-slate-300 mb-2" />
-                                        <p className="text-xs font-bold text-slate-600">No API logs found</p>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                        <p className="text-xs font-bold text-[#172033]">No API logs found</p>
+                                        <p className="text-[11px] text-[#8A95A3] mt-0.5">
                                             Inbound HTTP requests using workspace Bearer tokens will be recorded here.
                                         </p>
                                     </td>
@@ -199,29 +199,29 @@ export default function ApiLogsPage() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className="font-mono text-slate-900 font-bold">{log.method}</span>
+                                            <span className="font-mono text-[#172033] font-bold">{log.method}</span>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-slate-900">
+                                        <td className="px-4 py-3 font-mono text-[#172033]">
                                             {log.endpoint}
                                         </td>
                                         <td className="px-4 py-3">
                                             {log.api_key ? (
                                                 <div className="flex items-center gap-1.5">
-                                                    <Key size={12} className="text-[#35877D] shrink-0" />
-                                                    <span className="font-bold text-slate-800">{log.api_key.name}</span>
-                                                    <span className="text-[10px] font-mono text-slate-400">({log.api_key.prefix})</span>
+                                                    <Key size={12} className="text-[#2F8F83] shrink-0" />
+                                                    <span className="font-bold text-[#172033]">{log.api_key.name}</span>
+                                                    <span className="text-[10px] font-mono text-[#8A95A3]">({log.api_key.prefix})</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-slate-400 text-[11px] italic">Session / JWT</span>
+                                                <span className="text-[#8A95A3] text-[11px] italic">Session / JWT</span>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-500 font-mono">
+                                        <td className="px-4 py-3 text-[#5F6B7A] font-mono">
                                             {log.duration_ms} ms
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-slate-500">
+                                        <td className="px-4 py-3 font-mono text-[#5F6B7A]">
                                             {log.ip_address || "—"}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-400">
+                                        <td className="px-4 py-3 text-[#8A95A3]">
                                             {log.timestamp}
                                         </td>
                                     </tr>
@@ -233,7 +233,7 @@ export default function ApiLogsPage() {
 
                 {/* Pagination footer */}
                 {totalPages > 1 && (
-                    <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <div className="p-3 border-t border-[#E5E9EE] flex items-center justify-between text-xs text-[#5F6B7A]">
                         <span>Showing page {page} of {totalPages} ({totalCount} total entries)</span>
                         <div className="flex items-center gap-1">
                             <Button
@@ -241,7 +241,7 @@ export default function ApiLogsPage() {
                                 size="sm"
                                 disabled={page <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                className="h-7 px-2 rounded-lg border-slate-200"
+                                className="h-7 px-2 rounded-lg border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 <ChevronLeft size={14} />
                             </Button>
@@ -250,7 +250,7 @@ export default function ApiLogsPage() {
                                 size="sm"
                                 disabled={page >= totalPages}
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                className="h-7 px-2 rounded-lg border-slate-200"
+                                className="h-7 px-2 rounded-lg border-[#E5E9EE] hover:border-[#2F8F83] hover:text-[#2F8F83]"
                             >
                                 <ChevronRight size={14} />
                             </Button>

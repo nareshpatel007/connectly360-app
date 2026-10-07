@@ -64,7 +64,7 @@ export default function LeadsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             <PageHeader
                 icon={GitBranch}
                 title="Leads Pipeline"
@@ -73,7 +73,7 @@ export default function LeadsPage() {
                 actions={
                     <Button
                         onClick={() => handleAddLead("new")}
-                        className="bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-9 px-4 rounded-xl gap-1.5 shadow-xs transition-all cursor-pointer border-0"
+                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold h-9 px-4 rounded-xl gap-1.5 shadow-2xs transition-all cursor-pointer border-0 text-xs"
                     >
                         <Plus className="h-4 w-4" />
                         Add Lead
@@ -86,8 +86,8 @@ export default function LeadsPage() {
 
             {/* Pipeline Board */}
             {leads.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white py-20 text-center">
-                    <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E5E9EE] bg-white py-20 text-center">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-[#E5E9EE] flex items-center justify-center text-slate-400">
                         <Users2 size={24} />
                     </div>
                     <h3 className="mt-4 text-base font-bold text-slate-800">
@@ -98,7 +98,7 @@ export default function LeadsPage() {
                     </p>
                     <Button
                         onClick={() => handleAddLead("new")}
-                        className="mt-5 bg-[#35877D] hover:bg-[#2c6f66] text-white font-bold h-9 px-4 rounded-xl gap-1 border-0 shadow-sm cursor-pointer"
+                        className="mt-5 bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold h-9 px-4 rounded-xl gap-1 border-0 shadow-2xs cursor-pointer text-xs"
                     >
                         <Plus className="h-4 w-4" />
                         Create Manual Lead

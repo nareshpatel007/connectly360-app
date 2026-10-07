@@ -12,7 +12,7 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-const INTENT_COLORS = ["#C57B2A", "#E09A45", "#F5B86C", "#F5D4A0", "#D4A060", "#B87333", "#8B5A2B", "#6B3A1F"];
+const INTENT_COLORS = ["#2F8F83", "#45A79B", "#68BFB5", "#8FD5CD", "#236C63", "#3B82F6", "#6366F1", "#8B5CF6"];
 
 const INTENT_LABELS: Record<string, string> = {
   price: "Price Inquiry",
@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
   })) ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <PageHeader
         icon={BarChart3}
         title="Analytics"
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         {isLoadingSummary ? (
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl bg-slate-100" />)
         ) : (
           <>
             <SummaryCard label="Total Messages" value={summary?.totalMessages ?? 0} sub={`${summary?.totalInbound ?? 0} in / ${summary?.totalOutbound ?? 0} out`} />
@@ -68,57 +68,59 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Message Volume</CardTitle>
+      <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[#E5E9EE] pb-4">
+          <CardTitle className="text-base font-semibold text-[#172033]">Message Volume</CardTitle>
           <Select value={period} onValueChange={(v) => setPeriod(v as "daily" | "monthly")}>
-            <SelectTrigger className="w-32" data-testid="select-period">
+            <SelectTrigger className="w-32 h-9 text-xs border-[#E5E9EE] text-[#172033]" data-testid="select-period">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="daily" className="text-xs">Daily</SelectItem>
+              <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoadingStats ? (
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full bg-slate-100" />
           ) : chartData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
+            <div className="h-64 flex items-center justify-center text-[#5F6B7A] text-xs">
               No message data yet. Data appears once customers start messaging.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F5" />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#5F6B7A" }} stroke="#E5E9EE" />
+                <YAxis tick={{ fontSize: 12, fill: "#5F6B7A" }} stroke="#E5E9EE" />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
+                    background: "#FFFFFF",
+                    border: "1px solid #E5E9EE",
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                    fontSize: "12px",
                   }}
                 />
-                <Legend />
-                <Bar dataKey="Inbound" fill="#C57B2A" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Outbound" fill="#F5B86C" radius={[3, 3, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
+                <Bar dataKey="Inbound" fill="#2F8F83" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Outbound" fill="#8FD5CD" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Message Intent Breakdown</CardTitle>
+      <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
+        <CardHeader className="border-b border-[#E5E9EE] pb-4">
+          <CardTitle className="text-base font-semibold text-[#172033]">Message Intent Breakdown</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoadingIntents ? (
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full bg-slate-100" />
           ) : !pieData.length ? (
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
+            <div className="h-64 flex items-center justify-center text-[#5F6B7A] text-xs">
               No intent data yet.
             </div>
           ) : (
@@ -142,22 +144,24 @@ export default function AnalyticsPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
+                      background: "#FFFFFF",
+                      border: "1px solid #E5E9EE",
+                      borderRadius: "10px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                      fontSize: "12px",
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-col gap-2 min-w-48">
                 {pieData.map((entry, i) => (
-                  <div key={entry.name} className="flex items-center gap-2 text-sm">
+                  <div key={entry.name} className="flex items-center gap-2 text-xs">
                     <span
-                      className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                      className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ background: INTENT_COLORS[i % INTENT_COLORS.length] }}
                     />
-                    <span className="text-foreground">{entry.name}</span>
-                    <span className="ml-auto font-semibold text-muted-foreground">{entry.value}</span>
+                    <span className="text-[#172033] font-medium">{entry.name}</span>
+                    <span className="ml-auto font-semibold text-[#5F6B7A]">{entry.value}</span>
                   </div>
                 ))}
               </div>
@@ -173,11 +177,11 @@ function SummaryCard({
   label, value, sub, suffix = "",
 }: { label: string; value: number; sub: string; suffix?: string }) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="text-2xl font-bold">{value}{suffix}</div>
-        <div className="text-sm font-medium text-foreground mt-1">{label}</div>
-        <div className="text-xs text-muted-foreground mt-1">{sub}</div>
+    <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl">
+      <CardContent className="p-5">
+        <div className="text-2xl font-bold text-[#172033]">{value}{suffix}</div>
+        <div className="text-xs font-semibold text-[#5F6B7A] mt-1">{label}</div>
+        <div className="text-[11px] text-[#8A95A3] mt-0.5">{sub}</div>
       </CardContent>
     </Card>
   );

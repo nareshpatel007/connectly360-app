@@ -350,9 +350,9 @@ function ConversationsContent() {
                 <div className="p-3 border-b border-slate-150 shrink-0 bg-white space-y-2.5">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                            <h2 className="text-sm font-black text-slate-900 tracking-tight">Inbox</h2>
+                            <h2 className="text-sm font-semibold text-[#172033] tracking-tight">Inbox</h2>
                             {counts.unread > 0 && (
-                                <span className="bg-[#378179] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                                <span className="bg-[#2F8F83] text-white text-[10px] font-medium px-1.5 py-0.2 rounded-full shadow-2xs">
                                     {counts.unread}
                                 </span>
                             )}
@@ -363,9 +363,9 @@ function ConversationsContent() {
                             type="button"
                             size="sm"
                             onClick={() => setIsNewConvOpen(true)}
-                            className="bg-[#378179] hover:bg-[#2b625c] text-white font-bold text-xs h-7.5 px-2.5 rounded-lg flex items-center gap-1 shadow-2xs cursor-pointer"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-7.5 px-2.5 rounded-lg flex items-center gap-1 shadow-2xs cursor-pointer"
                         >
-                            <Plus size={13} strokeWidth={2.5} />
+                            <Plus size={13} strokeWidth={2} />
                             <span>New Message</span>
                         </Button>
                     </div>
@@ -382,16 +382,16 @@ function ConversationsContent() {
                             <button
                                 key={tabItem.key}
                                 onClick={() => handleTabChange(tabItem.key)}
-                                className={`text-[10px] font-bold py-1 px-1.5 sm:px-2 rounded-full border transition-all cursor-pointer uppercase tracking-tight flex items-center justify-center gap-1 shrink-0 ${
+                                className={`text-[10px] font-medium py-1 px-1.5 sm:px-2 rounded-full border transition-all cursor-pointer uppercase tracking-tight flex items-center justify-center gap-1 shrink-0 ${
                                     selectedTab === tabItem.key
-                                        ? "bg-[#378179] text-white border-transparent shadow-xs"
-                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                        ? "bg-[#2F8F83] text-white border-transparent shadow-xs"
+                                        : "bg-white border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
                                 }`}
                             >
                                 <span>{tabItem.label}</span>
                                 {tabItem.count !== undefined && (
                                     <span
-                                        className={`text-[9px] px-1 py-0.2 rounded-full font-bold ${
+                                        className={`text-[9px] px-1 py-0.2 rounded-full font-semibold ${
                                             selectedTab === tabItem.key ? "bg-white/25 text-white" : "bg-slate-100 text-slate-500"
                                         }`}
                                     >
@@ -404,21 +404,21 @@ function ConversationsContent() {
                 </div>
 
                 {/* Search Box */}
-                <div className="px-3 py-2 border-b border-slate-100 bg-white">
+                <div className="px-3 py-2 border-b border-[#E5E9EE] bg-white">
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#8A95A3]" />
                         <Input
                             type="search"
                             placeholder="Search active chats..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-8 text-xs h-8.5 rounded-lg bg-slate-50 border-slate-200 focus:bg-white text-slate-800 placeholder-slate-400 focus-visible:ring-1 focus-visible:ring-[#378179] focus-visible:ring-offset-0"
+                            className="pl-8 text-xs h-8.5 rounded-lg bg-[#F7F9FA] border-[#E5E9EE] focus:bg-white text-[#172033] placeholder-[#8A95A3] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:ring-offset-0"
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                                className="absolute right-2.5 top-2.5 text-[#8A95A3] hover:text-[#172033]"
                             >
                                 <X size={12} />
                             </button>
@@ -428,12 +428,12 @@ function ConversationsContent() {
 
                 {/* Chats Thread List */}
                 <div className="flex-1 overflow-auto bg-white">
-                    <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-500 tracking-wider bg-slate-50 border-b border-slate-100 uppercase flex items-center justify-between">
+                    <div className="px-3.5 py-1.5 text-[10px] font-semibold text-[#5F6B7A] tracking-wider bg-[#F7F9FA] border-b border-[#E5E9EE] uppercase flex items-center justify-between">
                         <span>Conversations</span>
                         {browserPermission === "default" && isSupported && (
                             <button
                                 onClick={requestBrowserPermission}
-                                className="text-[10px] font-semibold text-[#378179] hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-[10px] font-semibold text-[#2F8F83] hover:underline flex items-center gap-1 cursor-pointer"
                                 title="Enable browser alerts for new messages"
                             >
                                 <Bell size={10} />
@@ -582,7 +582,7 @@ function ConversationsContent() {
                                         )}
                                     </h3>
                                     <p className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
-                                        <Bot size={11} className="text-[#378179]" />
+                                        <Bot size={11} className="text-[#2F8F83]" />
                                         Bot Available
                                     </p>
                                 </div>
@@ -841,7 +841,7 @@ function ConversationsContent() {
                                     <Button
                                         type="submit"
                                         disabled={isSending || !replyText.trim()}
-                                        className="bg-[#378179] hover:bg-[#2b625c] text-white font-bold text-xs h-8 px-4 rounded-lg flex items-center gap-1.5 shadow-xs border-0 cursor-pointer"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-8 px-4 rounded-lg flex items-center gap-1.5 shadow-xs border-0 cursor-pointer"
                                     >
                                         {isSending ? (
                                             <Loader2 className="animate-spin" size={13} />
@@ -859,13 +859,13 @@ function ConversationsContent() {
                 ) : (
                     /* No conversation selected empty state */
                     <div className="flex-1 flex flex-col items-center justify-center text-slate-500 text-xs p-8 text-center space-y-4">
-                        <div className="text-[#378179] opacity-90">
+                        <div className="text-[#2F8F83] opacity-90">
                             <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                         </div>
-                        <h4 className="font-bold text-slate-800 text-sm">No conversation selected</h4>
-                        <p className="max-w-xs leading-normal text-slate-500 text-xs">
+                        <h4 className="font-semibold text-[#172033] text-sm">No conversation selected</h4>
+                        <p className="max-w-xs leading-normal text-[#5F6B7A] text-xs">
                             Select a chat from the left panel or initiate a new conversation with a customer.
                         </p>
                         <div className="flex items-center gap-2 pt-1">
@@ -873,7 +873,7 @@ function ConversationsContent() {
                                 type="button"
                                 size="sm"
                                 onClick={() => setIsNewConvOpen(true)}
-                                className="bg-[#378179] hover:bg-[#2b625c] text-white font-bold text-xs rounded-lg h-8 px-3.5"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs rounded-lg h-8 px-3.5 shadow-xs"
                             >
                                 <Plus size={13} className="mr-1" /> New Message
                             </Button>
@@ -882,7 +882,7 @@ function ConversationsContent() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleTabChange("unread")}
-                                className="border-[#378179] text-[#378179] hover:bg-[#378179]/05 rounded-lg text-xs font-semibold h-8"
+                                className="border-[#BFE4DD] text-[#2F8F83] hover:bg-[#E8F6F3]/50 rounded-lg text-xs font-medium h-8"
                             >
                                 View Unread Chats
                             </Button>
@@ -920,7 +920,7 @@ export default function ConversationsPage() {
     return (
         <Suspense fallback={
             <div className="flex h-full w-full bg-white p-6 items-center justify-center">
-                <Loader2 className="animate-spin text-[#378179]" size={24} />
+                <Loader2 className="animate-spin text-[#2F8F83]" size={24} />
             </div>
         }>
             <ConversationsContent />

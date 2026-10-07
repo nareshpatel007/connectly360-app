@@ -14,7 +14,7 @@ export default function AIAssistantPage() {
             featureName="AI Assistant" 
             description="Train a custom AI agent on your business files and automate customer replies 24/7."
         >
-            <div className="space-y-6">
+            <div className="space-y-6 w-full">
                 <PageHeader
                     icon={Bot}
                     title="AI Agents"
@@ -22,7 +22,7 @@ export default function AIAssistantPage() {
                     breadcrumbs={[{ label: "AI" }, { label: "AI Agents" }]}
                     actions={
                         <Link href="/knowledge-base">
-                            <Button className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer">
+                            <Button className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-xl shadow-2xs flex items-center gap-2 cursor-pointer font-semibold text-xs h-9 px-4">
                                 <Sparkles size={16} />
                                 Train Knowledge Base
                             </Button>
@@ -31,9 +31,9 @@ export default function AIAssistantPage() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    <Card className="border border-[#E5E9EE] bg-white rounded-2xl shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
                         <CardHeader className="pb-3">
-                            <div className="h-10 w-10 rounded-xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mb-2">
+                            <div className="h-10 w-10 rounded-xl bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD] flex items-center justify-center mb-2">
                                 <BookOpen size={20} />
                             </div>
                             <CardTitle className="text-base font-bold text-slate-900">Knowledge Base Training</CardTitle>
@@ -43,14 +43,14 @@ export default function AIAssistantPage() {
                         </CardHeader>
                         <CardContent className="pt-0">
                             <Link href="/knowledge-base">
-                                <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold cursor-pointer border-slate-200">
+                                <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold cursor-pointer border-[#E5E9EE]">
                                     Manage Knowledge Base <ArrowRight size={13} className="ml-1.5" />
                                 </Button>
                             </Link>
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    <Card className="border border-[#E5E9EE] bg-white rounded-2xl shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
                         <CardHeader className="pb-3">
                             <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">
                                 <Zap size={20} />
@@ -62,16 +62,16 @@ export default function AIAssistantPage() {
                         </CardHeader>
                         <CardContent className="pt-0">
                             <Link href="/automations">
-                                <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold cursor-pointer border-slate-200">
+                                <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold cursor-pointer border-[#E5E9EE]">
                                     Configure Automations <ArrowRight size={13} className="ml-1.5" />
                                 </Button>
                             </Link>
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-slate-200/80 bg-white rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    <Card className="border border-[#E5E9EE] bg-white rounded-2xl shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
                         <CardHeader className="pb-3">
-                            <div className="h-10 w-10 rounded-xl bg-teal-50 text-[#35877D] flex items-center justify-center mb-2">
+                            <div className="h-10 w-10 rounded-xl bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD] flex items-center justify-center mb-2">
                                 <ShieldCheck size={20} />
                             </div>
                             <CardTitle className="text-base font-bold text-slate-900">Agent Guardrails</CardTitle>

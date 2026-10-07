@@ -565,7 +565,7 @@ export default function TemplatesPage() {
     }, [templates, searchTerm]);
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 w-full">
             {/* Page Header */}
             <PageHeader
                 icon={FileText}
@@ -580,12 +580,12 @@ export default function TemplatesPage() {
                             disabled={syncMutation.isPending}
                             className="border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 rounded-xl cursor-pointer"
                         >
-                            <RefreshCw size={14} className={syncMutation.isPending ? "animate-spin" : ""} />
+                            <RefreshCw size={14} className={syncMutation.isPending ? "animate-spin text-[#2F8F83]" : ""} />
                             {syncMutation.isPending ? "Syncing..." : "Sync from Meta"}
                         </Button>
                         <Button
                             onClick={openCreate}
-                            className="bg-[#35877D] hover:bg-[#2c7169] text-white flex items-center gap-1.5 font-medium shadow-xs rounded-xl border-0 cursor-pointer"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white flex items-center gap-1.5 font-medium shadow-2xs rounded-xl border-0 cursor-pointer h-9 px-4 text-xs"
                         >
                             <Plus size={16} />
                             Create Template
@@ -634,7 +634,7 @@ export default function TemplatesPage() {
                     {!searchTerm && (
                         <Button
                             onClick={openCreate}
-                            className="bg-[#35877D] hover:bg-[#2c7169] text-white font-medium mt-2"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium mt-2"
                         >
                             Create first template
                         </Button>
@@ -681,12 +681,11 @@ export default function TemplatesPage() {
                                             {template.category}
                                         </Badge>
                                     </div>
-
-                                    {/* Body Text Preview */}
+                                     {/* Body Text Preview */}
                                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                         {template.header_type && template.header_type !== "none" && (
-                                            <div className="text-[10px] font-bold text-[#35877D] uppercase mb-1.5 flex items-center gap-1">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-[#35877D]" />
+                                            <div className="text-[10px] font-bold text-[#2F8F83] uppercase mb-1.5 flex items-center gap-1">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-[#2F8F83]" />
                                                 Header: {template.header_type}
                                             </div>
                                         )}
@@ -741,7 +740,7 @@ export default function TemplatesPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => openEdit(template)}
-                                                className="text-slate-600 hover:text-[#35877D] hover:bg-[#35877D]/10 h-7 text-xs px-2"
+                                                className="text-slate-600 hover:text-[#2F8F83] hover:bg-[#E8F6F3] h-7 text-xs px-2"
                                             >
                                                 <Pencil className="size-3 mr-1" />
                                                 Edit
@@ -753,7 +752,7 @@ export default function TemplatesPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => openEdit(template)}
-                                                className="text-slate-600 hover:text-[#35877D] hover:bg-[#35877D]/10 h-7 text-xs px-2"
+                                                className="text-slate-600 hover:text-[#2F8F83] hover:bg-[#E8F6F3] h-7 text-xs px-2"
                                             >
                                                 <RotateCcw className="size-3 mr-1" />
                                                 Resubmit
@@ -800,21 +799,21 @@ export default function TemplatesPage() {
                     {/* Step indicators */}
                     <div className="flex items-center gap-6 px-6 py-3 border-b border-slate-100 bg-slate-50/50 shrink-0 select-none">
                         <div className="flex items-center gap-2">
-                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= 1 ? "bg-[#35877D] text-white" : "bg-slate-200 text-slate-500"}`}>
+                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= 1 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-500"}`}>
                                 {step > 1 ? "✓" : "1"}
                             </div>
                             <span className={`text-xs font-semibold ${step >= 1 ? "text-slate-900" : "text-slate-400"}`}>Set up template</span>
                         </div>
                         <div className="h-px bg-slate-200 flex-1" />
                         <div className="flex items-center gap-2">
-                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= 2 ? "bg-[#35877D] text-white" : "bg-slate-200 text-slate-500"}`}>
+                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= 2 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-500"}`}>
                                 {step > 2 ? "✓" : "2"}
                             </div>
                             <span className={`text-xs font-semibold ${step >= 2 ? "text-slate-900" : "text-slate-400"}`}>Edit template</span>
                         </div>
                         <div className="h-px bg-slate-200 flex-1" />
                         <div className="flex items-center gap-2">
-                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 3 ? "bg-[#35877D] text-white" : "bg-slate-200 text-slate-500"}`}>
+                            <div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 3 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-500"}`}>
                                 3
                             </div>
                             <span className={`text-xs font-semibold ${step === 3 ? "text-slate-900" : "text-slate-400"}`}>Submit for review</span>
@@ -858,7 +857,7 @@ export default function TemplatesPage() {
                                                                 setForm({ ...form, category: cat.id as any, type: defaultType });
                                                             }}
                                                             className={`flex items-center justify-center gap-2 p-3.5 rounded-xl border text-center transition-all ${selected
-                                                                    ? "border-[#35877D] bg-[#35877D]/5 text-[#35877D] shadow-sm font-bold"
+                                                                    ? "border-[#2F8F83] bg-[#E8F6F3] text-[#2F8F83] shadow-sm font-bold"
                                                                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-medium"
                                                                 }`}
                                                         >
@@ -884,7 +883,7 @@ export default function TemplatesPage() {
                                                             <label
                                                                 key={t.id}
                                                                 className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${form.type === t.id
-                                                                        ? "border-[#35877D] bg-[#35877D]/5"
+                                                                        ? "border-[#2F8F83] bg-[#E8F6F3]"
                                                                         : "border-slate-200 hover:bg-slate-50 bg-white"
                                                                     }`}
                                                             >
@@ -893,7 +892,7 @@ export default function TemplatesPage() {
                                                                     name="template_type"
                                                                     checked={form.type === t.id}
                                                                     onChange={() => setForm({ ...form, type: t.id })}
-                                                                    className="mt-1 accent-[#35877D]"
+                                                                    className="mt-1 accent-[#2F8F83]"
                                                                 />
                                                                 <div>
                                                                     <p className="text-xs font-bold text-slate-800">{t.label}</p>
@@ -913,7 +912,7 @@ export default function TemplatesPage() {
                                                             <label
                                                                 key={t.id}
                                                                 className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${form.type === t.id
-                                                                        ? "border-[#35877D] bg-[#35877D]/5"
+                                                                        ? "border-[#2F8F83] bg-[#E8F6F3]"
                                                                         : "border-slate-200 hover:bg-slate-50 bg-white"
                                                                     }`}
                                                             >
@@ -922,7 +921,7 @@ export default function TemplatesPage() {
                                                                     name="template_type"
                                                                     checked={form.type === t.id}
                                                                     onChange={() => setForm({ ...form, type: t.id })}
-                                                                    className="mt-1 accent-[#35877D]"
+                                                                    className="mt-1 accent-[#2F8F83]"
                                                                 />
                                                                 <div>
                                                                     <p className="text-xs font-bold text-slate-800">{t.label}</p>
@@ -934,13 +933,13 @@ export default function TemplatesPage() {
                                                 )}
 
                                                 {form.category === "Authentication" && (
-                                                    <label className="flex items-start gap-3 p-3 rounded-xl border border-[#35877D] bg-[#35877D]/5 cursor-pointer">
+                                                    <label className="flex items-start gap-3 p-3 rounded-xl border border-[#2F8F83] bg-[#E8F6F3] cursor-pointer">
                                                         <input
                                                             type="radio"
                                                             name="template_type"
                                                             checked
                                                             readOnly
-                                                            className="mt-1 accent-[#35877D]"
+                                                            className="mt-1 accent-[#2F8F83]"
                                                         />
                                                         <div>
                                                             <p className="text-xs font-bold text-slate-800">One-time Passcode</p>
@@ -1492,7 +1491,7 @@ export default function TemplatesPage() {
                                                 }
                                             }
                                         }}
-                                        className="bg-[#35877D] hover:bg-[#2c7169] text-white font-semibold h-9 px-4 rounded-xl border-0 flex items-center gap-1"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold h-9 px-4 rounded-xl border-0 flex items-center gap-1 shadow-2xs"
                                     >
                                         Next <ChevronRight size={16} />
                                     </Button>
@@ -1504,7 +1503,7 @@ export default function TemplatesPage() {
                                             updateMutation.isPending ||
                                             form.category === "Authentication"
                                         }
-                                        className="bg-[#35877D] hover:bg-[#2c7169] text-white font-bold h-9 px-5 rounded-xl border-0"
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold h-9 px-5 rounded-xl border-0 shadow-2xs"
                                     >
                                         {createMutation.isPending || updateMutation.isPending ? (
                                             <span className="flex items-center gap-1">

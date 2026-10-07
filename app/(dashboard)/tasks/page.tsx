@@ -249,7 +249,7 @@ function TasksContent() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
             {/* Header */}
             <PageHeader
                 icon={CheckSquare}
@@ -262,17 +262,17 @@ function TasksContent() {
                             variant="outline"
                             size="sm"
                             onClick={() => fetchTasks(false)}
-                            className="rounded-xl border-slate-200 text-slate-700 h-9 px-3 cursor-pointer"
+                            className="rounded-xl border-[#E5E9EE] text-slate-700 h-9 px-3 cursor-pointer"
                             title="Refresh Tasks"
                         >
-                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#35877D]" : ""} />
+                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#2F8F83]" : ""} />
                         </Button>
                         <Button
                             onClick={() => {
                                 setEditingTask(null);
                                 setIsCreateModalOpen(true);
                             }}
-                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-colors cursor-pointer gap-2"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-colors cursor-pointer gap-2"
                         >
                             <Plus size={16} />
                             New Task
@@ -311,7 +311,7 @@ function TasksContent() {
                     <select
                         value={priorityFilter}
                         onChange={(e) => setPriorityFilter(e.target.value)}
-                        className="h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#35877D]"
+                        className="h-10 px-3 bg-white border border-[#E5E9EE] rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#2F8F83]"
                     >
                         <option value="all">All Priorities</option>
                         <option value="urgent">Urgent</option>
@@ -330,7 +330,7 @@ function TasksContent() {
                                 setSearchQuery(e.target.value);
                                 setPage(1);
                             }}
-                            className="pl-10 h-10 rounded-xl border-slate-200 text-xs font-semibold"
+                            className="pl-10 h-10 rounded-xl border-[#E5E9EE] text-xs font-semibold"
                         />
                     </div>
                 </div>
@@ -340,7 +340,7 @@ function TasksContent() {
             {isLoading && tasks.length === 0 ? (
                 <TaskListSkeleton />
             ) : tasks.length === 0 ? (
-                <Card className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center space-y-3 shadow-xs">
+                <Card className="rounded-2xl border border-[#E5E9EE] bg-white p-12 text-center space-y-3 shadow-2xs">
                     <CheckSquare className="mx-auto h-10 w-10 text-slate-300" />
                     <h3 className="text-sm font-bold text-slate-900">
                         {activeTab === "all"
@@ -364,7 +364,7 @@ function TasksContent() {
                                 setEditingTask(null);
                                 setIsCreateModalOpen(true);
                             }}
-                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs gap-1.5"
+                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs gap-1.5"
                         >
                             <Plus size={15} />
                             New Task
@@ -372,7 +372,7 @@ function TasksContent() {
                     </div>
                 </Card>
             ) : (
-                <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden divide-y divide-slate-100">
+                <Card className="rounded-2xl border border-[#E5E9EE] bg-white shadow-2xs overflow-hidden divide-y divide-[#E5E9EE]">
                     {tasks.map((task) => {
                         const isDone = task.status === "completed";
                         const isOverdue =
@@ -398,8 +398,8 @@ function TasksContent() {
                                         }}
                                         className={`mt-0.5 h-5 w-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
                                             isDone
-                                                ? "bg-[#35877D] border-[#35877D] text-white"
-                                                : "border-slate-300 hover:border-[#35877D] bg-white"
+                                                ? "bg-[#2F8F83] border-[#2F8F83] text-white"
+                                                : "border-slate-300 hover:border-[#2F8F83] bg-white"
                                         }`}
                                         title={isDone ? "Mark Pending" : "Mark Completed"}
                                     >
@@ -410,7 +410,7 @@ function TasksContent() {
                                     <div className="space-y-1 min-w-0 flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span
-                                                className={`text-sm font-bold text-slate-900 hover:text-[#35877D] transition-colors ${
+                                                className={`text-sm font-bold text-slate-900 hover:text-[#2F8F83] transition-colors ${
                                                     isDone ? "line-through text-slate-500" : ""
                                                 }`}
                                             >
@@ -430,7 +430,7 @@ function TasksContent() {
                                         </div>
 
                                         {task.description && (
-                                            <p className="text-xs text-slate-500 line-clamp-1">
+                                             <p className="text-xs text-slate-500 line-clamp-1">
                                                 {task.description}
                                             </p>
                                         )}
@@ -438,7 +438,7 @@ function TasksContent() {
                                         {/* Meta Items */}
                                         <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium pt-1 flex-wrap">
                                             <span className="flex items-center gap-1 text-slate-600 font-semibold">
-                                                <UserCheck size={12} className="text-[#35877D]" />
+                                                <UserCheck size={12} className="text-[#2F8F83]" />
                                                 {task.assignee?.name || "Unassigned"}
                                             </span>
 
@@ -453,7 +453,7 @@ function TasksContent() {
 
                                             {task.contact && (
                                                 <span className="flex items-center gap-1 text-slate-600 font-semibold">
-                                                    <MessageSquare size={12} className="text-[#35877D]" />
+                                                    <MessageSquare size={12} className="text-[#2F8F83]" />
                                                     {task.contact.name}
                                                     {task.contact.phone && ` (${task.contact.phone})`}
                                                 </span>

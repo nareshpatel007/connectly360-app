@@ -111,14 +111,14 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <PageHeader
         icon={Package}
         title="Products & Pricing"
         description="Manage your catalogue items, packaging variants, and prices."
         breadcrumbs={[{ label: "Products" }]}
         actions={
-          <Button onClick={openCreate} className="bg-[#35877D] hover:bg-[#2c6f66] text-white rounded-xl shadow-xs flex items-center gap-2 cursor-pointer">
+          <Button onClick={openCreate} className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg shadow-xs h-9 px-4 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors">
             <Plus className="h-4 w-4" /> Add Product
           </Button>
         }
@@ -179,8 +179,11 @@ export default function ProductsPage() {
                     </FormItem>
                   )}
                 />
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={createProduct.isPending || updateProduct.isPending}>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-lg h-9 px-4 text-xs font-semibold border-[#E5E9EE]">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createProduct.isPending || updateProduct.isPending} className="bg-[#2F8F83] hover:bg-[#267A70] text-white rounded-lg h-9 px-4 text-xs font-semibold">
                     {editingProduct ? 'Save Changes' : 'Create Product'}
                   </Button>
                 </div>
@@ -191,19 +194,19 @@ export default function ProductsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
-          [...Array(4)].map((_, i) => (
-            <Card key={i}>
+          [...Array(6)].map((_, i) => (
+            <Card key={i} className="bg-white border border-[#E5E9EE] rounded-xl shadow-2xs">
               <CardHeader className="pb-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-5 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-1/2 rounded-md mt-1" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-10 w-1/3 mt-2" />
+                <Skeleton className="h-8 w-1/3 mt-2 rounded-md" />
               </CardContent>
             </Card>
           ))
         ) : products?.map((product) => (
-          <Card key={product.id} className={!product.active ? "opacity-60 grayscale-[0.5]" : ""}>
+          <Card key={product.id} className={`bg-white border border-[#E5E9EE] rounded-xl shadow-2xs hover:shadow-xs transition-shadow ${!product.active ? "opacity-60 bg-slate-50/60" : ""}`}>
             <CardHeader className="pb-2 relative">
               <div className="absolute right-4 top-4 flex items-center gap-2">
                 <Switch 
@@ -212,25 +215,25 @@ export default function ProductsPage() {
                   aria-label="Toggle active status"
                 />
               </div>
-              <CardTitle className="text-lg pr-12">{product.name}</CardTitle>
-              <CardDescription>{product.unit}</CardDescription>
+              <CardTitle className="text-base font-semibold text-[#172033] pr-12">{product.name}</CardTitle>
+              <CardDescription className="text-xs text-[#5F6B7A]">{product.unit}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mt-2 flex items-end justify-between">
-                <div className="text-3xl font-bold text-primary">
+                <div className="text-2xl font-bold text-[#172033] tracking-tight">
                   ₹{product.price.toLocaleString('en-IN')}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon" onClick={() => openEdit(product)}>
-                    <Pencil className="h-4 w-4" />
+                <div className="flex gap-1.5">
+                  <Button variant="outline" size="icon" onClick={() => openEdit(product)} className="h-8 w-8 rounded-lg border-[#E5E9EE] text-[#5F6B7A] hover:text-[#172033] hover:bg-slate-50 cursor-pointer">
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => setDeletingProductId(product.id)}>
-                    <Trash2 className="h-4 w-4" />
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer" onClick={() => setDeletingProductId(product.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
               {!product.active && (
-                <Badge variant="secondary" className="mt-4">Inactive</Badge>
+                <Badge variant="secondary" className="mt-3 bg-slate-100 text-[#5F6B7A] border border-slate-200 text-[11px] font-normal">Inactive</Badge>
               )}
             </CardContent>
           </Card>
