@@ -112,17 +112,6 @@ export function ContactMessageBubble({ contactData, messageText, isInbound }: Co
                         <span className="text-[11px] truncate text-slate-600">{email}</span>
                     </div>
                 )}
-
-                <div className="pt-1">
-                    <button
-                        type="button"
-                        onClick={handleCopyPhone}
-                        className="w-full py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-200 transition-colors cursor-pointer"
-                    >
-                        <Plus size={13} />
-                        <span>Save Contact</span>
-                    </button>
-                </div>
             </div>
         </div>
     );
