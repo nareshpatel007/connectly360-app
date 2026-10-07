@@ -660,6 +660,9 @@ export interface SendMessagePayload {
     contacts?: any[];
     reaction_emoji?: string;
     reaction_message_id?: string;
+    emoji?: string;
+    target_wamid?: string;
+    message_id?: string;
     reply_to_message_id?: string;
     interactive_type?: string;
     interactive_data?: any;

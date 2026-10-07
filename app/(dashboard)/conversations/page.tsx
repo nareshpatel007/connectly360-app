@@ -388,7 +388,7 @@ function ConversationsContent() {
                         media_url: uploadedUrl,
                         filename: uploadedFilename,
                         caption: pendingAttachment.caption || outgoingBody || undefined,
-                        reply_to_message_id: replyingTo?.external_message_id || replyingTo?.id ? String(replyingTo.external_message_id || replyingTo.id) : undefined,
+                        reply_to_message_id: replyingTo?.providerMessageId || replyingTo?.provider_message_id || replyingTo?.external_message_id || (replyingTo?.id ? String(replyingTo.id) : undefined),
                     },
                 });
 
@@ -455,7 +455,7 @@ function ConversationsContent() {
                     to: activeThread.customerPhone,
                     body: outgoingBody,
                     type: "text",
-                    reply_to_message_id: replyingTo?.external_message_id || replyingTo?.id ? String(replyingTo.external_message_id || replyingTo.id) : undefined,
+                    reply_to_message_id: replyingTo?.providerMessageId || replyingTo?.provider_message_id || replyingTo?.external_message_id || (replyingTo?.id ? String(replyingTo.id) : undefined),
                 },
             });
 
@@ -528,7 +528,11 @@ function ConversationsContent() {
     const handleReact = async (targetMsg: any, emoji: string) => {
         if (!activeThread?.customerPhone || !targetMsg) return;
 
-        const targetExternalId = targetMsg.external_message_id || targetMsg.externalMessageId || String(targetMsg.id);
+        const targetExternalId = targetMsg.providerMessageId 
+            || targetMsg.provider_message_id 
+            || targetMsg.external_message_id 
+            || targetMsg.externalMessageId 
+            || String(targetMsg.id);
 
         // Optimistically update reactions in local query cache
         queryClient.setQueryData(
@@ -539,7 +543,7 @@ function ConversationsContent() {
                     if (m.id !== targetMsg.id) return m;
                     const existingReactions = Array.isArray(m.reactions) ? [...m.reactions] : [];
                     const userReactionIdx = existingReactions.findIndex(
-                        (r) => r.user_id === user?.id || r.from === String(user?.id)
+                        (r) => r.user_id === user?.id || r.from === String(user?.id) || r.from === "agent" || r.from === "business"
                     );
 
                     if (userReactionIdx >= 0) {
@@ -549,7 +553,7 @@ function ConversationsContent() {
                             existingReactions[userReactionIdx] = { ...existingReactions[userReactionIdx], emoji };
                         }
                     } else {
-                        existingReactions.push({ emoji, user_id: user?.id, from: "agent", contact_name: "You" });
+                        existingReactions.push({ emoji, user_id: user?.id, from: "business", contact_name: "You" });
                     }
 
                     return { ...m, reactions: existingReactions };
@@ -563,7 +567,10 @@ function ConversationsContent() {
                     to: activeThread.customerPhone,
                     type: "reaction",
                     reaction_emoji: emoji,
+                    emoji: emoji,
                     reaction_message_id: targetExternalId,
+                    target_wamid: targetExternalId,
+                    message_id: targetExternalId,
                 },
             });
         } catch (err: any) {
