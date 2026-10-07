@@ -1,4 +1,4 @@
-import { useQuery, useMutation, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 
 // Base API URL
 const API_BASE = "/api";
@@ -880,3 +880,140 @@ export function useSendCampaign() {
         },
     });
 }
+
+// -------------------------------------------------------------
+// Workspace Company Profile Hooks
+// -------------------------------------------------------------
+
+export interface CompanyProfile {
+    id: number;
+    workspace_id: number;
+    company_name: string;
+    legal_name?: string | null;
+    industry?: string | null;
+    website_url?: string | null;
+    business_phone?: string | null;
+    address?: string | null;
+    company_size?: string | null;
+    founded_year?: number | null;
+    description?: string | null;
+    tax_id?: string | null;
+    gst_number?: string | null;
+    timezone?: string | null;
+    currency?: string | null;
+    logo_path?: string | null;
+    logo_url?: string | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export function useCompanyProfile(workspaceId?: number | null) {
+    return useQuery<CompanyProfile | null>({
+        queryKey: ["workspace", "company-profile", workspaceId],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/workspace/company-profile`, {
+                headers,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to load company profile");
+            }
+            const data = await res.json();
+            return data.data || null;
+        },
+        enabled: workspaceId !== undefined && workspaceId !== null,
+        staleTime: 60 * 1000,
+    });
+}
+
+export function useUpdateCompanyProfile(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: Partial<CompanyProfile>) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/workspace/company-profile`, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const error: any = new Error(data.message || "Failed to update company profile");
+                error.errors = data.errors;
+                error.status = res.status;
+                throw error;
+            }
+            return data.data as CompanyProfile;
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(["workspace", "company-profile", workspaceId], updated);
+            queryClient.invalidateQueries({ queryKey: ["workspace", "company-profile", workspaceId] });
+        },
+    });
+}
+
+export function useUploadCompanyLogo(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (file: File) => {
+            const formData = new FormData();
+            formData.append("logo", file);
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/workspace/company-profile/logo`, {
+                method: "POST",
+                headers,
+                body: formData,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const error: any = new Error(data.message || "Failed to upload logo");
+                error.errors = data.errors;
+                error.status = res.status;
+                throw error;
+            }
+            return data.data as CompanyProfile;
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(["workspace", "company-profile", workspaceId], updated);
+            queryClient.invalidateQueries({ queryKey: ["workspace", "company-profile", workspaceId] });
+        },
+    });
+}
+
+export function useRemoveCompanyLogo(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/workspace/company-profile/logo`, {
+                method: "DELETE",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const error: any = new Error(data.message || "Failed to remove logo");
+                error.status = res.status;
+                throw error;
+            }
+            return data.data as CompanyProfile;
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(["workspace", "company-profile", workspaceId], updated);
+            queryClient.invalidateQueries({ queryKey: ["workspace", "company-profile", workspaceId] });
+        },
+    });
+}
+
