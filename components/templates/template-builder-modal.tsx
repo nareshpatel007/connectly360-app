@@ -25,6 +25,8 @@ import {
     useUpdateTemplate,
     useSaveTemplateDraft,
     useListTemplateAccounts,
+    useWhatsAppBusinessProfile,
+    useCompanyProfile,
     MessageTemplate,
     TemplateButton,
     LibraryTemplate,
@@ -83,6 +85,25 @@ export function TemplateBuilderModal({
     const createMutation = useCreateTemplate();
     const updateMutation = useUpdateTemplate();
     const saveDraftMutation = useSaveTemplateDraft();
+
+    // Active account and company profile for real preview
+    const activeAccount = accounts.find((a) => a.waba_id === wabaId) || accounts[0];
+    const { data: waProfile } = useWhatsAppBusinessProfile(activeAccount?.phone_number_id || undefined);
+    const { data: companyProfile } = useCompanyProfile();
+
+    const clientBusinessName =
+        activeAccount?.verified_name ||
+        waProfile?.business_name ||
+        activeAccount?.company_name ||
+        companyProfile?.company_name ||
+        "Official Business Account";
+
+    const clientProfileImage =
+        activeAccount?.profile_picture_url ||
+        waProfile?.profile_picture_url ||
+        companyProfile?.display_logo_url ||
+        companyProfile?.logo_url ||
+        null;
 
     // Steps: 1: Basics, 2: Content & Structure, 3: Validation & Submit
     const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -1151,7 +1172,8 @@ export function TemplateBuilderModal({
                                 </div>
 
                                 <TemplatePreview
-                                    businessName={accounts.find((a) => a.waba_id === wabaId)?.verified_name || "Connectly360 Client"}
+                                    businessName={clientBusinessName}
+                                    profileImageUrl={clientProfileImage}
                                     headerType={headerType}
                                     headerContent={headerContent}
                                     headerMediaUrl={headerMediaUrl}

@@ -17,6 +17,7 @@ import { TemplateButton } from "@/lib/api-client-react";
 
 interface TemplatePreviewProps {
     businessName?: string;
+    profileImageUrl?: string | null;
     verified?: boolean;
     headerType: "none" | "text" | "image" | "video" | "document";
     headerContent?: string;
@@ -38,8 +39,18 @@ function replaceVariables(text: string, samples: string[] = []): string {
     });
 }
 
+function getInitials(name?: string): string {
+    if (!name || !name.trim()) return "BA";
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 1) {
+        return words[0].substring(0, 2).toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 export function TemplatePreview({
-    businessName = "Connectly360",
+    businessName = "Official Business",
+    profileImageUrl = null,
     verified = true,
     headerType,
     headerContent = "",
@@ -51,6 +62,13 @@ export function TemplatePreview({
     buttons = [],
     category = "Marketing",
 }: TemplatePreviewProps) {
+    const [imageError, setImageError] = React.useState(false);
+
+    React.useEffect(() => {
+        setImageError(false);
+    }, [profileImageUrl]);
+
+    const displayName = businessName?.trim() || "Official Business";
     const renderedBody = replaceVariables(bodyText, bodySamples);
     const renderedHeader = headerType === "text" && headerContent
         ? replaceVariables(headerContent, headerSample ? [headerSample] : [])
@@ -63,15 +81,26 @@ export function TemplatePreview({
             {/* WhatsApp Chat Header */}
             <div className="bg-[#075E54] text-white px-3.5 py-2.5 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative">
-                        <div className="h-8 w-8 rounded-full bg-emerald-700 border border-white/20 flex items-center justify-center font-bold text-xs text-white uppercase tracking-wider shrink-0">
-                            {businessName.substring(0, 2)}
-                        </div>
+                    <div className="relative shrink-0">
+                        {profileImageUrl && !imageError ? (
+                            <img
+                                src={profileImageUrl}
+                                alt={displayName}
+                                className="h-8 w-8 rounded-full object-cover border border-white/20 bg-white shadow-2xs"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="h-8 w-8 rounded-full bg-emerald-700 border border-white/20 flex items-center justify-center font-bold text-xs text-white uppercase tracking-wider shrink-0 shadow-2xs">
+                                {getInitials(displayName)}
+                            </div>
+                        )}
                         <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-white" />
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-1">
-                            <p className="text-xs font-semibold leading-tight truncate text-white">{businessName}</p>
+                            <p className="text-xs font-semibold leading-tight truncate text-white" title={displayName}>
+                                {displayName}
+                            </p>
                             {verified && (
                                 <svg className="h-3.5 w-3.5 text-emerald-300 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

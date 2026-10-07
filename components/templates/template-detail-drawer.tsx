@@ -14,6 +14,9 @@ import {
     MessageTemplate,
     useDeleteTemplate,
     useDuplicateTemplate,
+    useListTemplateAccounts,
+    useWhatsAppBusinessProfile,
+    useCompanyProfile,
 } from "@/lib/api-client-react";
 import { TemplatePreview } from "./template-preview";
 import {
@@ -88,7 +91,35 @@ export function TemplateDetailDrawer({
     const duplicateMutation = useDuplicateTemplate();
     const [viewPayload, setViewPayload] = useState(false);
 
+    // Fetch accounts & business profile to display client company name & Meta profile image
+    const { data: accounts = [] } = useListTemplateAccounts();
+    const matchingAccount = accounts.find(
+        (a) => (template?.waba_id && a.waba_id === template.waba_id) ||
+               (template?.phone_number_id && a.phone_number_id === template.phone_number_id)
+    ) || accounts[0];
+
+    const phoneIdToQuery = template?.phone_number_id || matchingAccount?.phone_number_id || undefined;
+    const { data: waProfile } = useWhatsAppBusinessProfile(phoneIdToQuery);
+    const { data: companyProfile } = useCompanyProfile();
+
     if (!template) return null;
+
+    const clientBusinessName =
+        template.account_verified_name ||
+        waProfile?.business_name ||
+        matchingAccount?.verified_name ||
+        matchingAccount?.company_name ||
+        companyProfile?.company_name ||
+        template.company_name ||
+        "Official Business Account";
+
+    const clientProfileImage =
+        template.account_profile_picture_url ||
+        waProfile?.profile_picture_url ||
+        matchingAccount?.profile_picture_url ||
+        companyProfile?.display_logo_url ||
+        companyProfile?.logo_url ||
+        null;
 
     const statusKey = template.status?.toUpperCase() || "DRAFT";
     const status = statusBadges[statusKey] || statusBadges.DRAFT;
@@ -227,6 +258,8 @@ export function TemplateDetailDrawer({
                             </div>
                         ) : (
                             <TemplatePreview
+                                businessName={clientBusinessName}
+                                profileImageUrl={clientProfileImage}
                                 headerType={(template.header_type as any) || "none"}
                                 headerContent={template.header_content || ""}
                                 headerMediaUrl={template.header_media_url || ""}

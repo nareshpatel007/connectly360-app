@@ -1072,6 +1072,9 @@ export interface MessageTemplate {
     components_json?: any[] | null;
     meta_payload_json?: any | null;
     meta_response_json?: any | null;
+    account_verified_name?: string | null;
+    account_profile_picture_url?: string | null;
+    company_name?: string | null;
     synced_at?: string | null;
     last_submitted_at?: string | null;
     created_at?: string;
@@ -1106,6 +1109,8 @@ export interface WhatsAppAccountOption {
   verified_name?: string | null;
   quality_rating?: string | null;
   status?: string;
+  profile_picture_url?: string | null;
+  company_name?: string | null;
 }
 
 export interface LibraryTemplate {
