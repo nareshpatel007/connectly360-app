@@ -1253,4 +1253,408 @@ export function useDeleteNotification(workspaceId?: number | null) {
     });
 }
 
+// -------------------------------------------------------------
+// Outbound Webhooks (Developer Platform)
+// -------------------------------------------------------------
+
+export interface WebhookEndpointItem {
+    id: number;
+    workspace_id: number;
+    name: string;
+    url: string;
+    status: "active" | "inactive" | "failing" | "disabled";
+    description?: string | null;
+    events: string[];
+    masked_secret?: string;
+    secret?: string; // One-time plain secret only present on creation or rotation
+    custom_headers?: Record<string, string> | null;
+    failure_count: number;
+    success_count: number;
+    consecutive_failures: number;
+    last_delivery_at?: string | null;
+    last_success_at?: string | null;
+    last_failure_at?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WebhookEventDefinition {
+    key: string;
+    label: string;
+    description: string;
+    category: string;
+    version: string;
+    available: boolean;
+}
+
+export interface WebhookDeliveryAttemptItem {
+    id: number;
+    webhook_delivery_id: number;
+    attempt_number: number;
+    started_at: string;
+    completed_at?: string | null;
+    http_status?: number | null;
+    duration_ms?: number | null;
+    request_headers?: Record<string, any> | null;
+    request_body_preview?: any;
+    response_headers?: Record<string, any> | null;
+    response_body?: string | null;
+    response_truncated?: boolean;
+    error_type?: string | null;
+    error_message?: string | null;
+    created_at: string;
+}
+
+export interface WebhookDeliveryLogItem {
+    id: number;
+    workspace_id: number;
+    webhook_endpoint_id: number;
+    event_id: string;
+    event_type: string;
+    endpoint_name?: string;
+    endpoint_url?: string;
+    status: "pending" | "processing" | "delivered" | "retrying" | "failed" | "cancelled";
+    http_status?: number | null;
+    duration_ms?: number | null;
+    attempt_count: number;
+    next_retry_at?: string | null;
+    delivered_at?: string | null;
+    failed_at?: string | null;
+    payload?: any;
+    request_headers?: Record<string, any> | null;
+    response_headers?: Record<string, any> | null;
+    response_body?: string | null;
+    response_truncated?: boolean;
+    error_type?: string | null;
+    error_message?: string | null;
+    created_at: string;
+    attempts?: WebhookDeliveryAttemptItem[];
+    endpoint?: WebhookEndpointItem;
+}
+
+export interface WebhookLogsResponse {
+    data: WebhookDeliveryLogItem[];
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+}
+
+export interface WebhookTestResult {
+    success: boolean;
+    http_status?: number | null;
+    duration_ms?: number | null;
+    error_message?: string | null;
+    event_id?: string;
+    message?: string;
+}
+
+// Webhooks List Query
+export function useWebhookEndpoints(workspaceId?: number | null) {
+    return useQuery<WebhookEndpointItem[]>({
+        queryKey: ["webhooks", workspaceId],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to load webhook endpoints");
+            }
+            return data.data || [];
+        },
+    });
+}
+
+// Webhook Event Registry Query
+export function useWebhookEvents(workspaceId?: number | null) {
+    return useQuery<Record<string, WebhookEventDefinition[]>>({
+        queryKey: ["webhook-events", workspaceId],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/events`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to load webhook event definitions");
+            }
+            return data.categories || {};
+        },
+        staleTime: 1000 * 60 * 30, // 30 mins
+    });
+}
+
+// Create Webhook Mutation
+export function useCreateWebhookEndpoint(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {
+            name: string;
+            url: string;
+            events: string[];
+            description?: string;
+            custom_headers?: Record<string, string>;
+        }) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to create webhook endpoint");
+            }
+            return data.data as WebhookEndpointItem;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+// Update Webhook Mutation
+export function useUpdateWebhookEndpoint(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            id,
+            ...payload
+        }: {
+            id: number;
+            name?: string;
+            url?: string;
+            events?: string[];
+            description?: string;
+            custom_headers?: Record<string, string>;
+        }) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/${id}`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to update webhook endpoint");
+            }
+            return data.data as WebhookEndpointItem;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+// Delete Webhook Mutation
+export function useDeleteWebhookEndpoint(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/${id}`, {
+                method: "DELETE",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to delete webhook endpoint");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+// Rotate Secret Mutation
+export function useRotateWebhookSecret(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/${id}/rotate-secret`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to regenerate secret");
+            }
+            return data.data as WebhookEndpointItem;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+// Toggle Webhook Status (Enable / Disable)
+export function useToggleWebhookStatus(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, action }: { id: number; action: "enable" | "disable" }) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/${id}/${action}`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || `Failed to ${action} webhook endpoint`);
+            }
+            return data.data as WebhookEndpointItem;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+// Test Webhook Ping Mutation
+export function useTestWebhookPing(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhooks/${id}/test`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Webhook test delivery failed");
+            }
+            return data as { success: boolean; message: string; delivery: WebhookDeliveryLogItem; attempt: WebhookDeliveryAttemptItem };
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["webhook-logs", workspaceId] });
+        },
+    });
+}
+
+// Webhook Delivery Logs Query
+export function useWebhookLogs(options: {
+    workspaceId?: number | null;
+    page?: number;
+    per_page?: number;
+    endpoint_id?: number | string;
+    event_type?: string;
+    status?: string;
+    search?: string;
+    date_from?: string;
+    date_to?: string;
+}) {
+    const {
+        workspaceId,
+        page = 1,
+        per_page = 25,
+        endpoint_id,
+        event_type,
+        status,
+        search,
+        date_from,
+        date_to,
+    } = options;
+
+    return useQuery<WebhookLogsResponse>({
+        queryKey: ["webhook-logs", { workspaceId, page, per_page, endpoint_id, event_type, status, search, date_from, date_to }],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+
+            const params = new URLSearchParams();
+            params.set("page", String(page));
+            params.set("per_page", String(per_page));
+            if (endpoint_id) params.set("endpoint_id", String(endpoint_id));
+            if (event_type && event_type !== "all") params.set("event_type", event_type);
+            if (status && status !== "all") params.set("status", status);
+            if (search) params.set("search", search);
+            if (date_from) params.set("date_from", date_from);
+            if (date_to) params.set("date_to", date_to);
+
+            const res = await apiFetch(`${API_BASE}/developer/webhook-logs?${params.toString()}`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to load webhook delivery logs");
+            }
+            return data;
+        },
+    });
+}
+
+// Single Webhook Log Query with detailed attempts
+export function useWebhookLogDetail(id?: number | null, workspaceId?: number | null) {
+    return useQuery<WebhookDeliveryLogItem>({
+        queryKey: ["webhook-log-detail", id, workspaceId],
+        enabled: !!id,
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhook-logs/${id}`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to load delivery log detail");
+            }
+            return data.data;
+        },
+    });
+}
+
+// Retry Delivery Mutation
+export function useRetryWebhookDelivery(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/developer/webhook-logs/${id}/retry`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to queue delivery retry");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhook-logs", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["webhook-log-detail"] });
+            queryClient.invalidateQueries({ queryKey: ["webhooks", workspaceId] });
+        },
+    });
+}
+
+
 

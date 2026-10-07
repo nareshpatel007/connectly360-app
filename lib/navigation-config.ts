@@ -250,14 +250,24 @@ export const CLIENT_NAV_SECTIONS: NavSection[] = [
                         id: "dev-api-keys",
                         label: "API Keys",
                         icon: Key,
-                        href: "/integrations/api-keys",
+                        href: "/developer/api-keys",
+                        patterns: ["/integrations/api-keys/**"],
                         permission: "developer.view"
                     },
                     {
                         id: "dev-webhooks",
                         label: "Webhooks",
                         icon: Webhook,
-                        href: "/integrations/webhooks",
+                        href: "/developer/webhooks",
+                        exact: true,
+                        patterns: ["/integrations/webhooks"],
+                        permission: "developer.view"
+                    },
+                    {
+                        id: "dev-webhook-logs",
+                        label: "Webhook Logs",
+                        icon: History,
+                        href: "/developer/webhook-logs",
                         permission: "developer.view"
                     },
                     {
