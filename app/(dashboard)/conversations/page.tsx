@@ -58,6 +58,28 @@ import {
     X,
 } from "lucide-react";
 
+interface GroupedReaction {
+    emoji: string;
+    count: number;
+    users: string[];
+}
+
+function groupReactions(reactions: any[] = []): GroupedReaction[] {
+    if (!Array.isArray(reactions) || reactions.length === 0) return [];
+    const counts: { [emoji: string]: GroupedReaction } = {};
+    for (const r of reactions) {
+        if (!r || !r.emoji) continue;
+        const emoji = r.emoji;
+        if (!counts[emoji]) {
+            counts[emoji] = { emoji, count: 0, users: [] };
+        }
+        counts[emoji].count += 1;
+        if (r.contact_name) counts[emoji].users.push(r.contact_name);
+        else if (r.from) counts[emoji].users.push(r.from);
+    }
+    return Object.values(counts);
+}
+
 function ConversationsContent() {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -202,9 +224,11 @@ function ConversationsContent() {
     // Chronologically sorted messages
     const sortedConversations = useMemo(() => {
         if (!activeConversations) return [];
-        return [...activeConversations].sort(
-            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        return [...activeConversations]
+            .filter((c: any) => c.type !== "reaction" && c.message !== "Received Reaction message")
+            .sort(
+                (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
     }, [activeConversations]);
 
     // Group messages by localized date header
@@ -517,7 +541,9 @@ function ConversationsContent() {
                                             </div>
 
                                             <p className="text-slate-600 truncate text-[11px] leading-relaxed">
-                                                {thread.lastMessage || "No messages yet"}
+                                                {thread.lastMessage === "Received Reaction message"
+                                                    ? "Reacted to your message"
+                                                    : thread.lastMessage || "No messages yet"}
                                             </p>
 
                                             <div className="flex items-center justify-between pt-1">
@@ -702,18 +728,48 @@ function ConversationsContent() {
                                                         <div className={`flex ${isInbound ? "justify-start" : "justify-end"}`}>
                                                             <div className={`flex flex-col max-w-[75%] ${isInbound ? "items-start" : "items-end"}`}>
                                                                 {/* Bubble wrapper */}
-                                                                <div
-                                                                    className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-all border ${
-                                                                        isInbound
-                                                                            ? "bg-white text-slate-800 border-slate-200/80 rounded-tl-xs shadow-2xs"
-                                                                            : "bg-[#eef6f5] text-slate-800 border-[#d3e8e5] rounded-tr-xs shadow-2xs"
-                                                                    }`}
-                                                                >
-                                                                    {conv.message}
+                                                                <div className="relative inline-block max-w-full">
+                                                                    <div
+                                                                        className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-all border ${
+                                                                            isInbound
+                                                                                ? "bg-white text-slate-800 border-slate-200/80 rounded-tl-xs shadow-2xs"
+                                                                                : "bg-[#eef6f5] text-slate-800 border-[#d3e8e5] rounded-tr-xs shadow-2xs"
+                                                                        }`}
+                                                                    >
+                                                                        {conv.message}
+                                                                    </div>
+
+                                                                    {/* WhatsApp Reaction Pill Badge */}
+                                                                    {Array.isArray((conv as any).reactions) && (conv as any).reactions.length > 0 && (() => {
+                                                                        const grouped = groupReactions((conv as any).reactions);
+                                                                        if (grouped.length === 0) return null;
+                                                                        return (
+                                                                            <div
+                                                                                className={`absolute -bottom-2.5 flex items-center gap-1 z-10 ${
+                                                                                    isInbound ? "right-2" : "left-2"
+                                                                                }`}
+                                                                            >
+                                                                                {grouped.map((gr) => (
+                                                                                    <span
+                                                                                        key={gr.emoji}
+                                                                                        title={gr.users.length > 0 ? `${gr.emoji} by ${gr.users.join(", ")}` : gr.emoji}
+                                                                                        className="inline-flex items-center gap-1 bg-white border border-[#E5E9EE] shadow-2xs rounded-full px-1.5 py-0.5 text-xs select-none transition-transform hover:scale-105"
+                                                                                    >
+                                                                                        <span className="text-[13px] leading-none">{gr.emoji}</span>
+                                                                                        {gr.count > 1 && (
+                                                                                            <span className="text-[10px] font-semibold text-slate-600 leading-none">{gr.count}</span>
+                                                                                        )}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        );
+                                                                    })()}
                                                                 </div>
 
                                                                 {/* Footer info inside bubbles */}
-                                                                <div className="flex items-center gap-1.5 mt-1 px-1 text-[10px] font-normal text-slate-500">
+                                                                <div className={`flex items-center gap-1.5 px-1 text-[10px] font-normal text-slate-500 ${
+                                                                    Array.isArray((conv as any).reactions) && (conv as any).reactions.length > 0 ? "mt-2.5" : "mt-1"
+                                                                }`}>
                                                                     {isInbound && (
                                                                         <span className="text-[#378179] font-semibold">{activeThread.customerName}</span>
                                                                     )}

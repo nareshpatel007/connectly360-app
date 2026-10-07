@@ -507,6 +507,59 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             );
         };
 
+        // 3b. Handle realtime message reaction updated (WhatsApp reaction added/removed)
+        const onMessageReactionUpdated = (payload: any) => {
+            const cid = Number(payload.conversation_id || payload.customer_id || payload.customerId);
+            const msgId = Number(payload.message_id || payload.messageId || payload.id);
+            const reaction = payload.reaction || {};
+            const action = payload.action || (reaction.emoji ? "added" : "removed");
+
+            if (!cid || !msgId) return;
+
+            queryClient.setQueryData(
+                ["getCustomerConversations", cid],
+                (oldData: any[] | undefined) => {
+                    if (!oldData) return oldData;
+                    return oldData.map((m) => {
+                        if (m.id !== msgId) return m;
+                        let currentReactions = Array.isArray(m.reactions) ? [...m.reactions] : [];
+                        const reactorKey = reaction.contact_id
+                            ? String(reaction.contact_id)
+                            : (reaction.from || (reaction.user_id ? `user_${reaction.user_id}` : "default"));
+
+                        currentReactions = currentReactions.filter((r: any) => {
+                            const rKey = r.contact_id
+                                ? String(r.contact_id)
+                                : (r.from || (r.user_id ? `user_${r.user_id}` : "default"));
+                            return rKey !== reactorKey;
+                        });
+
+                        if (action === "added" && reaction.emoji) {
+                            currentReactions.push(reaction);
+                        }
+
+                        return {
+                            ...m,
+                            reactions: currentReactions,
+                        };
+                    });
+                }
+            );
+
+            const isCurrentlyViewing = activeCustomerIdRef.current === cid && !document.hidden;
+            if (!isCurrentlyViewing && action === "added" && reaction.emoji) {
+                const reactorName = reaction.contact_name || "Customer";
+                notify.info(`${reactorName} reacted ${reaction.emoji}`, {
+                    description: `Reacted ${reaction.emoji} to your message`,
+                    actionLabel: "Open",
+                    onAction: () => {
+                        setActiveCustomerId(cid);
+                        router.push(`/conversations?customer_id=${cid}`);
+                    },
+                });
+            }
+        };
+
         // 4. Handle notification created (for Bell icon & preferences)
         const onNotificationCreated = (payload: any) => {
             handleIncomingNotification(payload);
@@ -601,6 +654,8 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         channel.listen("whatsapp.message.sent", onMessageSent);
         channel.listen(".whatsapp.message.status", onMessageStatus);
         channel.listen("whatsapp.message.status", onMessageStatus);
+        channel.listen(".whatsapp.message.reaction_updated", onMessageReactionUpdated);
+        channel.listen("whatsapp.message.reaction_updated", onMessageReactionUpdated);
         channel.listen(".notification.created", onNotificationCreated);
         channel.listen("notification.created", onNotificationCreated);
         channel.listen(".conversation.status_changed", onConversationStatusChanged);
@@ -624,6 +679,8 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             channel.stopListening("whatsapp.message.sent");
             channel.stopListening(".whatsapp.message.status");
             channel.stopListening("whatsapp.message.status");
+            channel.stopListening(".whatsapp.message.reaction_updated");
+            channel.stopListening("whatsapp.message.reaction_updated");
             channel.stopListening(".notification.created");
             channel.stopListening("notification.created");
             channel.stopListening(".conversation.status_changed");

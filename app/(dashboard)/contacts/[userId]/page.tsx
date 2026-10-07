@@ -14,6 +14,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+interface GroupedReaction {
+    emoji: string;
+    count: number;
+    users: string[];
+}
+
+function groupReactions(reactions: any[] = []): GroupedReaction[] {
+    if (!Array.isArray(reactions) || reactions.length === 0) return [];
+    const counts: { [emoji: string]: GroupedReaction } = {};
+    for (const r of reactions) {
+        if (!r || !r.emoji) continue;
+        const emoji = r.emoji;
+        if (!counts[emoji]) {
+            counts[emoji] = { emoji, count: 0, users: [] };
+        }
+        counts[emoji].count += 1;
+        if (r.contact_name) counts[emoji].users.push(r.contact_name);
+        else if (r.from) counts[emoji].users.push(r.from);
+    }
+    return Object.values(counts);
+}
+
 export default function CustomerDetailPage() {
     const params = useParams();
     const userId = params.userId as string;
@@ -104,7 +126,9 @@ export default function CustomerDetailPage() {
                         </div>
                     ) : (
                         <div className="space-y-6 pb-4">
-                            {conversations?.map((conv) => {
+                            {conversations
+                                ?.filter((c: any) => c.type !== "reaction" && c.message !== "Received Reaction message")
+                                .map((conv) => {
                                 const isInbound = conv.direction === "inbound";
                                 return (
                                     <div key={conv.id} className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'}`}>
@@ -118,11 +142,39 @@ export default function CustomerDetailPage() {
                                             {!isInbound && <span className="text-xs font-medium">Sent</span>}
                                         </div>
 
-                                        <div className={`relative max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words ${isInbound
-                                            ? 'bg-card border border-border text-foreground rounded-tl-sm'
-                                            : 'bg-primary text-primary-foreground rounded-tr-sm shadow-sm'
-                                            }`}>
-                                            {conv.message}
+                                        <div className="relative inline-block max-w-[80%]">
+                                            <div className={`rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words ${isInbound
+                                                ? 'bg-card border border-border text-foreground rounded-tl-sm'
+                                                : 'bg-primary text-primary-foreground rounded-tr-sm shadow-sm'
+                                                }`}>
+                                                {conv.message}
+                                            </div>
+
+                                            {/* WhatsApp Reaction Pill Badge */}
+                                            {Array.isArray((conv as any).reactions) && (conv as any).reactions.length > 0 && (() => {
+                                                const grouped = groupReactions((conv as any).reactions);
+                                                if (grouped.length === 0) return null;
+                                                return (
+                                                    <div
+                                                        className={`absolute -bottom-2.5 flex items-center gap-1 z-10 ${
+                                                            isInbound ? "right-2" : "left-2"
+                                                        }`}
+                                                    >
+                                                        {grouped.map((gr) => (
+                                                            <span
+                                                                key={gr.emoji}
+                                                                title={gr.users.length > 0 ? `${gr.emoji} by ${gr.users.join(", ")}` : gr.emoji}
+                                                                className="inline-flex items-center gap-1 bg-white border border-[#E5E9EE] shadow-2xs rounded-full px-1.5 py-0.5 text-xs select-none transition-transform hover:scale-105"
+                                                            >
+                                                                <span className="text-[13px] leading-none">{gr.emoji}</span>
+                                                                {gr.count > 1 && (
+                                                                    <span className="text-[10px] font-semibold text-slate-600 leading-none">{gr.count}</span>
+                                                                )}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         {conv.intent && isInbound && (
