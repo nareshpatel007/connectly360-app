@@ -126,6 +126,17 @@ export function TemplateDetailDrawer({
         }
     }
 
+    const isApproved = statusKey === "APPROVED";
+    const rejectionReasonText =
+        template.rejection_reason && template.rejection_reason.trim().toUpperCase() !== "NONE"
+            ? template.rejection_reason
+            : null;
+    const submissionErrorText =
+        template.submission_error && template.submission_error.trim().toUpperCase() !== "NONE"
+            ? template.submission_error
+            : null;
+    const rejectionNotice = !isApproved ? (rejectionReasonText || submissionErrorText) : null;
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col bg-white overflow-hidden">
@@ -148,14 +159,14 @@ export function TemplateDetailDrawer({
 
                 <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
                     {/* Rejection Notice Banner */}
-                    {(template.rejection_reason || template.submission_error) && (
+                    {rejectionNotice && (
                         <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 space-y-1">
                             <div className="flex items-center gap-1.5 font-bold text-xs text-rose-700">
                                 <AlertTriangle className="size-4 shrink-0" />
                                 <span>Meta Review Feedback / Rejection Reason</span>
                             </div>
                             <p className="text-xs text-rose-600 leading-relaxed font-medium pl-5.5">
-                                {template.rejection_reason || template.submission_error}
+                                {rejectionNotice}
                             </p>
                         </div>
                     )}

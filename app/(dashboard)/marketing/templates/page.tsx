@@ -411,7 +411,7 @@ export default function TemplatesPage() {
                                                     <p className="text-[11px] text-slate-500 line-clamp-1 max-w-xs font-normal">
                                                         {tpl.body_text}
                                                     </p>
-                                                    {tpl.rejection_reason && (
+                                                    {tpl.status !== "APPROVED" && tpl.rejection_reason && tpl.rejection_reason.toUpperCase() !== "NONE" && (
                                                         <p className="text-[10px] text-rose-600 font-medium flex items-center gap-1 mt-0.5">
                                                             <AlertOctagon className="size-3 shrink-0" />
                                                             <span className="truncate max-w-xs">{tpl.rejection_reason}</span>
