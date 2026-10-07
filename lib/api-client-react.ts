@@ -65,11 +65,74 @@ export interface Conversation {
     customerId: number;
     customerName?: string;
     customerPhone: string;
+    email?: string;
+    city?: string;
+    stage?: string;
+    conversationStatus?: "open" | "pending" | "resolved" | "closed";
+    status?: string;
+    assignedTo?: number | null;
+    assignee?: { id: number; name: string; email: string } | null;
     message: string;
+    lastMessage?: string;
     direction: "inbound" | "outbound";
+    lastMessageDirection?: "inbound" | "outbound";
+    lastMessageTime?: string;
+    unreadCount?: number;
     intent?: string;
     isRead?: number;
+    resolvedAt?: string | null;
+    pendingAt?: string | null;
+    isInside24hWindow?: boolean;
+    secondsRemaining?: number;
+    notes?: string | null;
     createdAt: string;
+}
+
+export interface ConversationCounts {
+    all: number;
+    open: number;
+    pending: number;
+    resolved: number;
+    unread: number;
+}
+
+export interface InboxSettings {
+    default_status: string;
+    allow_pending: boolean;
+    allow_resolved: boolean;
+    auto_reopen_on_customer_reply: boolean;
+    auto_reopen_pending: boolean;
+    auto_close_enabled: boolean;
+    auto_close_after: string;
+    composer: {
+        ai_copilot: boolean;
+        templates: boolean;
+        emoji: boolean;
+        attachments: boolean;
+        image: boolean;
+        video: boolean;
+        document: boolean;
+        audio: boolean;
+        quick_replies: boolean;
+    };
+    copilot: {
+        enabled: boolean;
+        suggest_reply: boolean;
+        rewrite: boolean;
+        shorten: boolean;
+        professional: boolean;
+        friendly: boolean;
+        translate: boolean;
+        summarize: boolean;
+    };
+}
+
+export interface QuickReplyItem {
+    id: number;
+    title: string;
+    shortcut: string;
+    content: string;
+    is_active: boolean;
 }
 
 export interface MessageStat {
@@ -179,14 +242,215 @@ export function useGetTopIntents() {
 }
 
 // Conversations
-export function useListConversations(params?: { limit?: number }) {
+export function useListConversations(params?: { status?: string; search?: string; limit?: number; format?: string }) {
     return useQuery<Conversation[]>({
-        queryKey: ["listConversations", params?.limit],
+        queryKey: ["listConversations", params?.status, params?.search, params?.limit, params?.format],
         queryFn: async () => {
-            const url = params?.limit ? `${API_BASE}/conversations?limit=${params.limit}` : `${API_BASE}/conversations`;
+            const query = new URLSearchParams();
+            if (params?.status) query.set("status", params.status);
+            if (params?.search) query.set("search", params.search);
+            if (params?.limit) query.set("limit", String(params.limit));
+            if (params?.format) query.set("format", params.format);
+
+            const queryString = query.toString();
+            const url = queryString ? `${API_BASE}/conversations?${queryString}` : `${API_BASE}/conversations`;
             const res = await apiFetch(url);
             if (!res.ok) throw new Error("Failed to fetch conversations");
             return res.json();
+        },
+    });
+}
+
+export function useGetConversationCounts() {
+    return useQuery<{ success: boolean; counts: ConversationCounts }>({
+        queryKey: ["getConversationCounts"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/conversations/counts`);
+            if (!res.ok) throw new Error("Failed to fetch conversation counts");
+            return res.json();
+        },
+    });
+}
+
+export function useUpdateConversationStatus() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, status }: { id: number; status: string }) => {
+            const res = await apiFetch(`${API_BASE}/conversations/${id}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to update conversation status");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+        },
+    });
+}
+
+export function useAssignConversation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, assignedTo }: { id: number; assignedTo: number | null }) => {
+            const res = await apiFetch(`${API_BASE}/conversations/${id}/assign`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ assigned_to: assignedTo }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to assign conversation");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        },
+    });
+}
+
+export function useCreateConversation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {
+            customer_id?: number;
+            phone?: string;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+            type?: "text" | "template";
+            message?: string;
+            template_name?: string;
+            language?: string;
+            components?: any[];
+        }) => {
+            const res = await apiFetch(`${API_BASE}/conversations`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const err: any = new Error(data.message || "Failed to start conversation");
+                err.requires_template = data.requires_template;
+                err.error_code = data.error_code;
+                throw err;
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+        },
+    });
+}
+
+export function useGetWindowStatus(customerId: number | null | undefined) {
+    return useQuery<{
+        success: boolean;
+        inside_window: boolean;
+        last_inbound_at: string | null;
+        expires_at: string | null;
+        seconds_remaining: number;
+        requires_template: boolean;
+    }>({
+        queryKey: ["getWindowStatus", customerId],
+        queryFn: async () => {
+            if (!customerId) return { success: false, inside_window: false, last_inbound_at: null, expires_at: null, seconds_remaining: 0, requires_template: true };
+            const res = await apiFetch(`${API_BASE}/conversations/${customerId}/window-status`);
+            if (!res.ok) throw new Error("Failed to check 24-hour window status");
+            return res.json();
+        },
+        enabled: !!customerId,
+    });
+}
+
+export function useGetInboxSettings() {
+    return useQuery<{ success: boolean; settings: InboxSettings }>({
+        queryKey: ["getInboxSettings"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/conversations/settings`);
+            if (!res.ok) throw new Error("Failed to fetch inbox settings");
+            return res.json();
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function useCopilotAction() {
+    return useMutation({
+        mutationFn: async (payload: {
+            action: string;
+            text?: string;
+            customer_id?: number;
+            language?: string;
+        }) => {
+            const res = await apiFetch(`${API_BASE}/conversations/copilot`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Copilot action failed");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useListQuickReplies() {
+    return useQuery<QuickReplyItem[]>({
+        queryKey: ["listQuickReplies"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/quick-replies`);
+            if (!res.ok) throw new Error("Failed to fetch quick replies");
+            return res.json();
+        },
+    });
+}
+
+export function useCreateQuickReply() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: { title: string; shortcut: string; content: string }) => {
+            const res = await apiFetch(`${API_BASE}/quick-replies`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to create quick reply");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listQuickReplies"] });
+        },
+    });
+}
+
+export type WhatsAppTemplateItem = MessageTemplate;
+
+
+export function useListWorkspaceMembers() {
+    return useQuery<{ id: number; name: string; email: string; role?: string }[]>({
+        queryKey: ["listWorkspaceMembers"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/workspace/members`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data?.data)) return data.data;
+            if (Array.isArray(data?.members)) return data.members;
+            return [];
         },
     });
 }

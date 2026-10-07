@@ -467,6 +467,41 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             handleIncomingNotification(payload);
         };
 
+        // 5. Handle conversation status changed (Open / Pending / Resolved)
+        const onConversationStatusChanged = (payload: any) => {
+            const cid = Number(payload.customer_id || payload.customerId);
+            const newStatus = payload.status || payload.new_status;
+            if (!cid || !newStatus) return;
+
+            queryClient.setQueryData(
+                ["listConversations"],
+                (oldData: any[] | undefined) => {
+                    if (!oldData) return oldData;
+                    return oldData.map((item) => {
+                        const itemId = Number(item.customerId || item.id);
+                        if (itemId === cid) {
+                            return {
+                                ...item,
+                                conversationStatus: newStatus,
+                                status: newStatus,
+                                assignedTo: payload.assigned_to !== undefined ? payload.assigned_to : item.assignedTo,
+                            };
+                        }
+                        return item;
+                    });
+                }
+            );
+
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        };
+
+        // 6. Handle new conversation created
+        const onConversationCreated = (payload: any) => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+        };
+
         // Register listeners
         channel.listen(".whatsapp.message.received", onMessageReceived);
         channel.listen("whatsapp.message.received", onMessageReceived);
@@ -476,6 +511,10 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         channel.listen("whatsapp.message.status", onMessageStatus);
         channel.listen(".notification.created", onNotificationCreated);
         channel.listen("notification.created", onNotificationCreated);
+        channel.listen(".conversation.status_changed", onConversationStatusChanged);
+        channel.listen("conversation.status_changed", onConversationStatusChanged);
+        channel.listen(".conversation.created", onConversationCreated);
+        channel.listen("conversation.created", onConversationCreated);
 
         // Also subscribe to private user notifications channel
         const userChannel = echo.private(`user.${user.id}.notifications`);
@@ -491,6 +530,10 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             channel.stopListening("whatsapp.message.status");
             channel.stopListening(".notification.created");
             channel.stopListening("notification.created");
+            channel.stopListening(".conversation.status_changed");
+            channel.stopListening("conversation.status_changed");
+            channel.stopListening(".conversation.created");
+            channel.stopListening("conversation.created");
             userChannel.stopListening(".notification.created");
             userChannel.stopListening("notification.created");
 
