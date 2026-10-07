@@ -1017,3 +1017,240 @@ export function useRemoveCompanyLogo(workspaceId?: number | null) {
     });
 }
 
+// -------------------------------------------------------------
+// Notification System Interfaces & Hooks
+// -------------------------------------------------------------
+
+export interface AppNotification {
+    id: number;
+    tenant_id?: number;
+    workspace_id: number;
+    user_id: number | null;
+    type: string;
+    title: string;
+    message: string;
+    priority: "low" | "normal" | "high" | "critical";
+    data?: any;
+    action_url: string | null;
+    dedup_key?: string | null;
+    is_read: boolean;
+    read_at: string | null;
+    created_at: string;
+}
+
+export interface NotificationPreferenceItem {
+    key: string;
+    category: string;
+    title: string;
+    description: string;
+    priority: "low" | "normal" | "high" | "critical";
+    action_url: string | null;
+    locked: boolean;
+    in_app: boolean;
+    toast: boolean;
+    browser: boolean;
+    email: boolean;
+    has_custom?: boolean;
+}
+
+export interface NotificationCategoryGroup {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    items: NotificationPreferenceItem[];
+}
+
+export interface NotificationPreferencesPayload {
+    workspace_id: number;
+    user_id: number;
+    categories: NotificationCategoryGroup[];
+    preferences: NotificationPreferenceItem[];
+}
+
+export function useNotifications(options?: {
+    unreadOnly?: boolean;
+    page?: number;
+    perPage?: number;
+    category?: string;
+    priority?: string;
+    workspaceId?: number | null;
+}) {
+    const unreadOnly = options?.unreadOnly ?? false;
+    const page = options?.page ?? 1;
+    const perPage = options?.perPage ?? 20;
+    const category = options?.category;
+    const priority = options?.priority;
+    const workspaceId = options?.workspaceId;
+
+    return useQuery({
+        queryKey: ["notifications", { unreadOnly, page, perPage, category, priority, workspaceId }],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (unreadOnly) params.set("unread_only", "1");
+            if (page) params.set("page", String(page));
+            if (perPage) params.set("per_page", String(perPage));
+            if (category) params.set("category", category);
+            if (priority) params.set("priority", priority);
+
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+
+            const res = await apiFetch(`${API_BASE}/notifications?${params.toString()}`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to fetch notifications");
+            }
+            return {
+                notifications: (data.notifications || []) as AppNotification[],
+                unreadCount: (data.unread_count ?? 0) as number,
+                pagination: data.pagination,
+            };
+        },
+        staleTime: 10 * 1000,
+    });
+}
+
+export function useUnreadNotificationCount(workspaceId?: number | null) {
+    return useQuery({
+        queryKey: ["notifications", "unread-count", workspaceId],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notifications/unread-count`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to fetch unread count");
+            }
+            return (data.count ?? 0) as number;
+        },
+        staleTime: 15 * 1000,
+        refetchInterval: 30 * 1000, // automatic background heartbeat poll
+    });
+}
+
+export function useNotificationPreferences(workspaceId?: number | null) {
+    return useQuery({
+        queryKey: ["notification-preferences", workspaceId],
+        queryFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notification-preferences`, { headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to fetch notification preferences");
+            }
+            return data.data as NotificationPreferencesPayload;
+        },
+        staleTime: 60 * 1000,
+    });
+}
+
+export function useUpdateNotificationPreferences(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (preferences: Partial<NotificationPreferenceItem>[]) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notification-preferences`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({ preferences }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to update notification preferences");
+            }
+            return data.data as NotificationPreferencesPayload;
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(["notification-preferences", workspaceId], updated);
+            queryClient.invalidateQueries({ queryKey: ["notification-preferences", workspaceId] });
+        },
+    });
+}
+
+export function useMarkNotificationRead(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notifications/${id}/read`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to mark notification as read");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+        },
+    });
+}
+
+export function useMarkAllNotificationsRead(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notifications/read-all`, {
+                method: "POST",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to mark all as read");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+        },
+    });
+}
+
+export function useDeleteNotification(workspaceId?: number | null) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const headers: Record<string, string> = {};
+            if (workspaceId) {
+                headers["X-Tenant-Id"] = String(workspaceId);
+            }
+            const res = await apiFetch(`${API_BASE}/notifications/${id}`, {
+                method: "DELETE",
+                headers,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to delete notification");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+        },
+    });
+}
+
+

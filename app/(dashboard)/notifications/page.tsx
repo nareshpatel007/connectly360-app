@@ -1,187 +1,362 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bell, Loader2, Search, Check, AlertCircle, CheckCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+    Bell,
+    Check,
+    CheckCheck,
+    Search,
+    Loader2,
+    Trash2,
+    ExternalLink,
+    AlertTriangle,
+    MessageSquare,
+    PhoneCall,
+    Megaphone,
+    CreditCard,
+    Users,
+    Zap,
+    Bot,
+    Plug,
+    Code,
+    Shield,
+    CheckSquare,
+    Filter,
+} from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageHeader } from "@/components/page-header";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    useNotifications,
+    useMarkNotificationRead,
+    useMarkAllNotificationsRead,
+    useDeleteNotification,
+    type AppNotification,
+} from "@/lib/api-client-react";
+import { useAuth } from "@/lib/auth-context";
+import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 
-interface Notification {
-    id: number;
-    title: string;
-    message: string;
-    is_read: boolean;
-    created_at: string;
-}
-
 export default function NotificationsPage() {
-    const { token } = useAuth();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { user } = useAuth();
+    const router = useRouter();
+    const workspaceId = user?.tenant_id ?? null;
+
+    const [statusFilter, setStatusFilter] = useState<"all" | "unread">("all");
     const [searchTerm, setSearchTerm] = useState("");
+    const [priorityFilter, setPriorityFilter] = useState<string>("all");
 
-    const fetchNotifications = async () => {
-        if (!token) return;
-        setIsLoading(true);
-        try {
-            const res = await fetch("/api/notifications", {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            const data = await res.json();
-            if (data.status) {
-                setNotifications(data.notifications || []);
-            }
-        } catch (err) {
-            console.error("Failed to load notifications", err);
-            toast.error("Failed to load notifications.");
-        } finally {
-            setIsLoading(false);
+    const { data, isLoading } = useNotifications({
+        unreadOnly: statusFilter === "unread",
+        perPage: 50,
+        workspaceId,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined,
+    });
+
+    const markReadMutation = useMarkNotificationRead(workspaceId);
+    const markAllReadMutation = useMarkAllNotificationsRead(workspaceId);
+    const deleteMutation = useDeleteNotification(workspaceId);
+
+    const notifications = data?.notifications || [];
+
+    const filteredNotifications = notifications.filter((n) => {
+        const query = searchTerm.toLowerCase();
+        return (
+            (n.title || "").toLowerCase().includes(query) ||
+            (n.message || "").toLowerCase().includes(query)
+        );
+    });
+
+    const handleItemClick = (n: AppNotification) => {
+        if (!n.is_read) {
+            markReadMutation.mutate(n.id);
+        }
+        if (n.action_url) {
+            router.push(n.action_url);
         }
     };
 
-    useEffect(() => {
-        fetchNotifications();
-    }, [token]);
+    const handleDelete = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        deleteMutation.mutate(id, {
+            onSuccess: () => toast.success("Notification removed."),
+        });
+    };
 
-    const handleMarkAllRead = async () => {
-        if (!token) return;
-        try {
-            const res = await fetch("/api/notifications/read-all", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            const data = await res.json();
-            if (data.status) {
-                toast.success("All notifications marked as read.");
-                fetchNotifications();
-            } else {
-                toast.error("Failed to mark notifications as read.");
-            }
-        } catch (err) {
-            toast.error("Failed to update notifications.");
+    const getIconForType = (type: string, priority: string) => {
+        const prefix = type.split(".")[0];
+        const iconSize = 16;
+
+        if (priority === "critical") {
+            return <AlertTriangle size={iconSize} className="text-rose-600" />;
+        }
+
+        switch (prefix) {
+            case "whatsapp":
+                return <PhoneCall size={iconSize} className="text-emerald-600" />;
+            case "conversation":
+                return <MessageSquare size={iconSize} className="text-[#35877D]" />;
+            case "campaign":
+                return <Megaphone size={iconSize} className="text-indigo-600" />;
+            case "billing":
+                return <CreditCard size={iconSize} className="text-amber-600" />;
+            case "team":
+                return <Users size={iconSize} className="text-blue-600" />;
+            case "task":
+                return <CheckSquare size={iconSize} className="text-teal-600" />;
+            case "automation":
+                return <Zap size={iconSize} className="text-amber-500" />;
+            case "ai":
+                return <Bot size={iconSize} className="text-purple-600" />;
+            case "integration":
+                return <Plug size={iconSize} className="text-cyan-600" />;
+            case "developer":
+                return <Code size={iconSize} className="text-slate-700" />;
+            case "security":
+                return <Shield size={iconSize} className="text-rose-500" />;
+            default:
+                return <Bell size={iconSize} className="text-[#35877D]" />;
         }
     };
 
-    const filteredNotifications = notifications.filter(n =>
-        (n.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (n.message || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const formatTimestamp = (dateString: string) => {
+        try {
+            return formatDistanceToNowStrict(new Date(dateString), { addSuffix: true });
+        } catch {
+            return "recently";
+        }
+    };
 
     return (
-        <div className="space-y-6">
-
+        <div className="space-y-6 max-w-6xl">
             <PageHeader
                 icon={Bell}
                 title="Notifications"
-                description="View all system alerts and workspace activities in one place."
+                description="View and manage all real-time alerts and workspace activity in one centralized feed."
             />
 
-            {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="animate-spin text-[#378179]" size={36} />
-                    <p className="text-sm font-medium text-slate-500">Loading notifications...</p>
-                </div>
-            ) : (
-                <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
-                    <CardHeader className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle className="text-base font-bold text-slate-800">All Notifications</CardTitle>
-                            <CardDescription className="text-slate-500 text-sm mt-0.5">
-                                System notifications and activity alerts for your workspace.
-                            </CardDescription>
+            <Card className="border border-[#EAE6DF] bg-white shadow-xs rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <CardTitle className="text-base font-bold text-slate-800">
+                            Workspace Alerts & Feed
+                        </CardTitle>
+                        <CardDescription className="text-slate-500 text-sm mt-0.5">
+                            {data?.unreadCount ?? 0} unread notifications in current workspace.
+                        </CardDescription>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Search Input */}
+                        <div className="relative w-44 sm:w-56">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <Input
+                                type="search"
+                                placeholder="Search alerts..."
+                                className="pl-9 h-9 text-xs text-slate-600 rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <div className="relative w-44 sm:w-56">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search alerts..."
-                                    className="pl-9 h-9 text-xs text-slate-600 rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+
+                        {/* Filter Status */}
+                        <div className="flex rounded-xl bg-slate-100 p-0.5 text-xs font-semibold">
+                            <button
+                                type="button"
+                                onClick={() => setStatusFilter("all")}
+                                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    statusFilter === "all"
+                                        ? "bg-white text-slate-900 shadow-2xs font-bold"
+                                        : "text-slate-500 hover:text-slate-900"
+                                }`}
+                            >
+                                All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setStatusFilter("unread")}
+                                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    statusFilter === "unread"
+                                        ? "bg-white text-slate-900 shadow-2xs font-bold"
+                                        : "text-slate-500 hover:text-slate-900"
+                                }`}
+                            >
+                                Unread
+                            </button>
+                        </div>
+
+                        {/* Mark all as read */}
+                        {(data?.unreadCount ?? 0) > 0 && (
+                            <Button
+                                type="button"
+                                onClick={() => markAllReadMutation.mutate()}
+                                disabled={markAllReadMutation.isPending}
+                                variant="outline"
+                                className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
+                            >
+                                {markAllReadMutation.isPending ? (
+                                    <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                    <CheckCheck size={14} />
+                                )}
+                                Mark All Read
+                            </Button>
+                        )}
+                    </div>
+                </CardHeader>
+
+                <CardContent className="p-0">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3">
+                            <Loader2 className="animate-spin text-[#378179]" size={32} />
+                            <p className="text-sm font-medium text-slate-500">Loading alerts...</p>
+                        </div>
+                    ) : filteredNotifications.length === 0 ? (
+                        <div className="p-16 text-center text-slate-400 space-y-2">
+                            <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto text-slate-300">
+                                <Bell size={24} />
                             </div>
-                            {notifications.some(n => !n.is_read) && (
-                                <Button
-                                    onClick={handleMarkAllRead}
-                                    variant="outline"
-                                    className="border-slate-200 text-slate-700 text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
-                                >
-                                    <Check size={14} />
-                                    Mark All as Read
-                                </Button>
-                            )}
+                            <p className="text-sm font-bold text-slate-700">No alerts found</p>
+                            <p className="text-xs text-slate-400">
+                                {statusFilter === "unread"
+                                    ? "You have zero unread notifications."
+                                    : "New conversations, campaigns, or system updates will appear here."}
+                            </p>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
+                    ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pl-6">Notification</TableHead>
-                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">Status</TableHead>
-                                    <TableHead className="text-right font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pr-6">Date</TableHead>
+                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pl-6">
+                                        Alert
+                                    </TableHead>
+                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">
+                                        Priority
+                                    </TableHead>
+                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">
+                                        Status
+                                    </TableHead>
+                                    <TableHead className="font-extrabold text-slate-500 text-[10px] uppercase tracking-wider">
+                                        Time
+                                    </TableHead>
+                                    <TableHead className="text-right font-extrabold text-slate-500 text-[10px] uppercase tracking-wider pr-6">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredNotifications.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="h-40 text-center">
-                                            <div className="flex flex-col items-center gap-2 text-slate-400">
-                                                <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-                                                    <Bell size={18} />
+                                {filteredNotifications.map((n) => (
+                                    <TableRow
+                                        key={n.id}
+                                        onClick={() => handleItemClick(n)}
+                                        className={`hover:bg-slate-50/60 transition-colors cursor-pointer ${
+                                            !n.is_read ? "bg-teal-50/30" : ""
+                                        }`}
+                                    >
+                                        <TableCell className="py-4 pl-6">
+                                            <div className="flex items-start gap-3 max-w-xl">
+                                                <div
+                                                    className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs mt-0.5 ${
+                                                        n.priority === "critical"
+                                                            ? "bg-rose-50 border border-rose-200"
+                                                            : n.priority === "high"
+                                                            ? "bg-amber-50 border border-amber-200"
+                                                            : "bg-teal-50/70 border border-teal-100"
+                                                    }`}
+                                                >
+                                                    {getIconForType(n.type, n.priority)}
                                                 </div>
-                                                <p className="text-xs font-semibold text-slate-500">No notifications found</p>
-                                                <p className="text-xs">System warnings or updates will appear here.</p>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-bold text-slate-800 text-xs">
+                                                        {n.title}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                                                        {n.message}
+                                                    </p>
+                                                    {n.action_url && (
+                                                        <span className="text-[10px] font-semibold text-[#35877D] inline-flex items-center gap-0.5 pt-0.5 hover:underline">
+                                                            View entity <ExternalLink size={10} />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+
+                                        <TableCell className="py-4">
+                                            {n.priority === "critical" ? (
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                                                    Critical
+                                                </span>
+                                            ) : n.priority === "high" ? (
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                                                    High
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                                    Normal
+                                                </span>
+                                            )}
+                                        </TableCell>
+
+                                        <TableCell className="py-4">
+                                            {n.is_read ? (
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                    Read
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200 animate-pulse">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                                                    Unread
+                                                </span>
+                                            )}
+                                        </TableCell>
+
+                                        <TableCell className="py-4 text-xs text-slate-500 font-medium">
+                                            {formatTimestamp(n.created_at)}
+                                        </TableCell>
+
+                                        <TableCell className="py-4 text-right pr-6">
+                                            <div
+                                                className="flex items-center justify-end gap-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {!n.is_read && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => markReadMutation.mutate(n.id)}
+                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#35877D] hover:bg-teal-50 transition-colors"
+                                                        title="Mark as read"
+                                                    >
+                                                        <Check size={14} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleDelete(e, n.id)}
+                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                    title="Delete notification"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : (
-                                    filteredNotifications.map((n) => (
-                                        <TableRow key={n.id} className="hover:bg-slate-50/40 transition-colors">
-                                            <TableCell className="py-4 pl-6">
-                                                <div className="flex flex-col gap-1 max-w-2xl">
-                                                    <div className="font-bold text-slate-800 text-xs flex items-center gap-2">
-                                                        {n.title}
-                                                    </div>
-                                                    <p className="text-[11px] text-slate-500 leading-relaxed">{n.message}</p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-4">
-                                                {n.is_read ? (
-                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-105 text-slate-600 border border-slate-205">
-                                                        Read
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-100 animate-pulse">
-                                                        Unread
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="py-4 text-right text-xs text-slate-500 font-medium pr-6">
-                                                {new Date(n.created_at).toLocaleDateString("en-IN", {
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit"
-                                                })}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
+                                ))}
                             </TableBody>
                         </Table>
-                    </CardContent>
-                </Card>
-            )}
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }

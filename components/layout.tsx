@@ -46,11 +46,15 @@ import { CreditBalance } from "@/components/credit-balance";
 import { AppCommandPalette } from "@/components/app-command-palette";
 import { resolveActiveNavigation } from "@/lib/navigation-matcher";
 import { CLIENT_NAV_SECTIONS, type MenuItem, type SubMenuItem } from "@/lib/navigation-config";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationRealtimeProvider } from "@/components/notifications/NotificationRealtimeProvider";
+import { useUnreadNotificationCount } from "@/lib/api-client-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { token, user, logout } = useAuth();
+    const { data: unreadNotificationsCount = 0 } = useUnreadNotificationCount(user?.tenant_id);
 
     // Sidebar states: collapsed & mobile drawer
     const [collapsed, setCollapsed] = useState<boolean>(false);
@@ -81,10 +85,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }
     }, [activeNav.expandedGroupId]);
 
-    // Notifications state
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-
     // Load collapse state from localStorage
     useEffect(() => {
         const savedState = localStorage.getItem("connectly360-sidebar-collapsed");
@@ -101,47 +101,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         });
     };
 
-    // Fetch Notifications & Unread Count from backend API
-    const fetchNotifications = async () => {
-        if (!token) return;
-        try {
-            const res = await fetch("/api/notifications", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status) {
-                setNotifications(data.notifications || []);
-                const unread = (data.notifications || []).filter((n: any) => !n.is_read).length;
-                setUnreadCount(unread);
-            }
-        } catch {
-            // Silently handle offline/mock mode
-        }
-    };
-
-    useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, 15000);
-        return () => clearInterval(interval);
-    }, [token]);
-
-    const handleReadAll = async () => {
-        if (!token) return;
-        try {
-            const res = await fetch("/api/notifications/read-all", {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status) {
-                fetchNotifications();
-                toast.success("All notifications marked as read.");
-            }
-        } catch {
-            toast.error("Failed to mark notifications as read.");
-        }
-    };
-
     // Auth pages bypass
     const isAuthPage =
         pathname === "/login" ||
@@ -154,7 +113,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-slate-50/70 text-slate-900 font-sans selection:bg-[#35877D] selection:text-white dashboard-theme">
+        <NotificationRealtimeProvider>
+            <div className="flex h-screen w-screen overflow-hidden bg-slate-50/70 text-slate-900 font-sans selection:bg-[#35877D] selection:text-white dashboard-theme">
             {/* Command Palette Component (Cmd + K) */}
             <AppCommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
 
@@ -253,9 +213,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                                     {!collapsed && <span className="truncate">{item.label}</span>}
                                                 </div>
 
-                                                {!collapsed && item.href === "/conversations" && unreadCount > 0 && (
+                                                {!collapsed && item.href === "/conversations" && unreadNotificationsCount > 0 && (
                                                     <span className="px-2 py-0.5 text-[10px] font-black bg-rose-500 text-white rounded-full shadow-2xs">
-                                                        {unreadCount}
+                                                        {unreadNotificationsCount}
                                                     </span>
                                                 )}
 
@@ -499,41 +459,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {/* Credit Balance Badge Component */}
                         <CreditBalance />
 
-                        {/* Notifications Dropdown */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer">
-                                    <Bell size={18} />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute top-1 right-1 h-4 w-4 bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center animate-pulse">
-                                            {unreadCount}
-                                        </span>
-                                    )}
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-80 p-0 font-sans shadow-xl border border-slate-200 rounded-2xl overflow-hidden">
-                                <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-900">Workspace Alerts</span>
-                                    {unreadCount > 0 && (
-                                        <button onClick={handleReadAll} className="text-[11px] font-bold text-[#35877D] hover:underline cursor-pointer">
-                                            Mark all read
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 p-2 text-xs">
-                                    {notifications.length === 0 ? (
-                                        <div className="p-6 text-center text-slate-400 font-semibold">No recent alerts</div>
-                                    ) : (
-                                        notifications.map((n) => (
-                                            <div key={n.id} className={`p-2.5 rounded-xl space-y-1 ${!n.is_read ? "bg-teal-50/50" : ""}`}>
-                                                <p className="font-bold text-slate-900">{n.title || "System Alert"}</p>
-                                                <p className="text-slate-600 text-[11px]">{n.message}</p>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Real-time Notification Bell & Notification Center */}
+                        <NotificationBell />
                     </div>
                 </header>
 
@@ -541,5 +468,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <main className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8">{children}</main>
             </div>
         </div>
+        </NotificationRealtimeProvider>
     );
 }
