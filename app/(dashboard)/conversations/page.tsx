@@ -9,6 +9,7 @@ import {
     useGetConversationCounts,
     useGetInboxSettings,
     useGetWindowStatus,
+    useMarkConversationAsRead,
     type Conversation,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -111,6 +112,9 @@ function ConversationsContent() {
         router.replace(`/conversations?${params.toString()}`);
     };
 
+    // Mark as read mutation
+    const markAsReadMutation = useMarkConversationAsRead();
+
     // Synchronize active customer from URL query param if present
     useEffect(() => {
         const paramId = searchParams.get("customer_id") || searchParams.get("conversation");
@@ -120,6 +124,23 @@ function ConversationsContent() {
             setShowMobileList(false);
         }
     }, [searchParams, setActiveCustomerId]);
+
+    // Automatically mark conversation messages and notifications as read whenever opened
+    useEffect(() => {
+        if (!activeCustomerId) return;
+        markAsReadMutation.mutate(activeCustomerId);
+    }, [activeCustomerId]);
+
+    // Also re-mark as read when window regains focus while viewing active conversation
+    useEffect(() => {
+        const handleWindowFocus = () => {
+            if (activeCustomerId && !document.hidden) {
+                markAsReadMutation.mutate(activeCustomerId);
+            }
+        };
+        window.addEventListener("focus", handleWindowFocus);
+        return () => window.removeEventListener("focus", handleWindowFocus);
+    }, [activeCustomerId]);
 
     // Fetch conversation dynamic counts
     const { data: countsData } = useGetConversationCounts();
@@ -314,16 +335,7 @@ function ConversationsContent() {
         params.set("customer_id", String(cid));
         router.replace(`/conversations?${params.toString()}`);
 
-        if (token) {
-            fetch(`/api/conversations/${cid}/read`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: "application/json",
-                    ...(user?.tenant_id ? { "X-Tenant-Id": String(user.tenant_id) } : {}),
-                },
-            }).catch(() => {});
-        }
+        markAsReadMutation.mutate(cid);
     };
 
     return (

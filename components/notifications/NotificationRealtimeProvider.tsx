@@ -357,6 +357,11 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
                         "X-Tenant-Id": String(workspaceId),
                         Accept: "application/json",
                     },
+                }).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+                    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                    queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+                    queryClient.invalidateQueries({ queryKey: ["listConversations"] });
                 }).catch(() => {});
             } else {
                 // If not viewing or tab is hidden, trigger notification alerts

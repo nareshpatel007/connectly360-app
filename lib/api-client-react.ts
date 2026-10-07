@@ -272,6 +272,38 @@ export function useGetConversationCounts() {
     });
 }
 
+export function useMarkConversationAsRead() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (customerId: number) => {
+            const res = await apiFetch(`${API_BASE}/conversations/${customerId}/read`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to mark conversation as read");
+            }
+            return res.json();
+        },
+        onSuccess: (_data, customerId) => {
+            queryClient.setQueriesData<Conversation[]>(
+                { queryKey: ["listConversations"] },
+                (old) => {
+                    if (!old) return old;
+                    return old.map((t) =>
+                        t.customerId === customerId ? { ...t, unreadCount: 0 } : t
+                    );
+                }
+            );
+            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", customerId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        },
+    });
+}
+
 export function useUpdateConversationStatus() {
     const queryClient = useQueryClient();
     return useMutation({
