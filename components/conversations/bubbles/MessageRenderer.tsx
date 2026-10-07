@@ -8,6 +8,7 @@ import {
     Reply,
     Smile,
     Bot,
+    RotateCw,
 } from "lucide-react";
 import { formatMessageTime } from "@/lib/date-utils";
 import { TextMessageBubble } from "./TextMessageBubble";
@@ -32,6 +33,7 @@ interface MessageRendererProps {
     activeCustomerPhone?: string;
     onReply?: (conv: any) => void;
     onReact?: (conv: any, emoji: string) => void;
+    onRetry?: (conv: any) => void;
     currentUserId?: number | string;
 }
 
@@ -41,6 +43,7 @@ export function MessageRenderer({
     activeCustomerPhone,
     onReply,
     onReact,
+    onRetry,
     currentUserId,
 }: MessageRendererProps) {
     const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -160,7 +163,8 @@ export function MessageRenderer({
             case "contacts":
                 return (
                     <ContactMessageBubble
-                        contactData={conv.contacts || conv.contact_data}
+                        contactData={conv.contacts || conv.contact_data || conv.metadata?.contacts || conv.metadata}
+                        messageText={messageText}
                         isInbound={isInbound}
                     />
                 );
@@ -339,21 +343,37 @@ export function MessageRenderer({
                                         </Tooltip>
                                     </TooltipProvider>
                                 ) : status === "failed" ? (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span className="text-rose-500 font-bold flex items-center gap-0.5" title="Failed">
-                                                    <AlertCircle size={12} />
-                                                    <span>Failed</span>
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="top">
-                                                <p className="text-[11px] text-rose-500 font-semibold">
-                                                    {conv.errorMessage || conv.error_message || "Message delivery failed"}
-                                                </p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    <div className="flex items-center gap-1.5">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="text-rose-500 font-bold flex items-center gap-0.5 cursor-help" title="Failed">
+                                                        <AlertCircle size={12} />
+                                                        <span>Failed</span>
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">
+                                                    <p className="text-[11px] text-rose-500 font-semibold max-w-[220px] break-words">
+                                                        {conv.errorMessage || conv.error_message || conv.failure_reason || "Message delivery failed"}
+                                                    </p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        {onRetry && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onRetry(conv);
+                                                }}
+                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-700 border border-rose-200 rounded transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                                                title="Retry sending this message"
+                                            >
+                                                <RotateCw size={10} />
+                                                <span>Retry</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <span className="text-slate-400 flex items-center" title="Sending...">
                                         <Clock size={11} />

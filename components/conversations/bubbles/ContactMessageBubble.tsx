@@ -6,27 +6,59 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ContactMessageBubbleProps {
     contactData?: any;
+    messageText?: string;
     isInbound: boolean;
 }
 
-export function ContactMessageBubble({ contactData, isInbound }: ContactMessageBubbleProps) {
+export function ContactMessageBubble({ contactData, messageText, isInbound }: ContactMessageBubbleProps) {
     const { toast } = useToast();
 
-    // Normalizing contact data which can come as an array or object
-    const contact = Array.isArray(contactData) ? contactData[0] : contactData || {};
-    const name =
+    // Normalizing contact data which can come as an array, object, or JSON string
+    let parsedData = contactData;
+    if (typeof parsedData === "string") {
+        try {
+            parsedData = JSON.parse(parsedData);
+        } catch {
+            // keep as is
+        }
+    }
+    if (parsedData && typeof parsedData === "object" && parsedData.contacts) {
+        parsedData = parsedData.contacts;
+    }
+
+    const contact = Array.isArray(parsedData) ? parsedData[0] : (parsedData && typeof parsedData === "object" ? parsedData : {});
+
+    // Try extracting name from message text if available (e.g. "Contact: Rahul Sharma", "Contact Card: Rahul Sharma", "Rahul Sharma")
+    const cleanedMessageName = messageText
+        ? messageText.replace(/^(contact card|contact):\s*/i, "").trim()
+        : "";
+
+    // Candidate names in priority order
+    const candidateName =
         contact?.name?.formatted_name ||
+        (typeof contact?.name === "string" ? contact.name : null) ||
         `${contact?.name?.first_name || ""} ${contact?.name?.last_name || ""}`.trim() ||
         contact?.formatted_name ||
-        "Contact Card";
+        contact?.displayName ||
+        contact?.full_name ||
+        contact?.first_name ||
+        (cleanedMessageName && !/^contact(\s*card)?$/i.test(cleanedMessageName) ? cleanedMessageName : null);
+
+    const name = candidateName || "Contact";
 
     const phone =
         contact?.phones?.[0]?.phone ||
         contact?.phones?.[0]?.wa_id ||
+        (contact?.phones && typeof contact.phones[0] === "string" ? contact.phones[0] : "") ||
         contact?.phone ||
+        contact?.wa_id ||
         "";
 
-    const email = contact?.emails?.[0]?.email || contact?.email || "";
+    const email =
+        contact?.emails?.[0]?.email ||
+        (contact?.emails && typeof contact.emails[0] === "string" ? contact.emails[0] : "") ||
+        contact?.email ||
+        "";
     const company = contact?.org?.company || contact?.organization || "";
 
     const handleCopyPhone = (e: React.MouseEvent) => {

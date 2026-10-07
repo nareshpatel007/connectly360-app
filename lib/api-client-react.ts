@@ -705,6 +705,21 @@ export function useUploadMedia() {
     });
 }
 
+export function useRetryMessage() {
+    return useMutation({
+        mutationFn: async ({ messageId }: { messageId: number | string }) => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/messages/${messageId}/retry`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || "Failed to retry message");
+            }
+            return res.json();
+        },
+    });
+}
+
 // Customers
 export function useListCustomers(params?: { search?: string }) {
     return useQuery<Customer[]>({

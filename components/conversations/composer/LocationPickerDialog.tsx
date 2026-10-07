@@ -47,7 +47,7 @@ export function LocationPickerDialog({
                 setIsLocating(false);
                 setLatitude(pos.coords.latitude.toFixed(6));
                 setLongitude(pos.coords.longitude.toFixed(6));
-                if (!name) setName("Current Location");
+                if (!name) setName("");
                 toast({
                     title: "Location Acquired",
                     description: `Coordinates: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`,

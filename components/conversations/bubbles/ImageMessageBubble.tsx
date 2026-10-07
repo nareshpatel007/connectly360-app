@@ -42,7 +42,7 @@ export function ImageMessageBubble({
             <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-slate-100/70 border border-slate-200 text-slate-500 text-xs">
                 <div className="flex items-center gap-2">
                     <ImageIcon size={18} className="text-slate-400" />
-                    <span>{hasError ? "Unable to load image" : "Image downloading from WhatsApp..."}</span>
+                    <span>{hasError ? "Unable to load image" : isInbound ? "Image downloading from WhatsApp..." : "Image attachment unavailable"}</span>
                 </div>
                 {caption && <p className="text-slate-700 italic mt-1">{caption}</p>}
             </div>

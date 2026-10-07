@@ -7,6 +7,7 @@ import {
     useGetCustomerConversations,
     useSendMessage,
     useUploadMedia,
+    useRetryMessage,
     useGetConversationCounts,
     useGetInboxSettings,
     useGetWindowStatus,
@@ -301,7 +302,8 @@ function ConversationsContent() {
     // Outbound composer send & media upload
     const sendMessage = useSendMessage();
     const uploadMedia = useUploadMedia();
-    const isSending = sendMessage.isPending || uploadMedia.isPending;
+    const retryMessage = useRetryMessage();
+    const isSending = sendMessage.isPending || uploadMedia.isPending || retryMessage.isPending;
 
     const handleSelectFile = (file: File, type: "image" | "video" | "document" | "audio") => {
         // Enforce Meta rules
@@ -366,6 +368,15 @@ function ConversationsContent() {
                     caption: pendingAttachment.caption || outgoingBody || undefined,
                 });
 
+                const mediaObj = uploadRes?.media || uploadRes?.data || uploadRes;
+                const uploadedUrl = mediaObj?.media_url || mediaObj?.url || uploadRes?.url || uploadRes?.media_url;
+                const uploadedMediaId = mediaObj?.media_id || uploadRes?.media_id;
+                const uploadedFilename = mediaObj?.filename || uploadRes?.filename || pendingAttachment.file.name;
+
+                if (!uploadedUrl) {
+                    throw new Error("Unable to obtain media URL from upload response.");
+                }
+
                 setUploadProgress(80);
                 setUploadStatusText("Sending message...");
 
@@ -373,9 +384,9 @@ function ConversationsContent() {
                     data: {
                         to: activeThread.customerPhone,
                         type: pendingAttachment.type,
-                        media_id: uploadRes.data?.media_id,
-                        media_url: uploadRes.data?.url,
-                        filename: uploadRes.data?.filename || pendingAttachment.file.name,
+                        media_id: uploadedMediaId,
+                        media_url: uploadedUrl,
+                        filename: uploadedFilename,
                         caption: pendingAttachment.caption || outgoingBody || undefined,
                         reply_to_message_id: replyingTo?.external_message_id || replyingTo?.id ? String(replyingTo.external_message_id || replyingTo.id) : undefined,
                     },
@@ -460,6 +471,54 @@ function ConversationsContent() {
             toast({
                 title: "Failed to send",
                 description: err.message || "Could not dispatch reply",
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Retry sending a previously failed message
+    const handleRetryMessage = async (conv: any) => {
+        if (!conv || !activeThread?.customerPhone) return;
+
+        const hasMediaUrl = conv.mediaUrl || conv.media_url;
+        const msgType = conv.type || "text";
+
+        if (["image", "video", "audio", "document"].includes(msgType) && !hasMediaUrl) {
+            toast({
+                title: "Cannot retry this attachment",
+                description: "The original file was not stored on the server. Please attach the file again using the attachment button.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            if (conv.id && typeof conv.id === "number") {
+                await retryMessage.mutateAsync({ messageId: conv.id });
+            } else {
+                await sendMessage.mutateAsync({
+                    data: {
+                        to: activeThread.customerPhone,
+                        type: msgType,
+                        body: conv.message || conv.body,
+                        media_url: hasMediaUrl,
+                        filename: conv.filename || conv.media_filename,
+                        caption: conv.caption,
+                    },
+                });
+            }
+
+            toast({
+                title: "Message Retried",
+                description: "Dispatched message to WhatsApp.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", activeCustomerId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        } catch (err: any) {
+            toast({
+                title: "Retry Failed",
+                description: err.message || "Could not re-send message.",
                 variant: "destructive",
             });
         }
@@ -965,6 +1024,7 @@ function ConversationsContent() {
                                                         activeCustomerPhone={activeThread.customerPhone}
                                                         onReply={(c) => setReplyingTo(c)}
                                                         onReact={(c, emoji) => handleReact(c, emoji)}
+                                                        onRetry={(c) => handleRetryMessage(c)}
                                                         currentUserId={user?.id}
                                                     />
                                                 </div>
