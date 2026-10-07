@@ -465,7 +465,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </header>
 
                 {/* Page Content Render Area */}
-                <main className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8">{children}</main>
+                {pathname?.startsWith("/conversations") ? (
+                    <main className="flex-1 overflow-hidden bg-white p-0 flex flex-col min-w-0">
+                        {children}
+                    </main>
+                ) : (
+                    <main className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8">
+                        {children}
+                    </main>
+                )}
             </div>
         </div>
         </NotificationRealtimeProvider>

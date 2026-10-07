@@ -180,3 +180,35 @@
     --font-sans: var(--font-inter), sans-serif;
   }
 }
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}

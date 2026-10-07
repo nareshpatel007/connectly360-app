@@ -330,7 +330,7 @@ function ConversationsContent() {
         <div className="flex h-full w-full bg-white overflow-hidden text-slate-800 font-sans antialiased relative">
             {/* COLUMN 1: CONVERSATION LIST (SIDEBAR) */}
             <div
-                className={`w-full md:w-80 shrink-0 border-r border-slate-200 flex flex-col bg-white z-10 transition-all ${
+                className={`w-full md:w-80 lg:w-[340px] shrink-0 border-r border-slate-200 flex flex-col bg-white z-10 transition-all ${
                     showMobileList ? "flex" : "hidden md:flex"
                 }`}
             >
@@ -359,7 +359,7 @@ function ConversationsContent() {
                     </div>
 
                     {/* Filter Pills with Dynamic Counts */}
-                    <div className="flex gap-1 w-full overflow-x-auto pb-0.5 no-scrollbar">
+                    <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {[
                             { key: "all", label: "All", count: counts.all },
                             { key: "open", label: "Open", count: counts.open },
@@ -370,7 +370,7 @@ function ConversationsContent() {
                             <button
                                 key={tabItem.key}
                                 onClick={() => handleTabChange(tabItem.key)}
-                                className={`text-[10px] font-bold py-1 px-2 rounded-full border transition-all cursor-pointer uppercase tracking-wider flex items-center justify-center gap-1 shrink-0 ${
+                                className={`text-[10px] font-bold py-1 px-1.5 sm:px-2 rounded-full border transition-all cursor-pointer uppercase tracking-tight flex items-center justify-center gap-1 shrink-0 ${
                                     selectedTab === tabItem.key
                                         ? "bg-[#378179] text-white border-transparent shadow-xs"
                                         : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -379,7 +379,7 @@ function ConversationsContent() {
                                 <span>{tabItem.label}</span>
                                 {tabItem.count !== undefined && (
                                     <span
-                                        className={`text-[9px] px-1 rounded-full font-bold ${
+                                        className={`text-[9px] px-1 py-0.2 rounded-full font-bold ${
                                             selectedTab === tabItem.key ? "bg-white/25 text-white" : "bg-slate-100 text-slate-500"
                                         }`}
                                     >
