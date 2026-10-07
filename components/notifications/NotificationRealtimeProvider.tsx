@@ -19,6 +19,47 @@ export interface RealtimeMessageItem {
     intent?: string | null;
     isRead?: number;
     createdAt: string;
+
+    // WhatsApp Rich Fields
+    type?: string;
+    mediaType?: string | null;
+    media_type?: string | null;
+    mediaUrl?: string | null;
+    media_url?: string | null;
+    mediaFilename?: string | null;
+    media_filename?: string | null;
+    filename?: string | null;
+    mediaMimeType?: string | null;
+    media_mime_type?: string | null;
+    mediaSize?: number | null;
+    media_size?: number | null;
+    caption?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    locationName?: string | null;
+    location_name?: string | null;
+    locationAddress?: string | null;
+    location_address?: string | null;
+    contacts?: any[] | null;
+    reactionEmoji?: string | null;
+    reaction_emoji?: string | null;
+    reactionTargetMessageId?: string | null;
+    reaction_target_message_id?: string | null;
+    replyToMessageId?: string | null;
+    reply_to_message_id?: string | null;
+    contextMessageId?: string | null;
+    context_message_id?: string | null;
+    interactiveType?: string | null;
+    interactive_type?: string | null;
+    interactiveData?: any | null;
+    interactive_data?: any | null;
+    templateName?: string | null;
+    template_name?: string | null;
+    templateData?: any | null;
+    template_data?: any | null;
+    orderData?: any | null;
+    order_data?: any | null;
+    reactions?: any[];
 }
 
 interface NotificationRealtimeContextType {
@@ -358,6 +399,46 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
                 intent: msg.intent || null,
                 isRead: msg.isRead ?? 0,
                 createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
+
+                type: msg.type || "text",
+                mediaType: msg.mediaType || msg.media_type,
+                media_type: msg.media_type || msg.mediaType,
+                mediaUrl: msg.mediaUrl || msg.media_url,
+                media_url: msg.media_url || msg.mediaUrl,
+                mediaFilename: msg.mediaFilename || msg.media_filename || msg.filename,
+                media_filename: msg.media_filename || msg.mediaFilename || msg.filename,
+                filename: msg.filename || msg.mediaFilename || msg.media_filename,
+                mediaMimeType: msg.mediaMimeType || msg.media_mime_type,
+                media_mime_type: msg.media_mime_type || msg.mediaMimeType,
+                mediaSize: msg.mediaSize || msg.media_size,
+                media_size: msg.media_size || msg.mediaSize,
+                caption: msg.caption,
+                latitude: msg.latitude,
+                longitude: msg.longitude,
+                locationName: msg.locationName || msg.location_name,
+                location_name: msg.location_name || msg.locationName,
+                locationAddress: msg.locationAddress || msg.location_address,
+                location_address: msg.location_address || msg.locationAddress,
+                contacts: msg.contacts,
+                reactionEmoji: msg.reactionEmoji || msg.reaction_emoji,
+                reaction_emoji: msg.reaction_emoji || msg.reactionEmoji,
+                reactionTargetMessageId: msg.reactionTargetMessageId || msg.reaction_target_message_id,
+                reaction_target_message_id: msg.reaction_target_message_id || msg.reactionTargetMessageId,
+                replyToMessageId: msg.replyToMessageId || msg.reply_to_message_id,
+                reply_to_message_id: msg.reply_to_message_id || msg.replyToMessageId,
+                contextMessageId: msg.contextMessageId || msg.context_message_id,
+                context_message_id: msg.context_message_id || msg.contextMessageId,
+                interactiveType: msg.interactiveType || msg.interactive_type,
+                interactive_type: msg.interactive_type || msg.interactiveType,
+                interactiveData: msg.interactiveData || msg.interactive_data,
+                interactive_data: msg.interactive_data || msg.interactiveData,
+                templateName: msg.templateName || msg.template_name,
+                template_name: msg.template_name || msg.templateName,
+                templateData: msg.templateData || msg.template_data,
+                template_data: msg.template_data || msg.templateData,
+                orderData: msg.orderData || msg.order_data,
+                order_data: msg.order_data || msg.orderData,
+                reactions: msg.reactions || [],
             };
 
             // Update getCustomerConversations query cache immediately
@@ -464,6 +545,46 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
                 intent: msg.intent || null,
                 isRead: 1,
                 createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
+
+                type: msg.type || "text",
+                mediaType: msg.mediaType || msg.media_type,
+                media_type: msg.media_type || msg.mediaType,
+                mediaUrl: msg.mediaUrl || msg.media_url,
+                media_url: msg.media_url || msg.mediaUrl,
+                mediaFilename: msg.mediaFilename || msg.media_filename || msg.filename,
+                media_filename: msg.media_filename || msg.mediaFilename || msg.filename,
+                filename: msg.filename || msg.mediaFilename || msg.media_filename,
+                mediaMimeType: msg.mediaMimeType || msg.media_mime_type,
+                media_mime_type: msg.media_mime_type || msg.mediaMimeType,
+                mediaSize: msg.mediaSize || msg.media_size,
+                media_size: msg.media_size || msg.mediaSize,
+                caption: msg.caption,
+                latitude: msg.latitude,
+                longitude: msg.longitude,
+                locationName: msg.locationName || msg.location_name,
+                location_name: msg.location_name || msg.locationName,
+                locationAddress: msg.locationAddress || msg.location_address,
+                location_address: msg.location_address || msg.locationAddress,
+                contacts: msg.contacts,
+                reactionEmoji: msg.reactionEmoji || msg.reaction_emoji,
+                reaction_emoji: msg.reaction_emoji || msg.reactionEmoji,
+                reactionTargetMessageId: msg.reactionTargetMessageId || msg.reaction_target_message_id,
+                reaction_target_message_id: msg.reaction_target_message_id || msg.reactionTargetMessageId,
+                replyToMessageId: msg.replyToMessageId || msg.reply_to_message_id,
+                reply_to_message_id: msg.reply_to_message_id || msg.replyToMessageId,
+                contextMessageId: msg.contextMessageId || msg.context_message_id,
+                context_message_id: msg.context_message_id || msg.contextMessageId,
+                interactiveType: msg.interactiveType || msg.interactive_type,
+                interactive_type: msg.interactive_type || msg.interactiveType,
+                interactiveData: msg.interactiveData || msg.interactive_data,
+                interactive_data: msg.interactive_data || msg.interactiveData,
+                templateName: msg.templateName || msg.template_name,
+                template_name: msg.template_name || msg.templateName,
+                templateData: msg.templateData || msg.template_data,
+                template_data: msg.template_data || msg.templateData,
+                orderData: msg.orderData || msg.order_data,
+                order_data: msg.order_data || msg.orderData,
+                reactions: msg.reactions || [],
             };
 
             // Update active chat messages
@@ -650,12 +771,24 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         // Register listeners
         channel.listen(".whatsapp.message.received", onMessageReceived);
         channel.listen("whatsapp.message.received", onMessageReceived);
+        channel.listen(".WhatsAppMessageReceived", onMessageReceived);
+        channel.listen("WhatsAppMessageReceived", onMessageReceived);
         channel.listen(".whatsapp.message.sent", onMessageSent);
         channel.listen("whatsapp.message.sent", onMessageSent);
+        channel.listen(".WhatsAppMessageSent", onMessageSent);
+        channel.listen("WhatsAppMessageSent", onMessageSent);
         channel.listen(".whatsapp.message.status", onMessageStatus);
         channel.listen("whatsapp.message.status", onMessageStatus);
+        channel.listen(".whatsapp.message.status.updated", onMessageStatus);
+        channel.listen("whatsapp.message.status.updated", onMessageStatus);
+        channel.listen(".WhatsAppMessageStatusUpdated", onMessageStatus);
+        channel.listen("WhatsAppMessageStatusUpdated", onMessageStatus);
         channel.listen(".whatsapp.message.reaction_updated", onMessageReactionUpdated);
         channel.listen("whatsapp.message.reaction_updated", onMessageReactionUpdated);
+        channel.listen(".whatsapp.message.reaction.updated", onMessageReactionUpdated);
+        channel.listen("whatsapp.message.reaction.updated", onMessageReactionUpdated);
+        channel.listen(".WhatsAppMessageReactionUpdated", onMessageReactionUpdated);
+        channel.listen("WhatsAppMessageReactionUpdated", onMessageReactionUpdated);
         channel.listen(".notification.created", onNotificationCreated);
         channel.listen("notification.created", onNotificationCreated);
         channel.listen(".conversation.status_changed", onConversationStatusChanged);

@@ -86,6 +86,57 @@ export interface Conversation {
     secondsRemaining?: number;
     notes?: string | null;
     createdAt: string;
+
+    // WhatsApp Rich Message Fields
+    type?: string;
+    mediaType?: string | null;
+    media_type?: string | null;
+    mediaUrl?: string | null;
+    media_url?: string | null;
+    mediaFilename?: string | null;
+    media_filename?: string | null;
+    filename?: string | null;
+    mediaMimeType?: string | null;
+    media_mime_type?: string | null;
+    mediaSize?: number | null;
+    media_size?: number | null;
+    caption?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    locationName?: string | null;
+    location_name?: string | null;
+    locationAddress?: string | null;
+    location_address?: string | null;
+    contacts?: any[] | null;
+    contact_data?: any[] | null;
+    reactionEmoji?: string | null;
+    reaction_emoji?: string | null;
+    reactionTargetMessageId?: string | null;
+    reaction_target_message_id?: string | null;
+    replyToMessageId?: string | null;
+    reply_to_message_id?: string | null;
+    contextMessageId?: string | null;
+    context_message_id?: string | null;
+    interactiveType?: string | null;
+    interactive_type?: string | null;
+    interactiveData?: any | null;
+    interactive_data?: any | null;
+    templateName?: string | null;
+    template_name?: string | null;
+    templateData?: any | null;
+    template_data?: any | null;
+    orderData?: any | null;
+    order_data?: any | null;
+    reactions?: Array<{ emoji: string; from?: string; contact_name?: string; contact_id?: number; user_id?: number }>;
+    quotedMessage?: {
+        id?: number;
+        message?: string;
+        direction?: string;
+        senderName?: string;
+        type?: string;
+    } | null;
+    errorMessage?: string | null;
+    error_message?: string | null;
 }
 
 export interface ConversationCounts {
@@ -594,9 +645,32 @@ export function useDisconnectWhatsapp() {
     });
 }
 
+export interface SendMessagePayload {
+    to: string;
+    body?: string;
+    type?: string;
+    media_id?: string;
+    media_url?: string;
+    filename?: string;
+    caption?: string;
+    latitude?: number;
+    longitude?: number;
+    location_name?: string;
+    location_address?: string;
+    contacts?: any[];
+    reaction_emoji?: string;
+    reaction_message_id?: string;
+    reply_to_message_id?: string;
+    interactive_type?: string;
+    interactive_data?: any;
+    template_name?: string;
+    template_language?: string;
+    template_data?: any;
+}
+
 export function useSendMessage() {
     return useMutation({
-        mutationFn: async ({ data }: { data: { to: string; body: string } }) => {
+        mutationFn: async ({ data }: { data: SendMessagePayload }) => {
             const res = await apiFetch(`${API_BASE}/whatsapp/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -605,6 +679,26 @@ export function useSendMessage() {
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
                 throw new Error(errorData.message || "Failed to send WhatsApp message");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useUploadMedia() {
+    return useMutation({
+        mutationFn: async ({ file, caption }: { file: File; caption?: string }) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            if (caption) formData.append("caption", caption);
+
+            const res = await apiFetch(`${API_BASE}/whatsapp/media/upload`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || "Failed to upload media");
             }
             return res.json();
         },

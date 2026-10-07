@@ -6,6 +6,7 @@ import {
     useListConversations,
     useGetCustomerConversations,
     useSendMessage,
+    useUploadMedia,
     useGetConversationCounts,
     useGetInboxSettings,
     useGetWindowStatus,
@@ -33,6 +34,13 @@ import { ConversationHeaderMenu } from "@/components/conversations/ConversationH
 import { CopilotDropdown } from "@/components/conversations/CopilotDropdown";
 import { QuickReplyPicker } from "@/components/conversations/QuickReplyPicker";
 import { TemplatePickerModal } from "@/components/conversations/TemplatePickerModal";
+import { MessageRenderer } from "@/components/conversations/bubbles/MessageRenderer";
+import { AttachmentMenu } from "@/components/conversations/composer/AttachmentMenu";
+import { AttachmentPreviewBar, type PendingAttachment } from "@/components/conversations/composer/AttachmentPreviewBar";
+import { EmojiPickerPopover } from "@/components/conversations/composer/EmojiPickerPopover";
+import { ReplyQuoteBar } from "@/components/conversations/composer/ReplyQuoteBar";
+import { LocationPickerDialog } from "@/components/conversations/composer/LocationPickerDialog";
+import { ContactPickerDialog } from "@/components/conversations/composer/ContactPickerDialog";
 import {
     Search,
     User,
@@ -106,6 +114,14 @@ function ConversationsContent() {
     // Modals
     const [isNewConvOpen, setIsNewConvOpen] = useState(false);
     const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
+    // Reply & Attachment State
+    const [replyingTo, setReplyingTo] = useState<any>(null);
+    const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [uploadStatusText, setUploadStatusText] = useState<string | null>(null);
 
     // Mobile Master-Detail toggle
     const [showMobileList, setShowMobileList] = useState(true);
@@ -282,13 +298,48 @@ function ConversationsContent() {
         }
     }, [sortedConversations.length]);
 
-    // Outbound composer send
+    // Outbound composer send & media upload
     const sendMessage = useSendMessage();
-    const isSending = sendMessage.isPending;
+    const uploadMedia = useUploadMedia();
+    const isSending = sendMessage.isPending || uploadMedia.isPending;
+
+    const handleSelectFile = (file: File, type: "image" | "video" | "document" | "audio") => {
+        // Enforce Meta rules
+        if (type === "image" && file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File Too Large",
+                description: "Meta WhatsApp limit for images is 5MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+        if ((type === "video" || type === "audio") && file.size > 16 * 1024 * 1024) {
+            toast({
+                title: "File Too Large",
+                description: `Meta WhatsApp limit for ${type} is 16MB.`,
+                variant: "destructive",
+            });
+            return;
+        }
+        if (type === "document" && file.size > 100 * 1024 * 1024) {
+            toast({
+                title: "File Too Large",
+                description: "Meta WhatsApp limit for documents is 100MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setPendingAttachment({
+            file,
+            type,
+            caption: "",
+        });
+    };
 
     const handleSendReply = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!replyText.trim() || !activeCustomerId || !activeThread) return;
+        if ((!replyText.trim() && !pendingAttachment) || !activeCustomerId || !activeThread) return;
 
         // If outside 24-hour window, WhatsApp requires template!
         if (isOutside24hWindow) {
@@ -303,15 +354,77 @@ function ConversationsContent() {
 
         const outgoingBody = replyText.trim();
         const tempId = Date.now();
+
+        // 1. Sending Attachment Flow
+        if (pendingAttachment) {
+            setUploadProgress(25);
+            setUploadStatusText("Uploading media to WhatsApp...");
+
+            try {
+                const uploadRes = await uploadMedia.mutateAsync({
+                    file: pendingAttachment.file,
+                    caption: pendingAttachment.caption || outgoingBody || undefined,
+                });
+
+                setUploadProgress(80);
+                setUploadStatusText("Sending message...");
+
+                await sendMessage.mutateAsync({
+                    data: {
+                        to: activeThread.customerPhone,
+                        type: pendingAttachment.type,
+                        media_id: uploadRes.data?.media_id,
+                        media_url: uploadRes.data?.url,
+                        filename: uploadRes.data?.filename || pendingAttachment.file.name,
+                        caption: pendingAttachment.caption || outgoingBody || undefined,
+                        reply_to_message_id: replyingTo?.external_message_id || replyingTo?.id ? String(replyingTo.external_message_id || replyingTo.id) : undefined,
+                    },
+                });
+
+                setUploadProgress(100);
+                setUploadStatusText("Delivered");
+                toast({ title: "Media Sent", description: "Attachment dispatched successfully." });
+
+                setPendingAttachment(null);
+                setUploadProgress(null);
+                setUploadStatusText(null);
+                setReplyText("");
+                setReplyingTo(null);
+
+                queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", activeCustomerId] });
+                queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            } catch (err: any) {
+                setUploadProgress(null);
+                setUploadStatusText(null);
+                toast({
+                    title: "Failed to send media",
+                    description: err.message || "Could not dispatch attachment",
+                    variant: "destructive",
+                });
+            }
+            return;
+        }
+
+        // 2. Normal Text Send Flow
         const tempMsg = {
             id: tempId,
             customerId: activeCustomerId,
             customerName: activeThread.customerName,
             customerPhone: activeThread.customerPhone,
             message: outgoingBody,
+            type: "text",
             direction: "outbound" as const,
             status: "pending",
             isRead: 1,
+            replyToMessageId: replyingTo?.id ? String(replyingTo.id) : undefined,
+            quotedMessage: replyingTo
+                ? {
+                      id: replyingTo.id,
+                      message: replyingTo.message,
+                      senderName: replyingTo.senderName || (replyingTo.direction === "outbound" ? "You" : activeThread.customerName),
+                      type: replyingTo.type,
+                  }
+                : null,
             createdAt: new Date().toISOString(),
         };
 
@@ -322,6 +435,7 @@ function ConversationsContent() {
         );
 
         setReplyText("");
+        setReplyingTo(null);
         setTimeout(() => scrollToBottom(true), 50);
 
         try {
@@ -329,7 +443,9 @@ function ConversationsContent() {
                 data: {
                     to: activeThread.customerPhone,
                     body: outgoingBody,
-                }
+                    type: "text",
+                    reply_to_message_id: replyingTo?.external_message_id || replyingTo?.id ? String(replyingTo.external_message_id || replyingTo.id) : undefined,
+                },
             });
 
             toast({ title: "Reply Sent", description: "Outbound message dispatched successfully." });
@@ -344,7 +460,129 @@ function ConversationsContent() {
             toast({
                 title: "Failed to send",
                 description: err.message || "Could not dispatch reply",
-                variant: "destructive"
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Reaction handler
+    const handleReact = async (targetMsg: any, emoji: string) => {
+        if (!activeThread?.customerPhone || !targetMsg) return;
+
+        const targetExternalId = targetMsg.external_message_id || targetMsg.externalMessageId || String(targetMsg.id);
+
+        // Optimistically update reactions in local query cache
+        queryClient.setQueryData(
+            ["getCustomerConversations", activeCustomerId],
+            (old: any[] | undefined) => {
+                if (!old) return old;
+                return old.map((m) => {
+                    if (m.id !== targetMsg.id) return m;
+                    const existingReactions = Array.isArray(m.reactions) ? [...m.reactions] : [];
+                    const userReactionIdx = existingReactions.findIndex(
+                        (r) => r.user_id === user?.id || r.from === String(user?.id)
+                    );
+
+                    if (userReactionIdx >= 0) {
+                        if (existingReactions[userReactionIdx].emoji === emoji) {
+                            existingReactions.splice(userReactionIdx, 1);
+                        } else {
+                            existingReactions[userReactionIdx] = { ...existingReactions[userReactionIdx], emoji };
+                        }
+                    } else {
+                        existingReactions.push({ emoji, user_id: user?.id, from: "agent", contact_name: "You" });
+                    }
+
+                    return { ...m, reactions: existingReactions };
+                });
+            }
+        );
+
+        try {
+            await sendMessage.mutateAsync({
+                data: {
+                    to: activeThread.customerPhone,
+                    type: "reaction",
+                    reaction_emoji: emoji,
+                    reaction_message_id: targetExternalId,
+                },
+            });
+        } catch (err: any) {
+            toast({
+                title: "Reaction Failed",
+                description: err.message || "Could not send WhatsApp reaction",
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Location handler
+    const handleSendLocation = async (loc: { latitude: number; longitude: number; name?: string; address?: string }) => {
+        if (!activeThread?.customerPhone) return;
+
+        if (isOutside24hWindow) {
+            toast({
+                title: "Template Required",
+                description: "Customer is outside the 24-hour service window. Please select an approved template.",
+                variant: "destructive",
+            });
+            setIsTemplatePickerOpen(true);
+            return;
+        }
+
+        try {
+            await sendMessage.mutateAsync({
+                data: {
+                    to: activeThread.customerPhone,
+                    type: "location",
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                    location_name: loc.name,
+                    location_address: loc.address,
+                },
+            });
+            toast({ title: "Location Shared", description: "Location message dispatched." });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", activeCustomerId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        } catch (err: any) {
+            toast({
+                title: "Failed to send location",
+                description: err.message || "Could not send location",
+                variant: "destructive",
+            });
+        }
+    };
+
+    // Contact card handler
+    const handleSendContact = async (contacts: any[]) => {
+        if (!activeThread?.customerPhone) return;
+
+        if (isOutside24hWindow) {
+            toast({
+                title: "Template Required",
+                description: "Customer is outside the 24-hour service window. Please select an approved template.",
+                variant: "destructive",
+            });
+            setIsTemplatePickerOpen(true);
+            return;
+        }
+
+        try {
+            await sendMessage.mutateAsync({
+                data: {
+                    to: activeThread.customerPhone,
+                    type: "contacts",
+                    contacts,
+                },
+            });
+            toast({ title: "Contact Shared", description: "Contact card dispatched." });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", activeCustomerId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        } catch (err: any) {
+            toast({
+                title: "Failed to send contact",
+                description: err.message || "Could not send contact",
+                variant: "destructive",
             });
         }
     };
@@ -712,90 +950,25 @@ function ConversationsContent() {
                                             </div>
 
                                             {/* Messages in Group */}
-                                            {group.messages.map((conv, idx) => {
-                                                const isInbound = conv.direction === "inbound";
-
-                                                return (
-                                                    <div key={conv.id || `msg-${idx}`} className="space-y-2">
-                                                        {conv.intent === "automation_reply" && (
-                                                            <div className="flex justify-center text-xs text-slate-400 font-medium py-0.5">
-                                                                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full shadow-2xs text-[10px]">
-                                                                    Automated reply sent by Bot
-                                                                </span>
-                                                            </div>
-                                                        )}
-
-                                                        <div className={`flex ${isInbound ? "justify-start" : "justify-end"}`}>
-                                                            <div className={`flex flex-col max-w-[75%] ${isInbound ? "items-start" : "items-end"}`}>
-                                                                {/* Bubble wrapper */}
-                                                                <div className="relative inline-block max-w-full">
-                                                                    <div
-                                                                        className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-all border ${
-                                                                            isInbound
-                                                                                ? "bg-white text-slate-800 border-slate-200/80 rounded-tl-xs shadow-2xs"
-                                                                                : "bg-[#eef6f5] text-slate-800 border-[#d3e8e5] rounded-tr-xs shadow-2xs"
-                                                                        }`}
-                                                                    >
-                                                                        {conv.message}
-                                                                    </div>
-
-                                                                    {/* WhatsApp Reaction Pill Badge */}
-                                                                    {Array.isArray((conv as any).reactions) && (conv as any).reactions.length > 0 && (() => {
-                                                                        const grouped = groupReactions((conv as any).reactions);
-                                                                        if (grouped.length === 0) return null;
-                                                                        return (
-                                                                            <div
-                                                                                className={`absolute -bottom-2.5 flex items-center gap-1 z-10 ${
-                                                                                    isInbound ? "right-2" : "left-2"
-                                                                                }`}
-                                                                            >
-                                                                                {grouped.map((gr) => (
-                                                                                    <span
-                                                                                        key={gr.emoji}
-                                                                                        title={gr.users.length > 0 ? `${gr.emoji} by ${gr.users.join(", ")}` : gr.emoji}
-                                                                                        className="inline-flex items-center gap-1 bg-white border border-[#E5E9EE] shadow-2xs rounded-full px-1.5 py-0.5 text-xs select-none transition-transform hover:scale-105"
-                                                                                    >
-                                                                                        <span className="text-[13px] leading-none">{gr.emoji}</span>
-                                                                                        {gr.count > 1 && (
-                                                                                            <span className="text-[10px] font-semibold text-slate-600 leading-none">{gr.count}</span>
-                                                                                        )}
-                                                                                    </span>
-                                                                                ))}
-                                                                            </div>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-
-                                                                {/* Footer info inside bubbles */}
-                                                                <div className={`flex items-center gap-1.5 px-1 text-[10px] font-normal text-slate-500 ${
-                                                                    Array.isArray((conv as any).reactions) && (conv as any).reactions.length > 0 ? "mt-2.5" : "mt-1"
-                                                                }`}>
-                                                                    {isInbound && (
-                                                                        <span className="text-[#378179] font-semibold">{activeThread.customerName}</span>
-                                                                    )}
-                                                                    <span>{formatMessageTime(conv.createdAt)}</span>
-                                                                    {!isInbound && (
-                                                                        <span className="flex items-center gap-1 text-[#378179]">
-                                                                            {conv.intent === "automation_reply" || conv.intent === "ai" ? "Bot" : "Sent"}
-                                                                            {(conv as any).status === "read" ? (
-                                                                                <CheckCheck size={12} className="text-[#34b7f1]" />
-                                                                            ) : (conv as any).status === "delivered" ? (
-                                                                                <CheckCheck size={12} className="text-[#378179]" />
-                                                                            ) : (conv as any).status === "sent" ? (
-                                                                                <CheckCheck size={12} className="text-slate-400" />
-                                                                            ) : (conv as any).status === "failed" ? (
-                                                                                <span className="text-rose-500 font-bold text-[9px]">Failed</span>
-                                                                            ) : (
-                                                                                <Clock size={10} className="text-slate-400" />
-                                                                            )}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
+                                            {group.messages.map((conv, idx) => (
+                                                <div key={conv.id || `msg-${idx}`} className="space-y-1">
+                                                    {conv.intent === "automation_reply" && (
+                                                        <div className="flex justify-center text-xs text-slate-400 font-medium py-0.5">
+                                                            <span className="bg-slate-100 px-2.5 py-0.5 rounded-full shadow-2xs text-[10px]">
+                                                                Automated reply sent by Bot
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    )}
+                                                    <MessageRenderer
+                                                        conv={conv}
+                                                        activeCustomerName={activeThread.customerName}
+                                                        activeCustomerPhone={activeThread.customerPhone}
+                                                        onReply={(c) => setReplyingTo(c)}
+                                                        onReact={(c, emoji) => handleReact(c, emoji)}
+                                                        currentUserId={user?.id}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                     <div ref={messagesEndRef} />
@@ -814,15 +987,37 @@ function ConversationsContent() {
                             )}
                         </div>
 
+                        {/* Quoted Reply context preview above composer */}
+                        <ReplyQuoteBar replyingTo={replyingTo} onDismiss={() => setReplyingTo(null)} />
+
+                        {/* Pending Attachment preview bar with upload progress */}
+                        {pendingAttachment && (
+                            <AttachmentPreviewBar
+                                attachment={pendingAttachment}
+                                uploadProgress={uploadProgress}
+                                statusText={uploadStatusText}
+                                onCaptionChange={(caption) =>
+                                    setPendingAttachment({ ...pendingAttachment, caption })
+                                }
+                                onRemove={() => setPendingAttachment(null)}
+                            />
+                        )}
+
                         {/* Composer Chat Input Area */}
                         <div className="p-3 bg-white border-t border-slate-200 shrink-0">
                             <form onSubmit={handleSendReply} className="space-y-2">
                                 <Textarea
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder="Type your message here or press '/' key for templates..."
-                                    className="min-h-[46px] max-h-[120px] text-xs sm:text-sm resize-none py-2.5 px-3 border-transparent focus-visible:ring-0 rounded-xl bg-slate-50 focus:bg-white text-slate-800"
-                                    disabled={isSending}
+                                    placeholder={
+                                        pendingAttachment
+                                            ? "Add a caption or send..."
+                                            : isOutside24hWindow
+                                            ? "24-hour window expired. Select an approved template..."
+                                            : "Type your message here or press '/' key for templates..."
+                                    }
+                                    className="min-h-[46px] max-h-[120px] text-xs sm:text-sm resize-none py-2.5 px-3 border-transparent focus-visible:ring-0 rounded-xl bg-slate-50 focus:bg-white text-slate-800 disabled:opacity-60"
+                                    disabled={isSending || (isOutside24hWindow && !pendingAttachment)}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" && !e.shiftKey) {
                                             e.preventDefault();
@@ -859,45 +1054,39 @@ function ConversationsContent() {
                                         {/* Quick Replies Picker */}
                                         {composerSettings.quick_replies && (
                                             <QuickReplyPicker
-                                                onSelect={(content) => setReplyText((prev) => (prev ? `${prev} ${content}` : content))}
+                                                onSelect={(content) =>
+                                                    setReplyText((prev) => (prev ? `${prev} ${content}` : content))
+                                                }
                                             />
                                         )}
 
-                                        {/* Emoji Button */}
+                                        {/* Searchable Emoji Picker */}
                                         {composerSettings.emoji && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setReplyText((prev) => prev + " 😊")}
-                                                className="p-1.5 hover:text-slate-600 rounded-md hover:bg-slate-100 cursor-pointer transition-colors"
-                                                title="Insert Emoji"
-                                            >
-                                                <Smile size={14} />
-                                            </button>
+                                            <EmojiPickerPopover
+                                                onSelectEmoji={(emoji) => setReplyText((prev) => prev + emoji)}
+                                            />
                                         )}
 
-                                        {/* Attachment Button */}
+                                        {/* Attachment Button with Full Meta Attachment Menu */}
                                         {composerSettings.attachments && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    toast({
-                                                        title: "Attachment Support",
-                                                        description: "Select file or document to upload.",
-                                                    });
-                                                }}
-                                                className="p-1.5 hover:text-slate-600 rounded-md hover:bg-slate-100 cursor-pointer transition-colors"
-                                                title="Attach File"
-                                            >
-                                                <Paperclip size={14} />
-                                            </button>
+                                            <AttachmentMenu
+                                                onSelectFile={handleSelectFile}
+                                                onOpenLocationModal={() => setIsLocationModalOpen(true)}
+                                                onOpenContactModal={() => setIsContactModalOpen(true)}
+                                                disabled={isSending}
+                                            />
                                         )}
                                     </div>
 
                                     {/* Send Trigger */}
                                     <Button
                                         type="submit"
-                                        disabled={isSending || !replyText.trim()}
-                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-8 px-4 rounded-lg flex items-center gap-1.5 shadow-xs border-0 cursor-pointer"
+                                        disabled={
+                                            isSending ||
+                                            (!replyText.trim() && !pendingAttachment) ||
+                                            (isOutside24hWindow && !pendingAttachment)
+                                        }
+                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-8 px-4 rounded-lg flex items-center gap-1.5 shadow-xs border-0 cursor-pointer disabled:opacity-50"
                                     >
                                         {isSending ? (
                                             <Loader2 className="animate-spin" size={13} />
@@ -968,6 +1157,20 @@ function ConversationsContent() {
                     }}
                 />
             )}
+
+            {/* Modal: Location Picker Dialog */}
+            <LocationPickerDialog
+                open={isLocationModalOpen}
+                onOpenChange={setIsLocationModalOpen}
+                onSendLocation={handleSendLocation}
+            />
+
+            {/* Modal: Contact Picker Dialog */}
+            <ContactPickerDialog
+                open={isContactModalOpen}
+                onOpenChange={setIsContactModalOpen}
+                onSendContact={handleSendContact}
+            />
         </div>
     );
 }
