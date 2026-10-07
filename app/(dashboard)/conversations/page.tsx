@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
     useListConversations,
     useGetCustomerConversations,
@@ -14,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtime } from "@/components/notifications/NotificationRealtimeProvider";
+import { useAuth } from "@/lib/auth-context";
 import {
     Search,
     User,
@@ -34,17 +37,41 @@ import {
     Paperclip,
     Mic,
     CheckCheck,
-    Loader2
+    Loader2,
+    Bell,
+    ArrowDown
 } from "lucide-react";
 
-export default function ConversationsPage() {
+function ConversationsContent() {
     const queryClient = useQueryClient();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+    const { token, user } = useAuth();
+    const {
+        connectionStatus,
+        activeCustomerId,
+        setActiveCustomerId,
+        browserPermission,
+        requestBrowserPermission,
+        isSupported
+    } = useRealtime();
 
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTab, setSelectedTab] = useState("all"); // all, open, unread, pending
-    const [activeCustomerId, setActiveCustomerId] = useState<number | null>(null);
     const [replyText, setReplyText] = useState("");
+    const [hasUnreadBelow, setHasUnreadBelow] = useState(false);
+
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const isAtBottomRef = useRef(true);
+
+    // Sync active customer from URL query param if present
+    useEffect(() => {
+        const paramId = searchParams.get("customer_id") || searchParams.get("conversation");
+        if (paramId && !isNaN(Number(paramId))) {
+            setActiveCustomerId(Number(paramId));
+        }
+    }, [searchParams, setActiveCustomerId]);
 
     // Fetch conversation messages
     const { data: conversations, isLoading: isLoadingAll } = useListConversations();
@@ -60,6 +87,7 @@ export default function ConversationsPage() {
             lastMessage: string;
             lastMessageDirection: "inbound" | "outbound";
             lastMessageTime: string;
+            unreadCount: number;
             intent?: string;
         }> = {};
 
@@ -78,8 +106,12 @@ export default function ConversationsPage() {
                     lastMessage: conv.message,
                     lastMessageDirection: conv.direction,
                     lastMessageTime: conv.createdAt,
+                    unreadCount: 0,
                     intent: conv.intent,
                 };
+            }
+            if (conv.direction === "inbound" && conv.isRead === 0) {
+                groups[cid].unreadCount += 1;
             }
         });
 
@@ -97,7 +129,7 @@ export default function ConversationsPage() {
             if (!matchesSearch) return false;
 
             if (selectedTab === "unread") {
-                return thread.lastMessageDirection === "inbound";
+                return thread.unreadCount > 0 || thread.lastMessageDirection === "inbound";
             }
             if (selectedTab === "pending") {
                 return !!thread.intent;
@@ -111,7 +143,7 @@ export default function ConversationsPage() {
         if (activeCustomerId === null && filteredThreads.length > 0) {
             setActiveCustomerId(filteredThreads[0].customerId);
         }
-    }, [filteredThreads, activeCustomerId]);
+    }, [filteredThreads, activeCustomerId, setActiveCustomerId]);
 
     // Retrieve active customer thread
     const { data: activeConversations, isLoading: isLoadingThread } = useGetCustomerConversations(
@@ -131,37 +163,81 @@ export default function ConversationsPage() {
         );
     }, [activeConversations]);
 
-    // Outbound composer send
-    const sendMessage = useSendMessage();
-    const isSending = sendMessage.isPending;
+    // Handle scroll position and new message alert pill
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const atBottom = scrollHeight - scrollTop - clientHeight < 100;
+        isAtBottomRef.current = atBottom;
+        if (atBottom) {
+            setHasUnreadBelow(false);
+        }
+    };
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = (smooth = true) => {
+        messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+        setHasUnreadBelow(false);
+        isAtBottomRef.current = true;
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [sortedConversations]);
+        if (isAtBottomRef.current) {
+            scrollToBottom(false);
+        } else {
+            setHasUnreadBelow(true);
+        }
+    }, [sortedConversations.length]);
+
+    // Outbound composer send with optimistic UI update
+    const sendMessage = useSendMessage();
+    const isSending = sendMessage.isPending;
 
     const handleSendReply = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!replyText.trim() || !activeCustomerId || !activeThread) return;
 
+        const outgoingBody = replyText.trim();
+        const tempId = Date.now();
+        const tempMsg = {
+            id: tempId,
+            customerId: activeCustomerId,
+            customerName: activeThread.customerName,
+            customerPhone: activeThread.customerPhone,
+            message: outgoingBody,
+            direction: "outbound" as const,
+            status: "pending",
+            isRead: 1,
+            createdAt: new Date().toISOString(),
+        };
+
+        // Optimistically insert into active conversation cache
+        queryClient.setQueryData(
+            ["getCustomerConversations", activeCustomerId],
+            (old: any[] | undefined) => [...(old || []), tempMsg]
+        );
+
+        setReplyText("");
+        setTimeout(() => scrollToBottom(true), 50);
+
         try {
             await sendMessage.mutateAsync({
                 data: {
                     to: activeThread.customerPhone,
-                    body: replyText.trim()
+                    body: outgoingBody,
                 }
             });
-            setReplyText("");
+
             toast({ title: "Reply Sent", description: "Outbound message dispatched successfully." });
 
+            // Reconcile and refresh active thread queries
             queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", activeCustomerId] });
             queryClient.invalidateQueries({ queryKey: ["listConversations"] });
         } catch (err: any) {
+            // Remove optimistic item on failure
+            queryClient.setQueryData(
+                ["getCustomerConversations", activeCustomerId],
+                (old: any[] | undefined) => (old || []).filter((m) => m.id !== tempId)
+            );
             toast({
                 title: "Failed to send",
                 description: err.message || "Could not dispatch reply",
@@ -170,8 +246,24 @@ export default function ConversationsPage() {
         }
     };
 
+    // Mark as read when selecting a thread
+    const handleSelectThread = (cid: number) => {
+        setActiveCustomerId(cid);
+        if (token) {
+            fetch(`/api/conversations/${cid}/read`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                    ...(user?.tenant_id ? { "X-Tenant-Id": String(user.tenant_id) } : {}),
+                },
+            }).catch(() => {});
+        }
+    };
+
     return (
         <div className="flex h-full w-full bg-white overflow-hidden text-slate-800 font-sans antialiased">
+            {/* COLUMN 1: CONVERSATION LIST (SIDEBAR) */}
             <div className="w-76 shrink-0 border-r border-slate-200 flex flex-col bg-white">
                 {/* Search & Header */}
                 <div className="p-3 border-b border-slate-150 shrink-0 bg-white">
@@ -208,8 +300,18 @@ export default function ConversationsPage() {
 
                 {/* Chats Thread List */}
                 <div className="flex-1 overflow-auto bg-white">
-                    <div className="px-3.5 py-2 text-[11px] font-semibold text-slate-500 tracking-wide bg-slate-50 border-b border-slate-100 uppercase">
-                        Today
+                    <div className="px-3.5 py-2 text-[11px] font-semibold text-slate-500 tracking-wide bg-slate-50 border-b border-slate-100 uppercase flex items-center justify-between">
+                        <span>Today</span>
+                        {browserPermission === "default" && isSupported && (
+                            <button
+                                onClick={requestBrowserPermission}
+                                className="text-[10px] font-semibold text-[#378179] hover:underline flex items-center gap-1 cursor-pointer"
+                                title="Enable browser alerts for new messages"
+                            >
+                                <Bell size={10} />
+                                Alerts
+                            </button>
+                        )}
                     </div>
                     <div className="divide-y divide-slate-100">
                         {isLoadingAll ? (
@@ -230,7 +332,7 @@ export default function ConversationsPage() {
                                 return (
                                     <button
                                         key={thread.customerId}
-                                        onClick={() => setActiveCustomerId(thread.customerId)}
+                                        onClick={() => handleSelectThread(thread.customerId)}
                                         className={`w-full text-left p-3.5 flex gap-3 transition-all text-xs border-l-[4px] cursor-pointer relative ${isSelected
                                             ? "bg-[#f2faf7] border-[#378179]"
                                             : "border-transparent hover:bg-slate-50 bg-white"
@@ -241,6 +343,11 @@ export default function ConversationsPage() {
                                             <div className="h-10 w-10 rounded-full bg-[#378179]/10 text-[#378179] flex items-center justify-center font-bold text-sm">
                                                 {thread.customerName.charAt(0).toUpperCase()}
                                             </div>
+                                            {thread.unreadCount > 0 && !isSelected && (
+                                                <span className="absolute -top-1 -right-1 bg-[#378179] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full min-w-4 text-center shadow-xs">
+                                                    {thread.unreadCount}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Text Info */}
@@ -268,6 +375,11 @@ export default function ConversationsPage() {
                                                 <span className="text-[11px] font-semibold text-[#378179] bg-[#378179]/10 px-2 py-0.5 rounded border border-[#378179]/15">
                                                     Open
                                                 </span>
+                                                {thread.unreadCount > 0 && !isSelected && (
+                                                    <span className="text-[10px] font-semibold text-[#378179]">
+                                                        {thread.unreadCount} unread
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </button>
@@ -278,8 +390,8 @@ export default function ConversationsPage() {
                 </div>
             </div>
 
-            {/* COLUMN 3: RIGHT PANEL (CHAT COMPOSER THREAD) */}
-            <div className="flex-1 flex flex-col bg-[#F8FAFC]/50">
+            {/* COLUMN 2: RIGHT PANEL (CHAT THREAD & COMPOSER) */}
+            <div className="flex-1 flex flex-col bg-[#F8FAFC]/50 relative">
                 {activeThread ? (
                     <>
                         {/* Thread Header */}
@@ -304,7 +416,27 @@ export default function ConversationsPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4 text-slate-400">
+                            <div className="flex items-center gap-3 text-slate-400">
+                                {/* Subtle Live Realtime Status Pill */}
+                                <div className="flex items-center text-[11px] font-medium mr-1">
+                                    {connectionStatus === "connected" ? (
+                                        <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80 text-xs font-semibold">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            Live
+                                        </span>
+                                    ) : connectionStatus === "connecting" || connectionStatus === "reconnecting" ? (
+                                        <span className="inline-flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 text-xs font-medium">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+                                            Connecting
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 text-xs font-medium">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                                            Syncing
+                                        </span>
+                                    )}
+                                </div>
+
                                 <Badge className="bg-[#378179]/10 text-[#378179] hover:bg-[#378179]/15 border border-[#378179]/15 font-semibold text-xs px-2.5 py-0.5 rounded-lg">
                                     Open
                                 </Badge>
@@ -313,23 +445,12 @@ export default function ConversationsPage() {
                             </div>
                         </div>
 
-                        {/* Thread tabs lists */}
-                        {/* <div className="px-4 bg-white border-b border-slate-200 flex items-center gap-4 shrink-0 overflow-x-auto scrollbar-none">
-                            {["Messages", "Conversation Summary"].map((tab, idx) => (
-                                <button
-                                    key={tab}
-                                    className={`py-3 text-xs font-normal border-b-2 transition-colors cursor-pointer shrink-0 ${idx === 0
-                                        ? "border-[#378179] text-[#378179]"
-                                        : "border-transparent text-slate-400 hover:text-slate-600"
-                                        }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div> */}
-
                         {/* Thread message bubble body scroll */}
-                        <div className="flex-1 overflow-auto p-4 space-y-4">
+                        <div
+                            ref={scrollContainerRef}
+                            onScroll={handleScroll}
+                            className="flex-1 overflow-auto p-4 space-y-4 relative"
+                        >
                             {isLoadingThread ? (
                                 <div className="space-y-4">
                                     <Skeleton className="h-10 w-1/3 rounded-xl" />
@@ -357,7 +478,7 @@ export default function ConversationsPage() {
                                             new Date(conv.createdAt).toDateString() !== new Date(sortedConversations[idx - 1].createdAt).toDateString();
 
                                         return (
-                                            <div key={conv.id} className="space-y-3">
+                                            <div key={conv.id || `temp-${idx}`} className="space-y-3">
                                                 {showDate && (
                                                     <div className="flex justify-center py-2 shrink-0">
                                                         <span className="text-[10px] font-semibold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -387,14 +508,24 @@ export default function ConversationsPage() {
 
                                                         {/* Footer info inside bubbles */}
                                                         <div className="flex items-center gap-1.5 mt-1.5 px-1 text-[11px] font-normal text-slate-700">
-                                                            {isInbound && <span className="text-[#378179]">{activeThread.customerName}</span>}
+                                                            {isInbound && <span className="text-[#378179] font-medium">{activeThread.customerName}</span>}
                                                             <span>
                                                                 {new Date(conv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                             {!isInbound && (
-                                                                <span className="flex items-center gap-0.5 text-[#378179]">
-                                                                    Bot
-                                                                    <CheckCheck size={11} className="text-[#34b7f1]" />
+                                                                <span className="flex items-center gap-1 text-[#378179]">
+                                                                    {conv.intent === "automation_reply" || conv.intent === "ai" ? "Bot" : "Sent"}
+                                                                    {(conv as any).status === "read" ? (
+                                                                        <CheckCheck size={12} className="text-[#34b7f1]" />
+                                                                    ) : (conv as any).status === "delivered" ? (
+                                                                        <CheckCheck size={12} className="text-[#378179]" />
+                                                                    ) : (conv as any).status === "sent" ? (
+                                                                        <CheckCheck size={12} className="text-slate-400" />
+                                                                    ) : (conv as any).status === "failed" ? (
+                                                                        <span className="text-rose-500 font-semibold text-[10px]">Failed</span>
+                                                                    ) : (
+                                                                        <Clock size={11} className="text-slate-400" />
+                                                                    )}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -405,6 +536,17 @@ export default function ConversationsPage() {
                                     })}
                                     <div ref={messagesEndRef} />
                                 </div>
+                            )}
+
+                            {/* Floating New Message indicator pill if scrolled up */}
+                            {hasUnreadBelow && (
+                                <button
+                                    onClick={() => scrollToBottom(true)}
+                                    className="sticky bottom-3 left-1/2 -translate-x-1/2 bg-[#378179] hover:bg-[#2b625c] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-20 cursor-pointer transition-all animate-bounce"
+                                >
+                                    <span>New message</span>
+                                    <ArrowDown size={13} />
+                                </button>
                             )}
                         </div>
 
@@ -467,13 +609,27 @@ export default function ConversationsPage() {
                         </div>
                         <h4 className="font-semibold text-slate-800 text-sm">No conversation selected</h4>
                         <p className="max-w-xs leading-normal text-slate-500 text-xs">Select a chat from the list</p>
-                        <button className="mt-2 px-4 py-2 border border-[#378179] text-[#378179] rounded-lg text-xs font-semibold hover:bg-[#378179]/05 transition-colors cursor-pointer">
+                        <button
+                            onClick={() => setSelectedTab("unread")}
+                            className="mt-2 px-4 py-2 border border-[#378179] text-[#378179] rounded-lg text-xs font-semibold hover:bg-[#378179]/05 transition-colors cursor-pointer"
+                        >
                             View Unread Chats
                         </button>
                     </div>
                 )}
             </div>
-
         </div>
+    );
+}
+
+export default function ConversationsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-full w-full bg-white p-6 items-center justify-center">
+                <Loader2 className="animate-spin text-[#378179]" size={24} />
+            </div>
+        }>
+            <ConversationsContent />
+        </Suspense>
     );
 }

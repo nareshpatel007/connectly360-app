@@ -73,6 +73,10 @@ export async function handleApiProxy(
                 headers["Content-Type"] = incomingContentType;
                 const arrayBuf = await req.arrayBuffer();
                 bodyPayload = Buffer.from(arrayBuf);
+            } else if (incomingContentType.includes("application/x-www-form-urlencoded")) {
+                headers["Content-Type"] = "application/x-www-form-urlencoded";
+                const formText = await req.text().catch(() => "");
+                bodyPayload = formText;
             } else {
                 headers["Content-Type"] = "application/json";
                 const jsonBody = await req.json().catch(() => null);
