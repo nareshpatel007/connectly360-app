@@ -7,7 +7,8 @@ import {
     useGetWhatsappStatus,
     useExchangeMetaToken,
     useDisconnectWhatsapp,
-    getGetWhatsappStatusQueryKey
+    getGetWhatsappStatusQueryKey,
+    apiFetch,
 } from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -207,7 +208,7 @@ export default function WhatsAppIntegrationPage() {
     const handleSyncAccount = async () => {
         setIsSyncing(true);
         try {
-            const res = await fetch("/api/whatsapp/sync", { method: "POST" });
+            const res = await apiFetch("/api/whatsapp/sync", { method: "POST" });
             const data = await res.json();
             if (data.success) {
                 toast({ title: "Account Synchronized", description: "WhatsApp WABA metrics updated successfully." });
@@ -225,7 +226,7 @@ export default function WhatsAppIntegrationPage() {
     const handleTestConnection = async () => {
         setIsTesting(true);
         try {
-            const res = await fetch("/api/whatsapp/test-connection", { method: "POST" });
+            const res = await apiFetch("/api/whatsapp/test-connection", { method: "POST" });
             const data = await res.json();
             if (data.success) {
                 toast({ title: "Connection Healthy", description: data.message || "WhatsApp Cloud API connection is active." });
@@ -266,7 +267,7 @@ export default function WhatsAppIntegrationPage() {
                 payload.body = testBody.trim();
             }
 
-            const res = await fetch("/api/whatsapp/send", {
+            const res = await apiFetch("/api/whatsapp/send", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -301,12 +302,14 @@ export default function WhatsAppIntegrationPage() {
         setCurrentRegistrationStep(3); // Step 3: Registering phone number
 
         try {
-            const res = await fetch("/api/whatsapp/register", {
+            const tenantId = (account as any)?.tenant_id || (account as any)?.tenantId;
+            const res = await apiFetch("/api/whatsapp/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     pin: registerPin,
                     pin_confirmation: registerPinConfirm,
+                    tenant_id: tenantId,
                 }),
             });
             const data = await res.json();

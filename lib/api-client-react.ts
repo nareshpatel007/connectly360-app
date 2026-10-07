@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstac
 // Base API URL
 const API_BASE = "/api";
 
-async function apiFetch(url: string, options: RequestInit = {}) {
+export async function apiFetch(url: string, options: RequestInit = {}) {
     const headers = {
         ...options.headers,
     } as Record<string, string>;
@@ -17,6 +17,15 @@ async function apiFetch(url: string, options: RequestInit = {}) {
         if (token && token !== "undefined" && token !== "null" && token.split(".").length === 3) {
             headers["Authorization"] = `Bearer ${token}`;
         }
+        try {
+            const rawUser = localStorage.getItem("auth_user");
+            if (rawUser) {
+                const parsedUser = JSON.parse(rawUser);
+                if (parsedUser?.tenant_id) {
+                    headers["X-Tenant-Id"] = String(parsedUser.tenant_id);
+                }
+            }
+        } catch {}
     }
 
     const res = await fetch(url, {
