@@ -403,13 +403,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {/* Global Search Button (Cmd + K) */}
                         <button
                             onClick={() => setCommandOpen(true)}
-                            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#F7F9FA] hover:bg-slate-100/80 border border-[#E5E9EE] rounded-lg text-xs font-normal text-[#5F6B7A] transition-all cursor-pointer w-60 md:w-72 justify-between group focus:ring-2 focus:ring-[#2F8F83]/20 h-9"
+                            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#F7F9FA] hover:bg-slate-100/80 border border-[#E5E9EE] rounded-lg text-xs font-normal text-[#5F6B7A] transition-all cursor-pointer w-72 md:w-80 lg:w-96 justify-between group focus:ring-2 focus:ring-[#2F8F83]/20 h-9"
                         >
-                            <div className="flex items-center gap-2">
-                                <Search size={14} className="text-[#8A95A3]" />
-                                <span>Search contacts, leads, campaigns...</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Search size={14} className="text-[#8A95A3] shrink-0" />
+                                <span className="whitespace-nowrap truncate">Search contacts, leads, campaigns...</span>
                             </div>
-                            <kbd className="px-1.5 py-0.5 text-[10px] font-medium text-slate-400 bg-white border border-[#E5E9EE] rounded shadow-2xs">
+                            <kbd className="shrink-0 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 bg-white border border-[#E5E9EE] rounded shadow-2xs">
                                 Ctrl+K
                             </kbd>
                         </button>
