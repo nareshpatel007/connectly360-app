@@ -1048,44 +1048,133 @@ export function useSimulateAiReply() {
 // -------------------------------------------------------------
 export interface MessageTemplate {
     id: number;
+    tenant_id?: number;
+    waba_id?: string | null;
+    phone_number_id?: string | null;
     name: string;
     category: 'Marketing' | 'Utility' | 'Authentication';
+    template_type?: string | null;
     language: string;
     header_type?: 'none' | 'text' | 'image' | 'video' | 'document' | null;
     header_content?: string | null;
     header_media_url?: string | null;
+    header_handle?: string | null;
     body_text: string;
     footer_text?: string | null;
     buttons?: TemplateButton[] | null;
     status?: string;
+    previous_status?: string | null;
     rejection_reason?: string | null;
     submission_error?: string | null;
     quality_score?: string | null;
     meta_template_id?: string | null;
     sample_values?: TemplateSampleValues | null;
+    components_json?: any[] | null;
+    meta_payload_json?: any | null;
+    meta_response_json?: any | null;
+    synced_at?: string | null;
+    last_submitted_at?: string | null;
     created_at?: string;
+    updated_at?: string;
 }
 
 export type TemplateButton =
   | { type: 'QUICK_REPLY'; text: string }
   | { type: 'URL'; text: string; url: string; example?: string }
   | { type: 'PHONE_NUMBER'; text: string; phone_number: string }
-  | { type: 'COPY_CODE'; text: string; example: string };
+  | { type: 'COPY_CODE'; text?: string; example: string }
+  | { type: 'OTP'; text?: string; otp_type?: 'COPY_CODE' | 'ONE_TAP' };
 
 export interface TemplateSampleValues {
   body?: string[];
   header?: string[];
 }
 
+export interface TemplateFilters {
+  waba_id?: string;
+  category?: string;
+  status?: string;
+  language?: string;
+  search?: string;
+}
+
+export interface WhatsAppAccountOption {
+  id: number;
+  waba_id: string;
+  phone_number_id?: string | null;
+  display_phone_number?: string | null;
+  verified_name?: string | null;
+  quality_rating?: string | null;
+  status?: string;
+}
+
+export interface LibraryTemplate {
+  id: string;
+  title: string;
+  description: string;
+  category: 'Marketing' | 'Utility' | 'Authentication';
+  template_type: string;
+  header_type: 'none' | 'text' | 'image' | 'video' | 'document';
+  header_content?: string;
+  header_media_url?: string;
+  body_text: string;
+  sample_values?: TemplateSampleValues;
+  footer_text?: string;
+  buttons?: TemplateButton[];
+}
+
 // -------------------------------------------------------------
 // Message Template Hooks
 // -------------------------------------------------------------
-export function useListTemplates() {
+export function useListTemplates(filters?: TemplateFilters) {
     return useQuery<MessageTemplate[]>({
-        queryKey: ["listTemplates"],
+        queryKey: ["listTemplates", filters],
         queryFn: async () => {
-            const res = await apiFetch(`${API_BASE}/whatsapp/templates`);
+            const params = new URLSearchParams();
+            if (filters?.waba_id && filters.waba_id !== 'all') params.set('waba_id', filters.waba_id);
+            if (filters?.category && filters.category !== 'all') params.set('category', filters.category);
+            if (filters?.status && filters.status !== 'all') params.set('status', filters.status);
+            if (filters?.language && filters.language !== 'all') params.set('language', filters.language);
+            if (filters?.search) params.set('search', filters.search);
+
+            const queryString = params.toString();
+            const url = `${API_BASE}/whatsapp/templates${queryString ? `?${queryString}` : ''}`;
+            const res = await apiFetch(url);
             if (!res.ok) throw new Error("Failed to fetch message templates");
+            return res.json();
+        },
+    });
+}
+
+export function useGetTemplate(id: number | null) {
+    return useQuery<MessageTemplate>({
+        queryKey: ["getTemplate", id],
+        enabled: !!id,
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/${id}`);
+            if (!res.ok) throw new Error("Failed to fetch template detail");
+            return res.json();
+        },
+    });
+}
+
+export function useListTemplateAccounts() {
+    return useQuery<WhatsAppAccountOption[]>({
+        queryKey: ["listTemplateAccounts"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/accounts`);
+            if (!res.ok) return [];
+            return res.json();
+        },
+    });
+}
+
+export function useListTemplateLibrary() {
+    return useQuery<{ marketing: LibraryTemplate[]; utility: LibraryTemplate[]; authentication: LibraryTemplate[] }>({
+        queryKey: ["listTemplateLibrary"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/library`);
+            if (!res.ok) throw new Error("Failed to load template library");
             return res.json();
         },
     });
@@ -1093,7 +1182,7 @@ export function useListTemplates() {
 
 export function useCreateTemplate() {
     return useMutation({
-        mutationFn: async ({ data }: { data: Omit<MessageTemplate, "id" | "status" | "created_at"> }) => {
+        mutationFn: async ({ data }: { data: any }) => {
             const res = await apiFetch(`${API_BASE}/whatsapp/templates/submit`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1101,7 +1190,24 @@ export function useCreateTemplate() {
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.message || "Failed to submit template");
+                throw new Error(errorData.error || errorData.message || "Failed to submit template to Meta");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useSaveTemplateDraft() {
+    return useMutation({
+        mutationFn: async ({ data }: { data: any }) => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/draft`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || "Failed to save draft");
             }
             return res.json();
         },
@@ -1110,7 +1216,7 @@ export function useCreateTemplate() {
 
 export function useUpdateTemplate() {
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Omit<MessageTemplate, "id" | "name" | "language" | "created_at">> }) => {
+        mutationFn: async ({ id, data }: { id: number; data: any }) => {
             const res = await apiFetch(`${API_BASE}/whatsapp/templates/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -1119,6 +1225,40 @@ export function useUpdateTemplate() {
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
                 throw new Error(errorData.error || errorData.message || "Failed to update template");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useDuplicateTemplate() {
+    return useMutation({
+        mutationFn: async ({ id, name }: { id: number; name?: string }) => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/${id}/duplicate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name }),
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || "Failed to duplicate template");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function usePreviewTemplatePayload() {
+    return useMutation({
+        mutationFn: async (data: any) => {
+            const res = await apiFetch(`${API_BASE}/whatsapp/templates/preview-payload`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || "Failed to build preview payload");
             }
             return res.json();
         },
@@ -1142,9 +1282,11 @@ export function useDeleteTemplate() {
 
 export function useSyncTemplates() {
     return useMutation({
-        mutationFn: async () => {
+        mutationFn: async (params?: { waba_id?: string }) => {
             const res = await apiFetch(`${API_BASE}/whatsapp/templates/sync`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(params || {}),
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
