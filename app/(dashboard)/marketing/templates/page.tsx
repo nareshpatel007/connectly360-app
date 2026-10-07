@@ -270,10 +270,10 @@ export default function TemplatesPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
                     {/* Category Filter */}
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="h-8.5 text-xs rounded-xl border-slate-200 bg-slate-50 min-w-[120px]">
+                        <SelectTrigger className="h-8.5 text-xs rounded-xl border-slate-200 bg-slate-50 w-[140px]">
                             <SelectValue placeholder="Category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -286,7 +286,7 @@ export default function TemplatesPage() {
 
                     {/* Status Filter */}
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger className="h-8.5 text-xs rounded-xl border-slate-200 bg-slate-50 min-w-[125px]">
+                        <SelectTrigger className="h-8.5 text-xs rounded-xl border-slate-200 bg-slate-50 w-[140px]">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
