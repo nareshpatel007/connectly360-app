@@ -12,14 +12,9 @@ import {
     ArrowUpRight,
     Send
 } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 interface SegmentContactsDialogProps {
@@ -79,9 +74,25 @@ export function SegmentContactsDialog({
 
                 <div className="flex-1 overflow-y-auto py-3 space-y-2">
                     {isLoading ? (
-                        <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
-                            <Loader2 size={24} className="animate-spin text-[#35877D]" />
-                            <span className="text-xs font-semibold">Evaluating segment contacts...</span>
+                        <div className="space-y-2 py-1">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 flex items-center justify-between gap-3 animate-pulse"
+                                >
+                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="h-3.5 w-28 rounded-md" />
+                                            <Skeleton className="h-3.5 w-12 rounded-md" />
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-3 w-24 rounded-md" />
+                                            <Skeleton className="h-3 w-16 rounded-md" />
+                                        </div>
+                                    </div>
+                                    <Skeleton className="h-7 w-16 rounded-lg shrink-0" />
+                                </div>
+                            ))}
                         </div>
                     ) : contacts.length === 0 ? (
                         <div className="py-10 text-center text-slate-400 text-xs font-semibold">

@@ -22,6 +22,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     SegmentBuilderDialog,
     SegmentData,
@@ -44,10 +45,65 @@ interface SegmentItem {
     isSystem?: boolean;
 }
 
+function SegmentCardSkeleton({ index = 0 }: { index?: number }) {
+    const conditionWidths = [
+        ["w-40", "w-48"],
+        ["w-44", "w-36"],
+        ["w-52", "w-32"],
+        ["w-48", "w-44"],
+    ];
+    const widths = conditionWidths[index % conditionWidths.length];
+
+    return (
+        <Card className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-2.5">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <Skeleton className="h-9 w-9 rounded-xl shrink-0 bg-slate-200/70" />
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-4 w-32 rounded-md" />
+                                <Skeleton className="h-3.5 w-12 rounded-md" />
+                            </div>
+                            <Skeleton className="h-3 w-56 max-w-xs rounded-md" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Condition tags skeleton */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                    {widths.map((w, idx) => (
+                        <Skeleton key={idx} className={`h-6 ${w} rounded-lg`} />
+                    ))}
+                </div>
+            </div>
+
+            {/* Footer skeleton */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-3.5 w-3.5 rounded-full" />
+                        <Skeleton className="h-3.5 w-16 rounded-md" />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-3 w-3 rounded-full" />
+                        <Skeleton className="h-3 w-20 rounded-md" />
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-12 rounded-lg" />
+                    <Skeleton className="h-6 w-20 rounded-lg" />
+                </div>
+            </div>
+        </Card>
+    );
+}
+
 export default function SegmentsPage() {
-    const { token } = useAuth();
+    const { token, isLoading: isAuthLoading } = useAuth();
     const [segments, setSegments] = useState<SegmentItem[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
     // Builder modal state
@@ -79,8 +135,10 @@ export default function SegmentsPage() {
     useEffect(() => {
         if (token) {
             fetchSegments(false);
+        } else if (!isAuthLoading) {
+            setIsLoading(false);
         }
-    }, [token, fetchSegments]);
+    }, [token, isAuthLoading, fetchSegments]);
 
     const handleRecalculateSingle = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -275,42 +333,75 @@ export default function SegmentsPage() {
                     />
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
-                    Showing <span className="font-bold text-slate-900">{filteredSegments.length}</span> active workspace segments
+                    {isLoading ? (
+                        <div className="flex items-center gap-1.5">
+                            <span>Showing</span>
+                            <Skeleton className="h-4 w-6 rounded inline-block" />
+                            <span>active workspace segments</span>
+                        </div>
+                    ) : (
+                        <>
+                            Showing <span className="font-bold text-slate-900">{filteredSegments.length}</span> active workspace segments
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Segment Grid or Empty State */}
-            {filteredSegments.length === 0 ? (
+            {/* Segment Grid, Skeleton, or Empty State */}
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <SegmentCardSkeleton key={i} index={i} />
+                    ))}
+                </div>
+            ) : filteredSegments.length === 0 ? (
                 <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 my-8">
                     <div className="h-14 w-14 rounded-2xl bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mx-auto font-bold shadow-2xs">
                         <Layers size={26} />
                     </div>
                     <div className="space-y-1">
-                        <h3 className="text-base font-bold text-slate-900">No active customer segments</h3>
+                        <h3 className="text-base font-bold text-slate-900">
+                            {searchQuery.trim() ? "No matching segments found" : "No active customer segments"}
+                        </h3>
                         <p className="text-xs text-slate-500">
-                            Create custom dynamic segments with AND/OR conditions or restore default system presets.
+                            {searchQuery.trim()
+                                ? `No segments match "${searchQuery}". Try a different search term or clear the filter.`
+                                : "Create custom dynamic segments with AND/OR conditions or restore default system presets."}
                         </p>
                     </div>
                     <div className="flex items-center justify-center gap-2 pt-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRestoreDefaults}
-                            className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 gap-1.5 cursor-pointer"
-                        >
-                            <RotateCcw size={13} />
-                            Restore Presets
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                setEditingSegment(null);
-                                setIsBuilderOpen(true);
-                            }}
-                            className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs gap-1.5 cursor-pointer"
-                        >
-                            <Plus size={15} />
-                            New Segment
-                        </Button>
+                        {searchQuery.trim() ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSearchQuery("")}
+                                className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 cursor-pointer"
+                            >
+                                Clear Search
+                            </Button>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRestoreDefaults}
+                                    className="rounded-xl border-slate-200 text-slate-700 font-bold text-xs h-9 px-4 gap-1.5 cursor-pointer"
+                                >
+                                    <RotateCcw size={13} />
+                                    Restore Presets
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setEditingSegment(null);
+                                        setIsBuilderOpen(true);
+                                    }}
+                                    className="bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                                >
+                                    <Plus size={15} />
+                                    New Segment
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
             ) : (
