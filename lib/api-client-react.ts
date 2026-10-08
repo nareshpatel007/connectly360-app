@@ -1058,6 +1058,8 @@ export interface SendMessagePayload {
     template_name?: string;
     template_language?: string;
     template_data?: any;
+    force?: boolean;
+    force_send?: boolean;
 }
 
 export function useSendMessage() {
@@ -1070,7 +1072,13 @@ export function useSendMessage() {
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || "Failed to send WhatsApp message");
+                const err = new Error(errorData.message || "Failed to send WhatsApp message") as any;
+                err.status = res.status;
+                err.collision_detected = errorData.collision_detected;
+                err.agent_name = errorData.agent_name;
+                err.seconds_ago = errorData.seconds_ago;
+                err.allow_force = errorData.allow_force;
+                throw err;
             }
             return res.json();
         },
@@ -3902,8 +3910,111 @@ export function useConversationSla(conversationId?: number) {
         enabled: !!conversationId,
         refetchInterval: 30 * 1000,
     });
+}export interface MentionableUser {
+    id: number;
+    name: string;
+    email: string;
+    handle: string;
+    role?: string;
+    avatar?: string | null;
 }
 
+export function useMentionableUsers(query?: string) {
+    return useQuery<MentionableUser[]>({
+        queryKey: ["mentionableUsers", query],
+        queryFn: async () => {
+            const url = query ? `${API_BASE}/workspace/mentionable-users?query=${encodeURIComponent(query)}` : `${API_BASE}/workspace/mentionable-users`;
+            const res = await apiFetch(url);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.data || [];
+        },
+    });
+}
 
+// Conversation Collision Protection & Presence
+export interface ActiveAgentPresence {
+    id: number;
+    name: string;
+    avatar?: string | null;
+    state: "viewing" | "composing" | "left";
+    last_seen_seconds_ago: number;
+}
+
+export interface ConversationPresenceData {
+    customer_id: number;
+    conversation_id?: number | null;
+    viewing_agents: ActiveAgentPresence[];
+    composing_agents: ActiveAgentPresence[];
+    active_agents: ActiveAgentPresence[];
+    has_collision: boolean;
+    collision_type?: "composing" | "recent_reply" | null;
+    collision_warning?: string | null;
+    recent_reply?: {
+        message_id: number;
+        sender_id: number;
+        sender_name: string;
+        seconds_ago: number;
+        snippet: string;
+    } | null;
+    timestamp: string;
+}
+
+export function useConversationPresence(customerId?: number, conversationId?: number | null) {
+    return useQuery<ConversationPresenceData>({
+        queryKey: ["conversationPresence", customerId, conversationId],
+        queryFn: async () => {
+            if (!customerId) throw new Error("Customer ID required");
+            const endpoint = conversationId
+                ? `${API_BASE}/conversations/${conversationId}/presence`
+                : `${API_BASE}/customers/${customerId}/presence`;
+            const res = await apiFetch(endpoint);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch presence");
+            }
+            const body = await res.json();
+            return body.data;
+        },
+        enabled: !!customerId,
+        refetchInterval: 8000, // Poll every 8s as fallback or when active
+    });
+}
+
+export function useUpdatePresence() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            customerId,
+            conversationId,
+            state,
+        }: {
+            customerId: number;
+            conversationId?: number | null;
+            state: "viewing" | "composing" | "left";
+        }) => {
+            const endpoint = conversationId
+                ? `${API_BASE}/conversations/${conversationId}/presence`
+                : `${API_BASE}/customers/${customerId}/presence`;
+            const res = await apiFetch(endpoint, {
+                method: "POST",
+                body: JSON.stringify({ state, conversation_id: conversationId }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to update presence");
+            }
+            return res.json();
+        },
+        onSuccess: (data, variables) => {
+            if (data?.data) {
+                queryClient.setQueryData(
+                    ["conversationPresence", variables.customerId, variables.conversationId],
+                    data.data
+                );
+            }
+        },
+    });
+}
 
 

@@ -17,11 +17,19 @@ import {
     useListQuickReplies,
     useCustomerNotes,
     useWorkspaceTags,
+    useConversationPresence,
+    useUpdatePresence,
     type QuickReplyItem,
     type Conversation,
 } from "@workspace/api-client-react";
 import { interpolateQuickReply } from "@/lib/quick-replies";
 import { InternalNotesSheet } from "@/components/notes/InternalNotesSheet";
+import {
+    ViewingAgentsHeader,
+    ComposingIndicatorBanner,
+    CollisionWarningBanner,
+    CollisionConfirmModal,
+} from "@/components/conversations/CollisionProtectionBar";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -143,6 +151,10 @@ function ConversationsContent() {
     const [isNotesSheetOpen, setIsNotesSheetOpen] = useState(false);
     const [isBulkTagModalOpen, setIsBulkTagModalOpen] = useState(false);
     const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
+
+    // Collision protection & presence state
+    const [collisionModalOpen, setCollisionModalOpen] = useState(false);
+    const [collisionError, setCollisionError] = useState<any>(null);
 
     // Bulk selection state
     const [isBulkSelecting, setIsBulkSelecting] = useState(false);
@@ -372,6 +384,61 @@ function ConversationsContent() {
     // Fetch active customer's internal notes count
     const { data: activeCustomerNotes = [] } = useCustomerNotes(activeThread?.customerId);
 
+    // Live agent presence & collision protection
+    const { data: presenceData } = useConversationPresence(
+        activeCustomerId || undefined,
+        activeThread?.id || null
+    );
+    const updatePresenceMutation = useUpdatePresence();
+
+    // Heartbeat viewing presence while viewing conversation
+    useEffect(() => {
+        if (!activeCustomerId) return;
+        const custId = activeCustomerId;
+        const convId = activeThread?.id || null;
+
+        updatePresenceMutation.mutate({
+            customerId: custId,
+            conversationId: convId,
+            state: "viewing",
+        });
+
+        const timer = setInterval(() => {
+            updatePresenceMutation.mutate({
+                customerId: custId,
+                conversationId: convId,
+                state: replyText.trim() ? "composing" : "viewing",
+            });
+        }, 12000);
+
+        return () => {
+            clearInterval(timer);
+            updatePresenceMutation.mutate({
+                customerId: custId,
+                conversationId: convId,
+                state: "left",
+            });
+        };
+    }, [activeCustomerId]);
+
+    // Composing presence throttled on input change
+    useEffect(() => {
+        if (!activeCustomerId) return;
+        const custId = activeCustomerId;
+        const convId = activeThread?.id || null;
+        const isComposing = replyText.trim().length > 0;
+
+        const handler = setTimeout(() => {
+            updatePresenceMutation.mutate({
+                customerId: custId,
+                conversationId: convId,
+                state: isComposing ? "composing" : "viewing",
+            });
+        }, 400);
+
+        return () => clearTimeout(handler);
+    }, [replyText, activeCustomerId]);
+
 
     const applyQuickReply = (qr: QuickReplyItem) => {
         const resolved = interpolateQuickReply(qr.content, {
@@ -486,8 +553,9 @@ function ConversationsContent() {
         });
     };
 
-    const handleSendReply = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
+    const handleSendReply = async (e?: React.FormEvent | boolean, forceSendParam?: boolean) => {
+        const forceSend = typeof e === "boolean" ? e : (forceSendParam || false);
+        if (e && typeof e !== "boolean") e.preventDefault();
         if ((!replyText.trim() && !pendingAttachment) || !activeCustomerId || !activeThread) return;
 
         // If outside 24-hour window, WhatsApp requires template!
@@ -536,6 +604,8 @@ function ConversationsContent() {
                         filename: uploadedFilename,
                         caption: pendingAttachment.caption || outgoingBody || undefined,
                         reply_to_message_id: replyingTo?.providerMessageId || replyingTo?.provider_message_id || replyingTo?.external_message_id || (replyingTo?.id ? String(replyingTo.id) : undefined),
+                        force: forceSend,
+                        force_send: forceSend,
                     },
                 });
 
@@ -554,6 +624,11 @@ function ConversationsContent() {
             } catch (err: any) {
                 setUploadProgress(null);
                 setUploadStatusText(null);
+                if (err?.collision_detected || err?.status === 409) {
+                    setCollisionError(err);
+                    setCollisionModalOpen(true);
+                    return;
+                }
                 toast({
                     title: "Failed to send media",
                     description: err.message || "Could not dispatch attachment",
@@ -603,6 +678,8 @@ function ConversationsContent() {
                     body: outgoingBody,
                     type: "text",
                     reply_to_message_id: replyingTo?.providerMessageId || replyingTo?.provider_message_id || replyingTo?.external_message_id || (replyingTo?.id ? String(replyingTo.id) : undefined),
+                    force: forceSend,
+                    force_send: forceSend,
                 },
             });
 
@@ -615,6 +692,11 @@ function ConversationsContent() {
                 ["getCustomerConversations", activeCustomerId],
                 (old: any[] | undefined) => (old || []).filter((m) => m.id !== tempId)
             );
+            if (err?.collision_detected || err?.status === 409) {
+                setCollisionError(err);
+                setCollisionModalOpen(true);
+                return;
+            }
             toast({
                 title: "Failed to send",
                 description: err.message || "Could not dispatch reply",
@@ -1248,6 +1330,9 @@ function ConversationsContent() {
                             </div>
 
                             <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                                {/* Active Viewing Colleagues Header Pill */}
+                                <ViewingAgentsHeader presenceData={presenceData} />
+
                                 {/* SLA & Response Time Header Pill */}
                                 <SlaHeaderIndicator
                                     thread={activeThread}
@@ -1477,6 +1562,10 @@ function ConversationsContent() {
                                         </div>
                                     )}
 
+                                    {/* Composing Presence & Collision Hazard Indicators */}
+                                    <ComposingIndicatorBanner presenceData={presenceData} />
+                                    <CollisionWarningBanner presenceData={presenceData} />
+
                                     <Textarea
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
@@ -1702,6 +1791,14 @@ function ConversationsContent() {
             <SlaSettingsModal
                 open={isSlaModalOpen}
                 onOpenChange={setIsSlaModalOpen}
+            />
+
+            {/* Modal: Simultaneous Reply Collision Confirmation */}
+            <CollisionConfirmModal
+                open={collisionModalOpen}
+                onOpenChange={setCollisionModalOpen}
+                errorDetails={collisionError}
+                onConfirmSend={() => handleSendReply(true)}
             />
         </div>
 
