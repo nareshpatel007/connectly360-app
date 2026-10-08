@@ -128,45 +128,6 @@ function LoginContent() {
                         </div>
                     )}
 
-                    {/* Quick Demo Credentials Autofill Options */}
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-xs space-y-2">
-                        <div className="flex items-center justify-between text-slate-800 font-bold text-[11px] uppercase tracking-wider">
-                            <span className="flex items-center gap-1.5">
-                                <Zap size={13} className="text-[#35877D]" />
-                                Quick Test Credentials
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-normal">Click to fill</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setEmail("user@connectly360.com");
-                                    setPassword("password");
-                                    setError(null);
-                                }}
-                                className="flex flex-col text-left p-2 rounded-xl bg-white border border-slate-200 hover:border-[#35877D] hover:bg-emerald-50/40 transition-all cursor-pointer group shadow-2xs"
-                            >
-                                <span className="font-bold text-[#0B2E1E] text-[11px] group-hover:text-[#35877D] transition-colors">Customer User</span>
-                                <span className="text-[10px] text-slate-500 font-mono truncate">user@connectly360.com</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setEmail("admin@connectly360.com");
-                                    setPassword("password");
-                                    setError(null);
-                                }}
-                                className="flex flex-col text-left p-2 rounded-xl bg-white border border-slate-200 hover:border-[#35877D] hover:bg-emerald-50/40 transition-all cursor-pointer group shadow-2xs"
-                            >
-                                <span className="font-bold text-[#0B2E1E] text-[11px] group-hover:text-[#35877D] transition-colors">Super Admin</span>
-                                <span className="text-[10px] text-slate-500 font-mono truncate">admin@connectly360.com</span>
-                            </button>
-                        </div>
-                    </div>
-
-
                     {/* Google SSO Button */}
                     <Button
                         variant="outline"

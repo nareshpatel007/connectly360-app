@@ -181,7 +181,7 @@ export default function SegmentsPage() {
     });
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-12">
+        <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-16">
             {/* Header */}
             <PageHeader
                 icon={Users}
@@ -223,44 +223,40 @@ export default function SegmentsPage() {
                     <button
                         type="button"
                         onClick={() => setFilterTab("all")}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            filterTab === "all"
-                                ? "bg-white text-slate-900 shadow-2xs"
-                                : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === "all"
+                            ? "bg-white text-slate-900 shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                            }`}
                     >
                         All ({segments.length})
                     </button>
                     <button
                         type="button"
                         onClick={() => setFilterTab("dynamic")}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            filterTab === "dynamic"
-                                ? "bg-white text-slate-900 shadow-2xs"
-                                : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === "dynamic"
+                            ? "bg-white text-slate-900 shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                            }`}
                     >
                         Dynamic
                     </button>
                     <button
                         type="button"
                         onClick={() => setFilterTab("static")}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            filterTab === "static"
-                                ? "bg-white text-slate-900 shadow-2xs"
-                                : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === "static"
+                            ? "bg-white text-slate-900 shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                            }`}
                     >
                         Static
                     </button>
                     <button
                         type="button"
                         onClick={() => setFilterTab("system")}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                            filterTab === "system"
-                                ? "bg-white text-slate-900 shadow-2xs"
-                                : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterTab === "system"
+                            ? "bg-white text-slate-900 shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                            }`}
                     >
                         System Presets
                     </button>
@@ -333,11 +329,10 @@ export default function SegmentsPage() {
                                             ) : (
                                                 <Badge
                                                     variant="outline"
-                                                    className={`text-[10px] font-bold rounded-md px-1.5 py-0 ${
-                                                        seg.type === "static"
-                                                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                                                            : "bg-teal-50 text-[#35877D] border-teal-200"
-                                                    }`}
+                                                    className={`text-[10px] font-bold rounded-md px-1.5 py-0 ${seg.type === "static"
+                                                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                                                        : "bg-teal-50 text-[#35877D] border-teal-200"
+                                                        }`}
                                                 >
                                                     {seg.type === "static" ? "Static" : "Dynamic"}
                                                 </Badge>
