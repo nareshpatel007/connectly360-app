@@ -86,25 +86,6 @@ export function TemplateBuilderModal({
     const updateMutation = useUpdateTemplate();
     const saveDraftMutation = useSaveTemplateDraft();
 
-    // Active account and company profile for real preview
-    const activeAccount = accounts.find((a) => a.waba_id === wabaId) || accounts[0];
-    const { data: waProfile } = useWhatsAppBusinessProfile(activeAccount?.phone_number_id || undefined);
-    const { data: companyProfile } = useCompanyProfile();
-
-    const clientBusinessName =
-        activeAccount?.verified_name ||
-        waProfile?.business_name ||
-        activeAccount?.company_name ||
-        companyProfile?.company_name ||
-        "Official Business Account";
-
-    const clientProfileImage =
-        activeAccount?.profile_picture_url ||
-        waProfile?.profile_picture_url ||
-        companyProfile?.display_logo_url ||
-        companyProfile?.logo_url ||
-        null;
-
     // Steps: 1: Basics, 2: Content & Structure, 3: Validation & Submit
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [libraryOpen, setLibraryOpen] = useState(false);
@@ -127,6 +108,25 @@ export function TemplateBuilderModal({
     const [bodySamples, setBodySamples] = useState<string[]>([]);
     const [footerText, setFooterText] = useState<string>("");
     const [buttons, setButtons] = useState<TemplateButton[]>([]);
+
+    // Active account and company profile for real preview
+    const activeAccount = accounts.find((a) => a.waba_id === wabaId) || accounts[0];
+    const { data: waProfile } = useWhatsAppBusinessProfile(activeAccount?.phone_number_id || undefined);
+    const { data: companyProfile } = useCompanyProfile();
+
+    const clientBusinessName =
+        activeAccount?.verified_name ||
+        waProfile?.business_name ||
+        activeAccount?.company_name ||
+        companyProfile?.company_name ||
+        "Official Business Account";
+
+    const clientProfileImage =
+        activeAccount?.profile_picture_url ||
+        waProfile?.profile_picture_url ||
+        companyProfile?.display_logo_url ||
+        companyProfile?.logo_url ||
+        null;
 
     // Auto-select initial account when accounts load
     useEffect(() => {
@@ -532,9 +532,6 @@ export function TemplateBuilderModal({
                         <div>
                             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                                 <span>{editingTemplate ? "Edit WhatsApp Message Template" : "Create WhatsApp Message Template"}</span>
-                                <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 font-mono">
-                                    Meta Cloud API v22.0
-                                </Badge>
                             </DialogTitle>
                             <DialogDescription className="text-xs text-slate-500 mt-0.5">
                                 Configure Meta-compatible message components for submission and real-time review.
@@ -562,13 +559,11 @@ export function TemplateBuilderModal({
                             <button
                                 type="button"
                                 onClick={() => setStep(1)}
-                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                                    step === 1 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
-                                }`}
+                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer ${step === 1 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
+                                    }`}
                             >
-                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                    step === 1 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
-                                }`}>1</span>
+                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 1 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
+                                    }`}>1</span>
                                 <span>Set up template</span>
                             </button>
 
@@ -578,13 +573,11 @@ export function TemplateBuilderModal({
                                 type="button"
                                 onClick={() => isStep1Valid && setStep(2)}
                                 disabled={!isStep1Valid}
-                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                                    step === 2 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
-                                }`}
+                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${step === 2 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
+                                    }`}
                             >
-                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                    step === 2 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
-                                }`}>2</span>
+                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 2 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
+                                    }`}>2</span>
                                 <span>Edit components</span>
                             </button>
 
@@ -594,13 +587,11 @@ export function TemplateBuilderModal({
                                 type="button"
                                 onClick={() => isStep1Valid && setStep(3)}
                                 disabled={!isStep1Valid}
-                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                                    step === 3 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
-                                }`}
+                                className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${step === 3 ? "bg-white text-[#2F8F83] shadow-2xs border border-[#2F8F83]/30" : "text-slate-500 hover:text-slate-800"
+                                    }`}
                             >
-                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                    step === 3 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
-                                }`}>3</span>
+                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 3 ? "bg-[#2F8F83] text-white" : "bg-slate-200 text-slate-600"
+                                    }`}>3</span>
                                 <span>Review & Submit</span>
                             </button>
                         </div>
@@ -659,11 +650,10 @@ export function TemplateBuilderModal({
                                                     setCategory("Marketing");
                                                     setTemplateType("STANDARD");
                                                 }}
-                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                                    category === "Marketing"
-                                                        ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
-                                                        : "border-slate-200 hover:border-slate-300 bg-white"
-                                                }`}
+                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Marketing"
+                                                    ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
+                                                    : "border-slate-200 hover:border-slate-300 bg-white"
+                                                    }`}
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <div className="h-7 w-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -683,11 +673,10 @@ export function TemplateBuilderModal({
                                                     setCategory("Utility");
                                                     setTemplateType("STANDARD");
                                                 }}
-                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                                    category === "Utility"
-                                                        ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
-                                                        : "border-slate-200 hover:border-slate-300 bg-white"
-                                                }`}
+                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Utility"
+                                                    ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
+                                                    : "border-slate-200 hover:border-slate-300 bg-white"
+                                                    }`}
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <div className="h-7 w-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
@@ -714,11 +703,10 @@ export function TemplateBuilderModal({
                                                         setFooterText("Expires in 10 minutes");
                                                     }
                                                 }}
-                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                                    category === "Authentication"
-                                                        ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
-                                                        : "border-slate-200 hover:border-slate-300 bg-white"
-                                                }`}
+                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Authentication"
+                                                    ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
+                                                    : "border-slate-200 hover:border-slate-300 bg-white"
+                                                    }`}
                                             >
                                                 <div className="flex items-center justify-between">
                                                     <div className="h-7 w-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -814,11 +802,10 @@ export function TemplateBuilderModal({
                                                         key={fmt}
                                                         type="button"
                                                         onClick={() => setHeaderType(fmt)}
-                                                        className={`text-xs py-1.5 rounded-lg capitalize font-medium transition-all cursor-pointer ${
-                                                            headerType === fmt
-                                                                ? "bg-white text-[#2F8F83] shadow-2xs font-bold"
-                                                                : "text-slate-600 hover:text-slate-900"
-                                                        }`}
+                                                        className={`text-xs py-1.5 rounded-lg capitalize font-medium transition-all cursor-pointer ${headerType === fmt
+                                                            ? "bg-white text-[#2F8F83] shadow-2xs font-bold"
+                                                            : "text-slate-600 hover:text-slate-900"
+                                                            }`}
                                                     >
                                                         {fmt}
                                                     </button>

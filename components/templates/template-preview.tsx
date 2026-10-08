@@ -240,15 +240,6 @@ export function TemplatePreview({
                     )}
                 </div>
             </div>
-
-            {/* Bottom preview info footer */}
-            <div className="bg-slate-50 border-t border-slate-200/80 px-3 py-2 flex items-center justify-between text-[10px] text-slate-500">
-                <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Live WhatsApp Client Simulator
-                </span>
-                <span className="text-slate-400 font-mono">Meta Graph v22.0</span>
-            </div>
         </div>
     );
 }
