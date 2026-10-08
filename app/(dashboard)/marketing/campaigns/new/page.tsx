@@ -303,7 +303,7 @@ export default function NewCampaignPage() {
             featureName="Bulk Broadcast Campaigns"
             description="Broadcast campaigns allow sending high-volume WhatsApp messages using approved templates."
         >
-            <div className="space-y-6 w-full max-w-7xl mx-auto pb-12">
+            <div className="space-y-6 w-full pb-12">
                 {/* Header */}
                 <PageHeader
                     icon={Megaphone}
@@ -355,8 +355,8 @@ export default function NewCampaignPage() {
 
                 {/* Main 2-Column Workspace: Form & Live Realtime Device Preview */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* Left Column: Step Configuration Form (7 cols) */}
-                    <div className="lg:col-span-7 space-y-6">
+                    {/* Left Column: Step Configuration Form */}
+                    <div className="lg:col-span-7 xl:col-span-8 space-y-6">
                         {/* STEP 1: Channel & Account */}
                         {currentStep === 0 && (
                             <Card className="shadow-2xs border-border">
@@ -1014,8 +1014,8 @@ export default function NewCampaignPage() {
                         </div>
                     </div>
 
-                    {/* Right Column: Live Mobile Preview (5 cols) */}
-                    <div className="lg:col-span-5 lg:sticky lg:top-6">
+                    {/* Right Column: Live Mobile Preview */}
+                    <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6">
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">

@@ -245,7 +245,7 @@ export default function CampaignDetailPage() {
     const pagination = recipientsData?.pagination;
 
     return (
-        <div className="space-y-6 w-full max-w-7xl mx-auto pb-12">
+        <div className="space-y-6 w-full pb-12">
             {/* Header */}
             <PageHeader
                 icon={Megaphone}
