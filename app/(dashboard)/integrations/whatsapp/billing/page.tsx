@@ -68,7 +68,7 @@ export default function WhatsAppBillingDiagnosticsPage() {
         checks?.billing_eligibility?.code === 131042;
 
     return (
-        <div className="space-y-6 w-full max-w-[1400px] mx-auto pb-16">
+        <div className="space-y-6 w-full pb-16">
             <PageHeader
                 icon={Wrench}
                 title="WhatsApp Billing & Diagnostics"
