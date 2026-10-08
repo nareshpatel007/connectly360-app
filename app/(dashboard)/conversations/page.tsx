@@ -16,6 +16,7 @@ import {
     useListCustomers,
     useListQuickReplies,
     useCustomerNotes,
+    useWorkspaceTags,
     type QuickReplyItem,
     type Conversation,
 } from "@workspace/api-client-react";
@@ -40,6 +41,8 @@ import { NewConversationModal } from "@/components/conversations/NewConversation
 import { ConversationStatusDropdown } from "@/components/conversations/ConversationStatusDropdown";
 import { ConversationAssigneeDropdown } from "@/components/conversations/ConversationAssigneeDropdown";
 import { ConversationHeaderMenu } from "@/components/conversations/ConversationHeaderMenu";
+import { ConversationTagsManager } from "@/components/conversations/ConversationTagsManager";
+import { BulkTagConversationsModal } from "@/components/conversations/BulkTagConversationsModal";
 import { CopilotDropdown } from "@/components/conversations/CopilotDropdown";
 import { QuickReplyPicker } from "@/components/conversations/QuickReplyPicker";
 import { TemplatePickerModal } from "@/components/conversations/TemplatePickerModal";
@@ -77,6 +80,7 @@ import {
     Sparkles,
     CheckCircle2,
     X,
+    Tag as TagIcon,
 } from "lucide-react";
 
 interface GroupedReaction {
@@ -119,6 +123,7 @@ function ConversationsContent() {
     // URL State management
     const urlStatus = searchParams.get("status") || "all";
     const [selectedTab, setSelectedTab] = useState(urlStatus); // all, open, pending, resolved, unread
+    const [selectedTag, setSelectedTag] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [replyText, setReplyText] = useState("");
@@ -130,6 +135,11 @@ function ConversationsContent() {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
     const [isNotesSheetOpen, setIsNotesSheetOpen] = useState(false);
+    const [isBulkTagModalOpen, setIsBulkTagModalOpen] = useState(false);
+
+    // Bulk selection state
+    const [isBulkSelecting, setIsBulkSelecting] = useState(false);
+    const [selectedThreadIds, setSelectedThreadIds] = useState<number[]>([]);
 
 
     // Reply & Attachment State
@@ -237,10 +247,15 @@ function ConversationsContent() {
         quick_replies: true,
     };
 
+    // Fetch workspace tags for filtering
+    const { data: workspaceTagsData } = useWorkspaceTags();
+    const workspaceTags = workspaceTagsData?.data || [];
+
     // Fetch conversation thread list
     const { data: conversations, isLoading: isLoadingAll } = useListConversations({
         status: selectedTab,
         search: debouncedSearch,
+        tag: selectedTag !== "all" ? selectedTag : undefined,
     });
 
     // Chat threads list
@@ -842,6 +857,45 @@ function ConversationsContent() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Tag Filter Row */}
+                    {workspaceTags.length > 0 && (
+                        <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scrollbar-none pt-0.5">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-0.5 pr-0.5">
+                                <TagIcon size={10} />
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedTag("all")}
+                                className={`text-[9px] font-semibold py-0.5 px-2 rounded-md border transition-all cursor-pointer shrink-0 ${
+                                    selectedTag === "all"
+                                        ? "bg-slate-800 text-white border-slate-800"
+                                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                                }`}
+                            >
+                                All Tags
+                            </button>
+                            {workspaceTags.map((t) => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => setSelectedTag(selectedTag === t.name ? "all" : t.name)}
+                                    style={{
+                                        borderColor: selectedTag === t.name ? (t.color || "#0d9488") : undefined,
+                                        backgroundColor: selectedTag === t.name ? `${t.color || "#0d9488"}20` : undefined,
+                                        color: selectedTag === t.name ? (t.color || "#0d9488") : undefined,
+                                    }}
+                                    className={`text-[9px] font-semibold py-0.5 px-2 rounded-md border transition-all cursor-pointer shrink-0 ${
+                                        selectedTag === t.name
+                                            ? "font-bold"
+                                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                                    }`}
+                                >
+                                    {t.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Search Box */}
@@ -868,9 +922,27 @@ function ConversationsContent() {
                 </div>
 
                 {/* Chats Thread List */}
-                <div className="flex-1 overflow-auto bg-white">
-                    <div className="px-3.5 py-1.5 text-[10px] font-semibold text-[#5F6B7A] tracking-wider bg-[#F7F9FA] border-b border-[#E5E9EE] uppercase flex items-center justify-between">
-                        <span>Conversations</span>
+                <div className="flex-1 overflow-auto bg-white flex flex-col">
+                    <div className="px-3.5 py-1.5 text-[10px] font-semibold text-[#5F6B7A] tracking-wider bg-[#F7F9FA] border-b border-[#E5E9EE] uppercase flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2">
+                            <span>Conversations</span>
+                            {filteredThreads.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsBulkSelecting(!isBulkSelecting);
+                                        setSelectedThreadIds([]);
+                                    }}
+                                    className={`text-[10px] font-semibold rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                                        isBulkSelecting
+                                            ? "bg-[#378179] text-white"
+                                            : "text-[#378179] hover:bg-[#378179]/10"
+                                    }`}
+                                >
+                                    {isBulkSelecting ? "Done" : "Select"}
+                                </button>
+                            )}
+                        </div>
                         {browserPermission === "default" && isSupported && (
                             <button
                                 onClick={requestBrowserPermission}
@@ -882,6 +954,36 @@ function ConversationsContent() {
                             </button>
                         )}
                     </div>
+
+                    {/* Bulk Selection Action Bar */}
+                    {isBulkSelecting && (
+                        <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between text-xs shrink-0">
+                            <span className="font-semibold text-emerald-900 text-[11px]">
+                                {selectedThreadIds.length} selected
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => setIsBulkTagModalOpen(true)}
+                                    disabled={selectedThreadIds.length === 0}
+                                    className="h-6 px-2 text-[10px] bg-[#378179] hover:bg-[#2d6f68] text-white rounded-md font-semibold gap-1"
+                                >
+                                    <TagIcon size={10} />
+                                    <span>Bulk Tag</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedThreadIds([])}
+                                    className="h-6 px-1.5 text-[10px] text-slate-500 hover:text-slate-800 rounded-md"
+                                >
+                                    Clear
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="divide-y divide-slate-100">
                         {isLoadingAll ? (
@@ -921,13 +1023,33 @@ function ConversationsContent() {
                                 return (
                                     <button
                                         key={thread.customerId}
-                                        onClick={() => handleSelectThread(thread.customerId)}
+                                        onClick={() => {
+                                            if (isBulkSelecting) {
+                                                setSelectedThreadIds((prev) =>
+                                                    prev.includes(thread.customerId)
+                                                        ? prev.filter((id) => id !== thread.customerId)
+                                                        : [...prev, thread.customerId]
+                                                );
+                                            } else {
+                                                handleSelectThread(thread.customerId);
+                                            }
+                                        }}
                                         className={`w-full text-left p-3 flex gap-3 transition-all text-xs border-l-[3.5px] cursor-pointer relative ${
                                             isSelected
                                                 ? "bg-[#f2faf7] border-[#378179]"
                                                 : "border-transparent hover:bg-slate-50 bg-white"
                                         }`}
                                     >
+                                        {/* Multi-select checkbox */}
+                                        {isBulkSelecting && (
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedThreadIds.includes(thread.customerId)}
+                                                onChange={() => {}}
+                                                className="h-3.5 w-3.5 rounded border-slate-300 text-[#378179] focus:ring-[#378179] self-center shrink-0 cursor-pointer pointer-events-none"
+                                            />
+                                        )}
+
                                         {/* Avatar with unread badge */}
                                         <div className="relative shrink-0">
                                             <div className="h-9.5 w-9.5 rounded-full bg-[#378179]/10 text-[#378179] flex items-center justify-center font-bold text-xs">
@@ -963,22 +1085,48 @@ function ConversationsContent() {
                                                     : thread.lastMessage || "No messages yet"}
                                             </p>
 
-                                            <div className="flex items-center justify-between pt-1">
-                                                {/* Status indicator */}
-                                                <span
-                                                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded capitalize ${
-                                                        threadStatus === "open"
-                                                            ? "bg-[#378179]/10 text-[#378179]"
-                                                            : threadStatus === "pending"
-                                                            ? "bg-amber-50 text-amber-700"
-                                                            : "bg-slate-100 text-slate-600"
-                                                    }`}
-                                                >
-                                                    {threadStatus}
-                                                </span>
+                                            <div className="flex items-center justify-between pt-1 gap-1">
+                                                {/* Status indicator & Tag Chips */}
+                                                <div className="flex items-center gap-1 flex-wrap min-w-0">
+                                                    <span
+                                                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded capitalize shrink-0 ${
+                                                            threadStatus === "open"
+                                                                ? "bg-[#378179]/10 text-[#378179]"
+                                                                : threadStatus === "pending"
+                                                                ? "bg-amber-50 text-amber-700"
+                                                                : "bg-slate-100 text-slate-600"
+                                                        }`}
+                                                    >
+                                                        {threadStatus}
+                                                    </span>
+
+                                                    {/* Tag chips */}
+                                                    {thread.tags && thread.tags.length > 0 && (
+                                                        <>
+                                                            {thread.tags.slice(0, 2).map((tg) => (
+                                                                <span
+                                                                    key={tg.id || tg.name}
+                                                                    style={{
+                                                                        backgroundColor: `${tg.color || "#0d9488"}15`,
+                                                                        color: tg.color || "#0d9488",
+                                                                        borderColor: `${tg.color || "#0d9488"}30`,
+                                                                    }}
+                                                                    className="text-[8px] font-semibold px-1 py-0.2 rounded border truncate max-w-[65px]"
+                                                                >
+                                                                    {tg.name}
+                                                                </span>
+                                                            ))}
+                                                            {thread.tags.length > 2 && (
+                                                                <span className="text-[8px] text-slate-400 font-bold">
+                                                                    +{thread.tags.length - 2}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
 
                                                 {(thread.unreadCount ?? 0) > 0 && !isSelected && (
-                                                    <span className="text-[9px] font-bold text-[#378179]">
+                                                    <span className="text-[9px] font-bold text-[#378179] shrink-0">
                                                         {thread.unreadCount} unread
                                                     </span>
                                                 )}
@@ -1016,15 +1164,22 @@ function ConversationsContent() {
                                     {activeThread.customerName ? activeThread.customerName.charAt(0).toUpperCase() : "C"}
                                 </div>
                                 <div className="min-w-0">
-                                    <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                                        <span className="truncate">{activeThread.customerName}</span>
-                                        {activeThread.customerPhone && (
-                                            <span className="text-[11px] text-slate-400 font-normal shrink-0">
-                                                (+{activeThread.customerPhone})
-                                            </span>
-                                        )}
-                                    </h3>
-                                    <p className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                                            <span className="truncate">{activeThread.customerName}</span>
+                                            {activeThread.customerPhone && (
+                                                <span className="text-[11px] text-slate-400 font-normal shrink-0">
+                                                    (+{activeThread.customerPhone})
+                                                </span>
+                                            )}
+                                        </h3>
+                                        <ConversationTagsManager
+                                            conversationId={activeThread.customerId}
+                                            initialTags={activeThread.tags}
+                                            compact
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 flex items-center gap-1 font-medium mt-0.5">
                                         <Bot size={11} className="text-[#2F8F83]" />
                                         Bot Available
                                     </p>
@@ -1464,6 +1619,17 @@ function ConversationsContent() {
                     customerName={activeThread.customerName || activeThread.customerPhone}
                 />
             )}
+
+            {/* Modal: Bulk Tag Conversations */}
+            <BulkTagConversationsModal
+                isOpen={isBulkTagModalOpen}
+                onClose={() => setIsBulkTagModalOpen(false)}
+                conversationIds={selectedThreadIds}
+                onSuccess={() => {
+                    setSelectedThreadIds([]);
+                    setIsBulkSelecting(false);
+                }}
+            />
         </div>
 
     );

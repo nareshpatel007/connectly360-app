@@ -85,6 +85,7 @@ export interface Conversation {
     isInside24hWindow?: boolean;
     secondsRemaining?: number;
     notes?: string | null;
+    tags?: Array<{ id: number; name: string; color?: string }>;
     createdAt: string;
 
     // WhatsApp Rich Message Fields
@@ -215,6 +216,19 @@ export interface InternalNoteItem {
     } | null;
 }
 
+export interface WorkspaceTag {
+    id: number;
+    name: string;
+    slug?: string;
+    color?: string;
+    description?: string;
+    routing_user_id?: number | null;
+    routing_team_id?: number | null;
+    routing_user?: { id: number; name: string; email: string } | null;
+    routing_team?: { id: number; name: string } | null;
+    usage_count?: number;
+    created_at?: string;
+}
 
 export interface MessageStat {
     period: string;
@@ -369,15 +383,24 @@ export function useGetTopIntents() {
 }
 
 // Conversations
-export function useListConversations(params?: { status?: string; search?: string; limit?: number; format?: string }) {
+export function useListConversations(params?: {
+    status?: string;
+    search?: string;
+    limit?: number;
+    format?: string;
+    tag?: string;
+    tag_id?: number;
+}) {
     return useQuery<Conversation[]>({
-        queryKey: ["listConversations", params?.status, params?.search, params?.limit, params?.format],
+        queryKey: ["listConversations", params?.status, params?.search, params?.limit, params?.format, params?.tag, params?.tag_id],
         queryFn: async () => {
             const query = new URLSearchParams();
             if (params?.status) query.set("status", params.status);
             if (params?.search) query.set("search", params.search);
             if (params?.limit) query.set("limit", String(params.limit));
             if (params?.format) query.set("format", params.format);
+            if (params?.tag && params.tag !== "all") query.set("tag", params.tag);
+            if (params?.tag_id) query.set("tag_id", String(params.tag_id));
 
             const queryString = query.toString();
             const url = queryString ? `${API_BASE}/conversations?${queryString}` : `${API_BASE}/conversations`;
@@ -3406,4 +3429,135 @@ export function useRemoveSuppressedNumber() {
         },
     });
 }
+
+// -------------------------------------------------------------
+// Conversation Tags & Labels Hooks
+// -------------------------------------------------------------
+
+export function useWorkspaceTags() {
+    return useQuery<{ success: boolean; data: WorkspaceTag[] }>({
+        queryKey: ["workspaceTags"],
+        queryFn: async () => {
+            const res = await apiFetch(`/api/tags`);
+            if (!res.ok) {
+                throw new Error("Failed to fetch workspace tags");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useCreateWorkspaceTag() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {
+            name: string;
+            color?: string;
+            description?: string;
+            routing_user_id?: number | null;
+            routing_team_id?: number | null;
+        }) => {
+            const res = await apiFetch(`/api/tags`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.error || data.message || "Failed to create tag");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["workspaceTags"] });
+        },
+    });
+}
+
+export function useConversationTags(conversationId?: number) {
+    return useQuery<{ success: boolean; data: Array<{ id: number; name: string; color?: string }> }>({
+        queryKey: ["conversationTags", conversationId],
+        queryFn: async () => {
+            if (!conversationId) return { success: true, data: [] };
+            const res = await apiFetch(`/api/conversations/${conversationId}/tags`);
+            if (!res.ok) {
+                throw new Error("Failed to fetch conversation tags");
+            }
+            return res.json();
+        },
+        enabled: !!conversationId,
+    });
+}
+
+export function useAttachConversationTag() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ conversationId, tag }: { conversationId: number; tag: string }) => {
+            const res = await apiFetch(`/api/conversations/${conversationId}/tags`, {
+                method: "POST",
+                body: JSON.stringify({ tag }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to attach tag to conversation");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["conversationTags", variables.conversationId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["workspaceTags"] });
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.conversationId] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.conversationId] });
+        },
+    });
+}
+
+export function useDetachConversationTag() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ conversationId, tag }: { conversationId: number; tag: string }) => {
+            const res = await apiFetch(`/api/conversations/${conversationId}/tags/${encodeURIComponent(tag)}`, {
+                method: "DELETE",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to remove tag from conversation");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["conversationTags", variables.conversationId] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["workspaceTags"] });
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.conversationId] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.conversationId] });
+        },
+    });
+}
+
+export function useBulkTagConversations() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {
+            conversation_ids: number[];
+            add_tags?: string[];
+            remove_tags?: string[];
+        }) => {
+            const res = await apiFetch(`/api/conversations/bulk-tag`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to bulk tag conversations");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["workspaceTags"] });
+        },
+    });
+}
+
 
