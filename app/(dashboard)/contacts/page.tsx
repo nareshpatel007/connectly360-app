@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
     useListCustomers,
     useCustomerStats,
+    useBulkCustomerOptIn,
+    useBulkCustomerOptOut,
     Customer
 } from "@/lib/api-client-react";
 import { PageHeader } from "@/components/page-header";
@@ -38,6 +40,7 @@ import {
     Trash2,
     Edit2,
     ShieldCheck,
+    ShieldAlert,
     Users,
     BookmarkPlus,
     X,
@@ -60,6 +63,7 @@ import { ContactFilterDrawer, ContactFilterState } from "@/components/contacts/c
 import { SegmentBuilderDialog, SegmentRule } from "@/components/segments/segment-builder-dialog";
 import { DuplicateContactsModal } from "@/components/contacts/DuplicateContactsModal";
 import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
+import { ManageConsentModal } from "@/components/contacts/ManageConsentModal";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -164,6 +168,40 @@ export default function ContactsPage() {
             setSelectedIds((prev) => [...prev, id]);
         } else {
             setSelectedIds((prev) => prev.filter((item) => item !== id));
+        }
+    };
+
+    // Consent Management State
+    const [consentCustomer, setConsentCustomer] = useState<Customer | null>(null);
+    const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+    const bulkOptInMutation = useBulkCustomerOptIn();
+    const bulkOptOutMutation = useBulkCustomerOptOut();
+
+    const handleBulkOptIn = async () => {
+        if (selectedIds.length === 0) return;
+        try {
+            await bulkOptInMutation.mutateAsync({
+                ids: selectedIds,
+                source: "bulk_contacts_directory",
+            });
+            toast.success(`Successfully recorded marketing opt-in for ${selectedIds.length} contacts.`);
+            setSelectedIds([]);
+        } catch (err: any) {
+            toast.error(err.message || "Failed to bulk opt-in contacts");
+        }
+    };
+
+    const handleBulkOptOut = async () => {
+        if (selectedIds.length === 0) return;
+        try {
+            await bulkOptOutMutation.mutateAsync({
+                ids: selectedIds,
+                reason: "bulk_suppression_action",
+            });
+            toast.success(`Successfully suppressed marketing for ${selectedIds.length} contacts.`);
+            setSelectedIds([]);
+        } catch (err: any) {
+            toast.error(err.message || "Failed to bulk opt-out contacts");
         }
     };
 
@@ -740,7 +778,7 @@ export default function ContactsPage() {
                                 paginatedCustomers.map((customer) => {
                                     const phoneFormatted = formatPhoneNumber(customer.phone);
                                     const isSelected = selectedIds.includes(customer.id);
-                                    const optIn = (customer as any).whatsapp_opt_in ?? true;
+                                    const isOptedIn = Boolean(customer.whatsapp_opt_in && !customer.whatsapp_opt_out);
                                     const stage = (stageOverrides[customer.id] ?? (customer as any).stage ?? "new_lead") as StageKey;
 
                                     return (
@@ -780,19 +818,40 @@ export default function ContactsPage() {
 
                                             {/* WhatsApp Opt-in */}
                                             <td className="p-3.5">
-                                                {optIn ? (
-                                                    <Badge className="bg-teal-50 border-teal-200 text-teal-800 text-[10px] font-semibold gap-1 py-0.5">
+                                                {isOptedIn ? (
+                                                    <Badge
+                                                        onClick={() => {
+                                                            setConsentCustomer(customer);
+                                                            setIsConsentModalOpen(true);
+                                                        }}
+                                                        className="bg-teal-50 border-teal-200 text-teal-800 text-[10px] font-semibold gap-1 py-0.5 cursor-pointer hover:bg-teal-100 transition-colors"
+                                                        title="Click to manage consent"
+                                                    >
                                                         <ShieldCheck size={11} className="text-[#35877D]" />
                                                         Opted-in
                                                     </Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-slate-500 border-slate-200 text-[10px]">
+                                                    <Badge
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setConsentCustomer(customer);
+                                                            setIsConsentModalOpen(true);
+                                                        }}
+                                                        className="bg-rose-50 border-rose-200 text-rose-700 text-[10px] font-semibold gap-1 py-0.5 cursor-pointer hover:bg-rose-100 transition-colors"
+                                                        title="Click to manage consent"
+                                                    >
+                                                        <ShieldAlert size={11} className="text-rose-500" />
                                                         Opted-out
                                                     </Badge>
                                                 )}
-                                                {(customer as any).last_interaction_at && (
-                                                    <div className="text-[10px] text-slate-400 mt-1">
-                                                        Active {new Date((customer as any).last_interaction_at).toLocaleDateString()}
+                                                {(customer as any).whatsapp_opt_out_reason && !isOptedIn && (
+                                                    <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]" title={(customer as any).whatsapp_opt_out_reason}>
+                                                        {(customer as any).whatsapp_opt_out_reason.replace(/_/g, " ")}
+                                                    </div>
+                                                )}
+                                                {(customer as any).whatsapp_opt_in_source && isOptedIn && (
+                                                    <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]" title={(customer as any).whatsapp_opt_in_source}>
+                                                        {(customer as any).whatsapp_opt_in_source.replace(/_/g, " ")}
                                                     </div>
                                                 )}
                                             </td>
@@ -921,6 +980,28 @@ export default function ContactsPage() {
                             className="h-8 text-xs bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold"
                         >
                             Change Stage
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={bulkOptInMutation.isPending}
+                            onClick={handleBulkOptIn}
+                            className="h-8 text-xs bg-emerald-950 border-emerald-700 text-emerald-200 hover:bg-emerald-900 font-semibold gap-1"
+                        >
+                            <ShieldCheck size={13} className="text-emerald-400" />
+                            {bulkOptInMutation.isPending ? "Opting in..." : "Opt-In"}
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={bulkOptOutMutation.isPending}
+                            onClick={handleBulkOptOut}
+                            className="h-8 text-xs bg-rose-950 border-rose-800 text-rose-200 hover:bg-rose-900 font-semibold gap-1"
+                        >
+                            <ShieldAlert size={13} className="text-rose-400" />
+                            {bulkOptOutMutation.isPending ? "Suppressing..." : "Opt-Out"}
                         </Button>
 
                         <Button
@@ -1343,6 +1424,16 @@ export default function ContactsPage() {
                     }}
                 />
             )}
+
+            {/* MANAGE CONSENT MODAL */}
+            <ManageConsentModal
+                isOpen={isConsentModalOpen}
+                onClose={() => {
+                    setIsConsentModalOpen(false);
+                    setConsentCustomer(null);
+                }}
+                customer={consentCustomer}
+            />
         </div>
     );
 }

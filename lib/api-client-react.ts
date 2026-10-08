@@ -265,6 +265,12 @@ export interface Customer {
     stage?: string;
     whatsapp_opt_in?: boolean;
     whatsapp_opt_in_at?: string;
+    whatsapp_opt_in_source?: string;
+    whatsapp_opt_in_evidence?: string;
+    whatsapp_opt_in_categories?: string[];
+    whatsapp_opt_out?: boolean;
+    whatsapp_opt_out_at?: string;
+    whatsapp_opt_out_reason?: string;
     notes?: string;
     custom_attributes?: Record<string, string>;
     messageCount: number;
@@ -3072,5 +3078,116 @@ export function useSyncWhatsAppBusinessProfile(workspaceId?: number | null) {
     });
 }
 
+export function useCustomerOptIn() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            customerId,
+            source = "manual_admin",
+            evidence,
+            categories = ["MARKETING", "UTILITY"],
+        }: {
+            customerId: number;
+            source?: string;
+            evidence?: string;
+            categories?: string[];
+        }) => {
+            const res = await apiFetch(`/api/contacts/${customerId}/opt-in`, {
+                method: "POST",
+                body: JSON.stringify({ source, evidence, categories }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to record customer opt-in");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+        },
+    });
+}
 
+export function useCustomerOptOut() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            customerId,
+            reason = "user_request",
+        }: {
+            customerId: number;
+            reason?: string;
+        }) => {
+            const res = await apiFetch(`/api/contacts/${customerId}/opt-out`, {
+                method: "POST",
+                body: JSON.stringify({ reason }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to record customer opt-out");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+        },
+    });
+}
 
+export function useBulkCustomerOptIn() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            ids,
+            source = "bulk_action",
+            evidence,
+        }: {
+            ids: number[];
+            source?: string;
+            evidence?: string;
+        }) => {
+            const res = await apiFetch(`/api/contacts/bulk-opt-in`, {
+                method: "POST",
+                body: JSON.stringify({ ids, source, evidence }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to bulk opt-in contacts");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+        },
+    });
+}
+
+export function useBulkCustomerOptOut() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            ids,
+            reason = "bulk_suppression",
+        }: {
+            ids: number[];
+            reason?: string;
+        }) => {
+            const res = await apiFetch(`/api/contacts/bulk-opt-out`, {
+                method: "POST",
+                body: JSON.stringify({ ids, reason }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to bulk opt-out contacts");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+        },
+    });
+}

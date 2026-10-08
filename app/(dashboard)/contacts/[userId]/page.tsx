@@ -21,6 +21,7 @@ import {
     Loader2,
     User,
     ShieldCheck,
+    ShieldAlert,
     MessageCircle,
     Building2,
     Mail,
@@ -40,6 +41,7 @@ import { apiFetch, useCustomerDuplicates } from "@/lib/api-client-react";
 import { StageBadge, StageKey, STAGES } from "@/components/contacts/contact-crm-panel";
 import { InternalNotesPanel } from "@/components/notes/InternalNotesPanel";
 import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
+import { ManageConsentModal } from "@/components/contacts/ManageConsentModal";
 
 
 interface GroupedReaction {
@@ -124,6 +126,7 @@ export default function CustomerDetailPage() {
     const { data: duplicates = [] } = useCustomerDuplicates(customerId);
     const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
     const [selectedDuplicateForMerge, setSelectedDuplicateForMerge] = useState<any>(null);
+    const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
 
     // Send Message Mutation
     const [isSending, setIsSending] = useState(false);
@@ -291,13 +294,22 @@ export default function CustomerDetailPage() {
                         <div className="flex items-center gap-2.5">
                             <h2 className="text-lg font-bold text-slate-900">{customer.name || "WhatsApp User"}</h2>
                             <StageBadge stage={(customer.stage as StageKey) || "new_lead"} />
-                            {customer.whatsapp_opt_in ? (
-                                <Badge className="bg-teal-50 border-teal-200 text-teal-800 text-[10px] font-semibold gap-1">
+                            {customer.whatsapp_opt_in && !customer.whatsapp_opt_out ? (
+                                <Badge
+                                    onClick={() => setIsConsentModalOpen(true)}
+                                    className="bg-teal-50 border-teal-200 text-teal-800 text-[10px] font-semibold gap-1 cursor-pointer hover:bg-teal-100 transition-colors"
+                                    title="Click to manage WhatsApp marketing consent"
+                                >
                                     <ShieldCheck size={11} className="text-[#35877D]" />
                                     Opted-in
                                 </Badge>
                             ) : (
-                                <Badge variant="outline" className="text-slate-500 border-slate-200 text-[10px]">
+                                <Badge
+                                    variant="outline"
+                                    onClick={() => setIsConsentModalOpen(true)}
+                                    className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-semibold cursor-pointer hover:bg-rose-100 transition-colors"
+                                    title="Click to manage WhatsApp marketing consent"
+                                >
                                     Opted-out
                                 </Badge>
                             )}
@@ -330,6 +342,15 @@ export default function CustomerDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsConsentModalOpen(true)}
+                        className="text-xs rounded-xl font-semibold gap-1.5 h-9 border-slate-200 text-slate-700 hover:text-slate-900"
+                    >
+                        <ShieldCheck size={14} className="text-[#35877D]" />
+                        Manage Consent
+                    </Button>
                     <Button
                         size="sm"
                         variant="outline"
@@ -509,36 +530,90 @@ export default function CustomerDetailPage() {
                     {/* Right Column: WhatsApp Marketing & Engagement Status */}
                     <div className="space-y-6">
                         <Card className="rounded-2xl border-slate-200/90 shadow-xs bg-white">
-                            <CardHeader className="p-5 pb-3 border-b border-slate-100">
-                                <CardTitle className="text-sm font-bold text-slate-900">
-                                    WhatsApp Marketing Permission
+                            <CardHeader className="p-5 pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
+                                <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-[#35877D]" />
+                                    WhatsApp Marketing Consent
                                 </CardTitle>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setIsConsentModalOpen(true)}
+                                    className="text-xs text-[#35877D] hover:text-[#2d736a] hover:bg-teal-50 h-7 px-2.5 font-bold"
+                                >
+                                    Manage
+                                </Button>
                             </CardHeader>
                             <CardContent className="p-5 space-y-3.5 text-xs">
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-500">Opt-in Status:</span>
-                                    {customer.whatsapp_opt_in ? (
-                                        <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold">
+                                    {customer.whatsapp_opt_in && !customer.whatsapp_opt_out ? (
+                                        <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold gap-1">
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                                             Opted-In (Active)
                                         </Badge>
                                     ) : (
-                                        <Badge variant="outline" className="text-rose-600 border-rose-200 font-semibold">
-                                            Opted-Out
+                                        <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 font-semibold gap-1">
+                                            <ShieldAlert className="w-3 h-3 text-rose-500" />
+                                            Opted-Out (Suppressed)
                                         </Badge>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500">Opt-in Timestamp:</span>
-                                    <span className="font-medium text-slate-700">
-                                        {customer.whatsapp_opt_in_at
-                                            ? new Date(customer.whatsapp_opt_in_at).toLocaleDateString()
-                                            : "Automatic default"}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500">Campaign Eligibility:</span>
-                                    <span className="font-bold text-emerald-700">Eligible to receive broadcasts</span>
-                                </div>
+                                {customer.whatsapp_opt_in && !customer.whatsapp_opt_out ? (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500">Opt-in Source:</span>
+                                            <span className="font-semibold text-slate-800 capitalize">
+                                                {(customer.whatsapp_opt_in_source || "manual_entry").replace(/_/g, " ")}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500">Opt-in Date:</span>
+                                            <span className="font-medium text-slate-700">
+                                                {customer.whatsapp_opt_in_at
+                                                    ? new Date(customer.whatsapp_opt_in_at).toLocaleDateString()
+                                                    : "Default recorded"}
+                                            </span>
+                                        </div>
+                                        {customer.whatsapp_opt_in_evidence && (
+                                            <div className="pt-2 border-t border-slate-100">
+                                                <span className="text-[11px] text-slate-400 block mb-0.5">Proof / Evidence:</span>
+                                                <div className="p-2 bg-slate-50 rounded-lg text-slate-600 text-[11px] font-mono break-all">
+                                                    {customer.whatsapp_opt_in_evidence}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                            <span className="text-slate-500">Campaign Broadcasts:</span>
+                                            <span className="font-bold text-emerald-700 flex items-center gap-1">
+                                                <CheckCircle2 className="w-3 h-3" /> Eligible
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500">Opt-out Reason:</span>
+                                            <span className="font-semibold text-slate-800 capitalize">
+                                                {(customer.whatsapp_opt_out_reason || "user_request").replace(/_/g, " ")}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500">Opt-out Date:</span>
+                                            <span className="font-medium text-slate-700">
+                                                {customer.whatsapp_opt_out_at
+                                                    ? new Date(customer.whatsapp_opt_out_at).toLocaleDateString()
+                                                    : "—"}
+                                            </span>
+                                        </div>
+                                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                            <span className="text-slate-500">Campaign Broadcasts:</span>
+                                            <span className="font-bold text-rose-700 flex items-center gap-1">
+                                                <ShieldAlert className="w-3 h-3" /> Suppressed
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -901,6 +976,13 @@ export default function CustomerDetailPage() {
                     }}
                 />
             )}
+
+            {/* Manage Consent Modal */}
+            <ManageConsentModal
+                isOpen={isConsentModalOpen}
+                onClose={() => setIsConsentModalOpen(false)}
+                customer={customer}
+            />
         </div>
     );
 }
