@@ -826,7 +826,7 @@ export default function ContactsPage() {
                                             <td className="p-3.5 pr-4 text-right">
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     <Link
-                                                        href={`/inbox?phone=${customer.phone}`}
+                                                        href={`/conversations?customer_id=${customer.id}&phone=${encodeURIComponent(customer.phone)}`}
                                                         className="h-7 w-7 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#35877D] flex items-center justify-center transition-colors"
                                                         title="Start WhatsApp Conversation"
                                                     >

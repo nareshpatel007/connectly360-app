@@ -12,6 +12,8 @@ import {
     useGetInboxSettings,
     useGetWindowStatus,
     useMarkConversationAsRead,
+    useGetCustomer,
+    useListCustomers,
     type Conversation,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -154,15 +156,13 @@ function ConversationsContent() {
     // Mark as read mutation
     const markAsReadMutation = useMarkConversationAsRead();
 
-    // Synchronize active customer from URL query param if present
-    useEffect(() => {
-        const paramId = searchParams.get("customer_id") || searchParams.get("conversation");
-        if (paramId && !isNaN(Number(paramId))) {
-            const numId = Number(paramId);
-            setActiveCustomerId(numId);
-            setShowMobileList(false);
-        }
-    }, [searchParams, setActiveCustomerId]);
+    const paramId = searchParams.get("customer_id") || searchParams.get("conversation");
+    const paramPhone = searchParams.get("phone");
+
+    // Search customer if phone parameter provided without customer_id
+    const { data: phoneMatchedCustomers } = useListCustomers(
+        !paramId && paramPhone ? { search: paramPhone } : undefined
+    );
 
     // Automatically mark conversation messages and notifications as read whenever opened
     useEffect(() => {
@@ -217,12 +217,48 @@ function ConversationsContent() {
         return chatThreads;
     }, [chatThreads]);
 
-    // Auto-select first thread if none active on desktop
+    // Synchronize active customer from URL query param if present
     useEffect(() => {
-        if (activeCustomerId === null && filteredThreads.length > 0 && typeof window !== "undefined" && window.innerWidth >= 768) {
+        if (paramId && !isNaN(Number(paramId))) {
+            const numId = Number(paramId);
+            setActiveCustomerId(numId);
+            setShowMobileList(false);
+            return;
+        }
+
+        if (paramPhone) {
+            const cleanParam = paramPhone.replace(/\D/g, "");
+            if (chatThreads.length > 0) {
+                const match = chatThreads.find((t) => {
+                    const cleanPhone = (t.customerPhone || "").replace(/\D/g, "");
+                    return cleanPhone === cleanParam || (cleanParam.length >= 10 && cleanPhone.endsWith(cleanParam.slice(-10)));
+                });
+                if (match) {
+                    setActiveCustomerId(match.customerId);
+                    setShowMobileList(false);
+                    return;
+                }
+            }
+            if (phoneMatchedCustomers && phoneMatchedCustomers.length > 0) {
+                const matched = phoneMatchedCustomers.find((c) => {
+                    const cleanPhone = (c.phone || "").replace(/\D/g, "");
+                    return cleanPhone === cleanParam || (cleanParam.length >= 10 && cleanPhone.endsWith(cleanParam.slice(-10)));
+                }) || phoneMatchedCustomers[0];
+                if (matched) {
+                    setActiveCustomerId(matched.id);
+                    setShowMobileList(false);
+                }
+            }
+        }
+    }, [paramId, paramPhone, chatThreads, phoneMatchedCustomers, setActiveCustomerId]);
+
+    // Auto-select first thread if none active on desktop and no URL parameter target
+    useEffect(() => {
+        const hasUrlTarget = !!(paramId || paramPhone);
+        if (!hasUrlTarget && activeCustomerId === null && filteredThreads.length > 0 && typeof window !== "undefined" && window.innerWidth >= 768) {
             setActiveCustomerId(filteredThreads[0].customerId);
         }
-    }, [filteredThreads, activeCustomerId, setActiveCustomerId]);
+    }, [filteredThreads, activeCustomerId, setActiveCustomerId, paramId, paramPhone]);
 
     // Retrieve active customer messages
     const { data: activeConversations, isLoading: isLoadingThread } = useGetCustomerConversations(
@@ -230,9 +266,33 @@ function ConversationsContent() {
         { query: { queryKey: ["getCustomerConversations", activeCustomerId], enabled: !!activeCustomerId } }
     );
 
+    // Fallback fetch if active customer isn't in chatThreads array
+    const { data: fallbackCustomer } = useGetCustomer(activeCustomerId || 0, {
+        query: { enabled: !!activeCustomerId }
+    });
+
     const activeThread = useMemo(() => {
-        return chatThreads.find((t) => t.customerId === activeCustomerId);
-    }, [chatThreads, activeCustomerId]);
+        const found = chatThreads.find((t) => t.customerId === activeCustomerId);
+        if (found) return found;
+        if (fallbackCustomer && fallbackCustomer.id === activeCustomerId) {
+            return {
+                id: 0,
+                customerId: fallbackCustomer.id,
+                customerName: fallbackCustomer.name || [fallbackCustomer.first_name, fallbackCustomer.last_name].filter(Boolean).join(" ") || fallbackCustomer.phone,
+                customerPhone: fallbackCustomer.phone,
+                email: fallbackCustomer.email,
+                city: fallbackCustomer.city,
+                stage: fallbackCustomer.stage,
+                conversationStatus: (fallbackCustomer as any).conversation_status || "open",
+                status: "open",
+                message: "",
+                direction: "outbound" as const,
+                createdAt: fallbackCustomer.createdAt || (fallbackCustomer as any).created_at || new Date().toISOString(),
+                isInside24hWindow: true,
+            } as Conversation;
+        }
+        return undefined;
+    }, [chatThreads, activeCustomerId, fallbackCustomer]);
 
     // Check 24-hour window status for active customer
     const { data: windowStatus } = useGetWindowStatus(activeCustomerId);

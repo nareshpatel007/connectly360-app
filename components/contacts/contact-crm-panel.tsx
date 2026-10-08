@@ -342,7 +342,7 @@ export function ContactCrmPanel({
                 {/* ── Footer actions ── */}
                 <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-2.5 shrink-0">
                     <Link
-                        href={contact ? `/customers/inbox/${contact.id}` : "#"}
+                        href={contact ? `/conversations?customer_id=${contact.id}&phone=${encodeURIComponent(contact.phone)}` : "#"}
                         className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#35877D] text-white text-xs font-semibold hover:bg-[#2c6761] transition-colors"
                     >
                         <MessageCircle size={13} />
