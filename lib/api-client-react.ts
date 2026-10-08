@@ -180,11 +180,41 @@ export interface InboxSettings {
 
 export interface QuickReplyItem {
     id: number;
+    tenant_id?: number | null;
+    user_id?: number | null;
     title: string;
     shortcut: string;
     content: string;
+    category?: string;
+    scope?: "personal" | "team" | "global";
     is_active: boolean;
+    user?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+    created_at?: string;
+    updated_at?: string;
 }
+
+export interface InternalNoteItem {
+
+    id: number;
+    tenant_id: number;
+    user_id: number;
+    customer_id: number;
+    conversation_id?: number | null;
+    content: string;
+    is_pinned: boolean;
+    created_at: string;
+    updated_at: string;
+    user?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+}
+
 
 export interface MessageStat {
     period: string;
@@ -501,13 +531,32 @@ export function useCopilotAction() {
     });
 }
 
-export function useListQuickReplies() {
+export function useListQuickReplies(params?: { search?: string; category?: string; scope?: string }) {
     return useQuery<QuickReplyItem[]>({
-        queryKey: ["listQuickReplies"],
+        queryKey: ["listQuickReplies", params],
         queryFn: async () => {
-            const res = await apiFetch(`${API_BASE}/quick-replies`);
+            const query = new URLSearchParams();
+            if (params?.search) query.append("search", params.search);
+            if (params?.category) query.append("category", params.category);
+            if (params?.scope) query.append("scope", params.scope);
+
+            const queryString = query.toString();
+            const url = `${API_BASE}/quick-replies${queryString ? `?${queryString}` : ""}`;
+            const res = await apiFetch(url);
             if (!res.ok) throw new Error("Failed to fetch quick replies");
             return res.json();
+        },
+    });
+}
+
+export function useQuickReplyCategories() {
+    return useQuery<string[]>({
+        queryKey: ["quickReplyCategories"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/quick-replies/categories`);
+            if (!res.ok) throw new Error("Failed to fetch quick reply categories");
+            const data = await res.json();
+            return data.data || [];
         },
     });
 }
@@ -515,7 +564,7 @@ export function useListQuickReplies() {
 export function useCreateQuickReply() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (payload: { title: string; shortcut: string; content: string }) => {
+        mutationFn: async (payload: { title: string; shortcut: string; content: string; category?: string; scope?: "personal" | "team" }) => {
             const res = await apiFetch(`${API_BASE}/quick-replies`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -529,9 +578,192 @@ export function useCreateQuickReply() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["listQuickReplies"] });
+            queryClient.invalidateQueries({ queryKey: ["quickReplyCategories"] });
         },
     });
 }
+
+export function useUpdateQuickReply() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: { id: number; title?: string; shortcut?: string; content?: string; category?: string; scope?: "personal" | "team"; is_active?: boolean }) => {
+            const { id, ...body } = payload;
+            const res = await apiFetch(`${API_BASE}/quick-replies/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to update quick reply");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listQuickReplies"] });
+            queryClient.invalidateQueries({ queryKey: ["quickReplyCategories"] });
+        },
+    });
+}
+
+export function useDeleteQuickReply() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const res = await apiFetch(`${API_BASE}/quick-replies/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to delete quick reply");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listQuickReplies"] });
+            queryClient.invalidateQueries({ queryKey: ["quickReplyCategories"] });
+        },
+    });
+}
+
+// ==========================================
+// INTERNAL NOTES HOOKS
+// ==========================================
+
+export function useCustomerNotes(customerId?: number) {
+    return useQuery<InternalNoteItem[]>({
+        queryKey: ["getCustomerNotes", customerId],
+        queryFn: async () => {
+            if (!customerId) return [];
+            const res = await apiFetch(`${API_BASE}/customers/${customerId}/notes`);
+            if (!res.ok) throw new Error("Failed to fetch customer notes");
+            const data = await res.json();
+            return data.data || [];
+        },
+        enabled: !!customerId,
+    });
+}
+
+export function useConversationNotes(conversationId?: number) {
+    return useQuery<InternalNoteItem[]>({
+        queryKey: ["getConversationNotes", conversationId],
+        queryFn: async () => {
+            if (!conversationId) return [];
+            const res = await apiFetch(`${API_BASE}/conversations/${conversationId}/notes`);
+            if (!res.ok) throw new Error("Failed to fetch conversation notes");
+            const data = await res.json();
+            return data.data || [];
+        },
+        enabled: !!conversationId,
+    });
+}
+
+export function useCreateCustomerNote() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ customerId, content, conversationId, is_pinned }: { customerId: number; content: string; conversationId?: number; is_pinned?: boolean }) => {
+            const res = await apiFetch(`${API_BASE}/customers/${customerId}/notes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content, conversation_id: conversationId, is_pinned }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to save internal note");
+            }
+            return res.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", variables.customerId] });
+            if (variables.conversationId) {
+                queryClient.invalidateQueries({ queryKey: ["getConversationNotes", variables.conversationId] });
+            }
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomer", variables.customerId] });
+        },
+    });
+}
+
+export function useCreateConversationNote() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ conversationId, content, is_pinned }: { conversationId: number; content: string; is_pinned?: boolean }) => {
+            const res = await apiFetch(`${API_BASE}/conversations/${conversationId}/notes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content, is_pinned }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to save conversation note");
+            }
+            return res.json();
+        },
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["getConversationNotes", variables.conversationId] });
+            const custId = data?.data?.customer_id;
+            if (custId) {
+                queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", custId] });
+                queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", custId] });
+            }
+        },
+    });
+}
+
+export function useUpdateInternalNote() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, content, is_pinned }: { id: number; content?: string; is_pinned?: boolean }) => {
+            const res = await apiFetch(`${API_BASE}/internal-notes/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content, is_pinned }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to update internal note");
+            }
+            return res.json();
+        },
+        onSuccess: (data) => {
+            const note = data?.data;
+            if (note?.customer_id) {
+                queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", note.customer_id] });
+                queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", note.customer_id] });
+            }
+            if (note?.conversation_id) {
+                queryClient.invalidateQueries({ queryKey: ["getConversationNotes", note.conversation_id] });
+            }
+        },
+    });
+}
+
+export function useDeleteInternalNote() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, customerId, conversationId }: { id: number; customerId?: number; conversationId?: number }) => {
+            const res = await apiFetch(`${API_BASE}/internal-notes/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to delete note");
+            }
+            return res.json();
+        },
+        onSuccess: (_, variables) => {
+            if (variables.customerId) {
+                queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", variables.customerId] });
+                queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+            }
+            if (variables.conversationId) {
+                queryClient.invalidateQueries({ queryKey: ["getConversationNotes", variables.conversationId] });
+            }
+        },
+    });
+}
+
+
 
 export type WhatsAppTemplateItem = MessageTemplate;
 
@@ -799,6 +1031,108 @@ export function useCreateCustomer() {
                 throw new Error(errorData.message || "Failed to create contact");
             }
             return res.json();
+        },
+    });
+}
+
+// Duplicate Detection & Merge
+export interface DuplicateCandidate {
+    id: number;
+    name: string;
+    first_name?: string;
+    last_name?: string;
+    phone: string;
+    normalized_phone?: string;
+    email?: string;
+    city?: string;
+    company?: string;
+    stage?: string;
+    whatsapp_opt_in?: boolean;
+    conversations_count?: number;
+    tasks_count?: number;
+    leads_count?: number;
+    match_reasons?: string[];
+    confidence?: "high" | "medium";
+    created_at?: string;
+}
+
+export interface DuplicateGroup {
+    group_key: string;
+    type: "phone" | "email";
+    match_value: string;
+    reason: string;
+    contacts_count: number;
+    contacts: DuplicateCandidate[];
+}
+
+export interface MergeContactParams {
+    master_id: number;
+    source_ids: number[];
+    field_overrides?: {
+        name?: string;
+        phone?: string;
+        email?: string;
+        company?: string;
+        city?: string;
+        stage?: string;
+    };
+}
+
+export function useCustomerDuplicates(customerId?: number) {
+    return useQuery<DuplicateCandidate[]>({
+        queryKey: ["getCustomerDuplicates", customerId],
+        queryFn: async () => {
+            if (!customerId) return [];
+            const res = await apiFetch(`${API_BASE}/customers/${customerId}/duplicates`);
+            if (!res.ok) return [];
+            const json = await res.json();
+            return json.data || [];
+        },
+        enabled: !!customerId,
+    });
+}
+
+export function useTenantDuplicates() {
+    return useQuery<DuplicateGroup[]>({
+        queryKey: ["getTenantDuplicates"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/customers/duplicates`);
+            if (!res.ok) throw new Error("Failed to scan for duplicate contacts");
+            const json = await res.json();
+            return json.data || [];
+        },
+    });
+}
+
+export function useMergeContacts() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (params: MergeContactParams) => {
+            const res = await apiFetch(`${API_BASE}/customers/merge`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(params),
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || "Failed to merge contacts");
+            }
+            return res.json();
+        },
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+            queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+            queryClient.invalidateQueries({ queryKey: ["getTenantDuplicates"] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomer", variables.master_id] });
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.master_id] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerDuplicates", variables.master_id] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", variables.master_id] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.master_id] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", variables.master_id] });
+            for (const srcId of variables.source_ids) {
+                queryClient.invalidateQueries({ queryKey: ["getCustomer", srcId] });
+                queryClient.invalidateQueries({ queryKey: ["customerDetail", srcId] });
+            }
         },
     });
 }

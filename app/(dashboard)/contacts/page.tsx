@@ -58,6 +58,8 @@ import { ContactImportModal } from "@/components/contacts/contact-import-modal";
 import { ContactExportModal } from "@/components/contacts/contact-export-modal";
 import { ContactFilterDrawer, ContactFilterState } from "@/components/contacts/contact-filter-drawer";
 import { SegmentBuilderDialog, SegmentRule } from "@/components/segments/segment-builder-dialog";
+import { DuplicateContactsModal } from "@/components/contacts/DuplicateContactsModal";
+import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -100,6 +102,9 @@ export default function ContactsPage() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isSegmentBuilderOpen, setIsSegmentBuilderOpen] = useState(false);
     const [segmentInitialRules, setSegmentInitialRules] = useState<SegmentRule[]>([]);
+    const [isDuplicatesModalOpen, setIsDuplicatesModalOpen] = useState(false);
+    const [mergeSelectedModalOpen, setMergeSelectedModalOpen] = useState(false);
+    const [mergePairSelected, setMergePairSelected] = useState<{ primary: any; secondary: any } | null>(null);
 
     // Edit Modal State
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -383,6 +388,14 @@ export default function ContactsPage() {
                 breadcrumbs={[{ label: "Contacts" }]}
                 actions={
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDuplicatesModalOpen(true)}
+                            className="border-slate-200 text-slate-700 text-xs h-9 px-3.5 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer shadow-xs"
+                        >
+                            <Users size={14} className="text-indigo-600" />
+                            Check Duplicates
+                        </Button>
                         <Button
                             variant="outline"
                             onClick={() => setIsExportOpen(true)}
@@ -920,6 +933,25 @@ export default function ContactsPage() {
                             Export
                         </Button>
 
+                        {selectedIds.length === 2 && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    const first = customers.find((c) => c.id === selectedIds[0]);
+                                    const second = customers.find((c) => c.id === selectedIds[1]);
+                                    if (first && second) {
+                                        setMergePairSelected({ primary: first, secondary: second });
+                                        setMergeSelectedModalOpen(true);
+                                    }
+                                }}
+                                className="h-8 text-xs bg-indigo-950 border-indigo-700 text-indigo-200 hover:bg-indigo-900 font-semibold gap-1.5"
+                            >
+                                <Users size={13} className="text-indigo-400" />
+                                Merge (2 Selected)
+                            </Button>
+                        )}
+
                         <Button
                             size="sm"
                             onClick={() => router.push(`/marketing/campaigns/new`)}
@@ -1284,6 +1316,33 @@ export default function ContactsPage() {
                     setCrmContact((prev) => (prev && prev.id === id ? { ...prev, custom_attributes: attrs } : prev));
                 }}
             />
+
+            {/* DUPLICATE CONTACTS MODAL */}
+            <DuplicateContactsModal
+                open={isDuplicatesModalOpen}
+                onOpenChange={setIsDuplicatesModalOpen}
+            />
+
+            {/* MERGE SELECTED PAIR MODAL */}
+            {mergePairSelected && (
+                <ContactMergeDialog
+                    open={mergeSelectedModalOpen}
+                    onOpenChange={(open) => {
+                        setMergeSelectedModalOpen(open);
+                        if (!open) setMergePairSelected(null);
+                    }}
+                    primaryContact={mergePairSelected.primary}
+                    secondaryContact={mergePairSelected.secondary}
+                    onMergeComplete={() => {
+                        setMergeSelectedModalOpen(false);
+                        setMergePairSelected(null);
+                        setSelectedIds([]);
+                        queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                        queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                        queryClient.invalidateQueries({ queryKey: ["getTenantDuplicates"] });
+                    }}
+                />
+            )}
         </div>
     );
 }

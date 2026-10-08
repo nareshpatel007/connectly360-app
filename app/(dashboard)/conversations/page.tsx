@@ -14,8 +14,14 @@ import {
     useMarkConversationAsRead,
     useGetCustomer,
     useListCustomers,
+    useListQuickReplies,
+    useCustomerNotes,
+    type QuickReplyItem,
     type Conversation,
 } from "@workspace/api-client-react";
+import { interpolateQuickReply } from "@/lib/quick-replies";
+import { InternalNotesSheet } from "@/components/notes/InternalNotesSheet";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +65,10 @@ import {
     Mic,
     CheckCheck,
     Loader2,
+    Zap,
+    StickyNote,
+
+
     Bell,
     ArrowDown,
     ArrowLeft,
@@ -119,6 +129,8 @@ function ConversationsContent() {
     const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [isNotesSheetOpen, setIsNotesSheetOpen] = useState(false);
+
 
     // Reply & Attachment State
     const [replyingTo, setReplyingTo] = useState<any>(null);
@@ -129,7 +141,32 @@ function ConversationsContent() {
     // Mobile Master-Detail toggle
     const [showMobileList, setShowMobileList] = useState(true);
 
+    // Quick Replies & Slash Command autocomplete
+    const { data: allQuickReplies = [] } = useListQuickReplies();
+    const [slashMenuDismissed, setSlashMenuDismissed] = useState(false);
+    const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+
+    // Reset slash dismiss if text doesn't start with /
+    useEffect(() => {
+        if (!replyText.startsWith("/")) {
+            setSlashMenuDismissed(false);
+            setSlashSelectedIndex(0);
+        }
+    }, [replyText]);
+
+    const matchingSlashReplies = useMemo(() => {
+        if (!replyText.startsWith("/") || slashMenuDismissed) return [];
+        const query = replyText.slice(1).trim().toLowerCase();
+        return (allQuickReplies || [])
+            .filter((r) =>
+                r.shortcut.toLowerCase().replace(/^\//, "").includes(query) ||
+                r.title.toLowerCase().includes(query)
+            )
+            .slice(0, 6);
+    }, [replyText, allQuickReplies, slashMenuDismissed]);
+
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isAtBottomRef = useRef(true);
 
@@ -297,6 +334,22 @@ function ConversationsContent() {
     // Check 24-hour window status for active customer
     const { data: windowStatus } = useGetWindowStatus(activeCustomerId);
     const isOutside24hWindow = activeThread?.isInside24hWindow === false || windowStatus?.inside_window === false;
+
+    // Fetch active customer's internal notes count
+    const { data: activeCustomerNotes = [] } = useCustomerNotes(activeThread?.customerId);
+
+
+    const applyQuickReply = (qr: QuickReplyItem) => {
+        const resolved = interpolateQuickReply(qr.content, {
+            contactName: activeThread?.customerName,
+            phone: activeThread?.customerPhone,
+            email: (activeThread as any)?.email,
+            agentName: user?.name,
+        });
+        setReplyText(resolved);
+        setSlashMenuDismissed(true);
+    };
+
 
     // Chronologically sorted messages
     const sortedConversations = useMemo(() => {
@@ -1007,6 +1060,22 @@ function ConversationsContent() {
                                     currentStatus={activeThread.conversationStatus || activeThread.status || "open"}
                                 />
 
+                                {/* Internal Notes Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsNotesSheetOpen(true)}
+                                    className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200/60 hover:border-amber-200 shrink-0"
+                                    title="Internal Team Notes"
+                                >
+                                    <StickyNote size={14} className="text-amber-500" />
+                                    <span className="hidden sm:inline text-[11px] text-slate-700">Notes</span>
+                                    {activeCustomerNotes.length > 0 && (
+                                        <span className="h-4 min-w-4 px-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center">
+                                            {activeCustomerNotes.length}
+                                        </span>
+                                    )}
+                                </button>
+
                                 <div className="h-4 w-px bg-slate-200" />
 
                                 {/* Three-Dot Menu */}
@@ -1015,7 +1084,9 @@ function ConversationsContent() {
                                     customerName={activeThread.customerName || activeThread.customerPhone || "Customer"}
                                     customerPhone={activeThread.customerPhone}
                                     currentStatus={activeThread.conversationStatus || activeThread.status || "open"}
+                                    onOpenNotes={() => setIsNotesSheetOpen(true)}
                                 />
+
                             </div>
                         </div>
 
@@ -1133,25 +1204,102 @@ function ConversationsContent() {
                         {/* Composer Chat Input Area */}
                         <div className="p-3 bg-white border-t border-slate-200 shrink-0">
                             <form onSubmit={handleSendReply} className="space-y-2">
-                                <Textarea
-                                    value={replyText}
-                                    onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder={
-                                        pendingAttachment
-                                            ? "Add a caption or send..."
-                                            : isOutside24hWindow
-                                            ? "24-hour window expired. Select an approved template..."
-                                            : "Type your message here or press '/' key for templates..."
-                                    }
-                                    className="min-h-[46px] max-h-[120px] text-xs sm:text-sm resize-none py-2.5 px-3 border-transparent focus-visible:ring-0 rounded-xl bg-slate-50 focus:bg-white text-slate-800 disabled:opacity-60"
-                                    disabled={isSending || (isOutside24hWindow && !pendingAttachment)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSendReply();
+                                <div className="relative">
+                                    {/* Inline Slash Command Autocomplete Popover */}
+                                    {matchingSlashReplies.length > 0 && (
+                                        <div className="absolute bottom-full left-0 right-0 mb-1.5 p-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-30 space-y-1">
+                                            <div className="flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-slate-500 border-b border-slate-100">
+                                                <span className="flex items-center gap-1.5 text-[#2F8F83]">
+                                                    <Zap size={11} /> Quick Replies (/shortcut)
+                                                </span>
+                                                <span className="text-slate-400 font-normal">Press Tab / Enter to insert • Esc to dismiss</span>
+                                            </div>
+                                            <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                                                {matchingSlashReplies.map((qr, idx) => (
+                                                    <button
+                                                        key={qr.id}
+                                                        type="button"
+                                                        onClick={() => applyQuickReply(qr)}
+                                                        className={`w-full text-left p-2 rounded-xl transition-colors flex items-center justify-between gap-2 cursor-pointer ${
+                                                            idx === slashSelectedIndex
+                                                                ? "bg-teal-50 text-teal-900 font-medium"
+                                                                : "hover:bg-slate-50 text-slate-700"
+                                                        }`}
+                                                    >
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-xs font-bold text-slate-800 truncate">
+                                                                    {qr.title}
+                                                                </span>
+                                                                <span className="text-[10px] font-mono font-semibold text-teal-700 bg-teal-100/60 px-1.5 py-0.2 rounded border border-teal-200/50">
+                                                                    {qr.shortcut}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                                                {interpolateQuickReply(qr.content, {
+                                                                    contactName: activeThread?.customerName,
+                                                                    phone: activeThread?.customerPhone,
+                                                                    email: (activeThread as any)?.email,
+                                                                    agentName: user?.name,
+                                                                })}
+                                                            </p>
+                                                        </div>
+                                                        {qr.category && (
+                                                            <span className="text-[9px] text-slate-400 shrink-0 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
+                                                                #{qr.category}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <Textarea
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        placeholder={
+                                            pendingAttachment
+                                                ? "Add a caption or send..."
+                                                : isOutside24hWindow
+                                                ? "24-hour window expired. Select an approved template..."
+                                                : "Type your message here or press '/' for quick replies..."
                                         }
-                                    }}
-                                />
+                                        className="min-h-[46px] max-h-[120px] text-xs sm:text-sm resize-none py-2.5 px-3 border-transparent focus-visible:ring-0 rounded-xl bg-slate-50 focus:bg-white text-slate-800 disabled:opacity-60"
+                                        disabled={isSending || (isOutside24hWindow && !pendingAttachment)}
+                                        onKeyDown={(e) => {
+                                            if (matchingSlashReplies.length > 0) {
+                                                if (e.key === "ArrowDown") {
+                                                    e.preventDefault();
+                                                    setSlashSelectedIndex((prev) => (prev + 1) % matchingSlashReplies.length);
+                                                    return;
+                                                }
+                                                if (e.key === "ArrowUp") {
+                                                    e.preventDefault();
+                                                    setSlashSelectedIndex((prev) => (prev - 1 + matchingSlashReplies.length) % matchingSlashReplies.length);
+                                                    return;
+                                                }
+                                                if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
+                                                    e.preventDefault();
+                                                    const chosen = matchingSlashReplies[slashSelectedIndex] || matchingSlashReplies[0];
+                                                    if (chosen) {
+                                                        applyQuickReply(chosen);
+                                                        return;
+                                                    }
+                                                }
+                                                if (e.key === "Escape") {
+                                                    e.preventDefault();
+                                                    setSlashMenuDismissed(true);
+                                                    return;
+                                                }
+                                            }
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSendReply();
+                                            }
+                                        }}
+                                    />
+                                </div>
 
                                 <div className="flex items-center justify-between gap-3 flex-wrap pt-0.5">
                                     {/* Action toolbar buttons configured by Admin */}
@@ -1181,11 +1329,18 @@ function ConversationsContent() {
                                         {/* Quick Replies Picker */}
                                         {composerSettings.quick_replies && (
                                             <QuickReplyPicker
+                                                context={{
+                                                    contactName: activeThread?.customerName,
+                                                    phone: activeThread?.customerPhone,
+                                                    email: (activeThread as any)?.email,
+                                                    agentName: user?.name,
+                                                }}
                                                 onSelect={(content) =>
                                                     setReplyText((prev) => (prev ? `${prev} ${content}` : content))
                                                 }
                                             />
                                         )}
+
 
                                         {/* Searchable Emoji Picker */}
                                         {composerSettings.emoji && (
@@ -1298,7 +1453,19 @@ function ConversationsContent() {
                 onOpenChange={setIsContactModalOpen}
                 onSendContact={handleSendContact}
             />
+
+            {/* Modal: Internal Notes Slide-over Sheet */}
+            {activeThread && (
+                <InternalNotesSheet
+                    open={isNotesSheetOpen}
+                    onOpenChange={setIsNotesSheetOpen}
+                    customerId={activeThread.customerId}
+                    conversationId={activeThread.id || null}
+                    customerName={activeThread.customerName || activeThread.customerPhone}
+                />
+            )}
         </div>
+
     );
 }
 

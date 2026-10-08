@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateConversationStatus } from "@workspace/api-client-react";
+import { useUpdateConversationStatus, useCreateCustomerNote } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
     MoreVertical,
@@ -37,6 +37,7 @@ interface ConversationHeaderMenuProps {
     customerName: string;
     customerPhone: string;
     currentStatus: string;
+    onOpenNotes?: () => void;
 }
 
 export function ConversationHeaderMenu({
@@ -44,10 +45,12 @@ export function ConversationHeaderMenu({
     customerName,
     customerPhone,
     currentStatus,
+    onOpenNotes,
 }: ConversationHeaderMenuProps) {
     const router = useRouter();
     const { toast } = useToast();
     const updateStatus = useUpdateConversationStatus();
+    const createNoteMutation = useCreateCustomerNote();
 
     const [noteDialogOpen, setNoteDialogOpen] = useState(false);
     const [noteText, setNoteText] = useState("");
@@ -73,31 +76,17 @@ export function ConversationHeaderMenu({
         if (!noteText.trim()) return;
         setSavingNote(true);
         try {
-            const token = localStorage.getItem("auth_token");
-            const res = await fetch(`/api/customers/${customerId}/attributes`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    custom_attributes: {
-                        internal_note: noteText.trim(),
-                        note_updated_at: new Date().toISOString(),
-                    },
-                }),
+            await createNoteMutation.mutateAsync({
+                customerId,
+                content: noteText.trim(),
             });
 
-            if (res.ok) {
-                toast({
-                    title: "Internal Note Saved",
-                    description: "Note attached to contact record. Not visible to customer.",
-                });
-                setNoteDialogOpen(false);
-                setNoteText("");
-            } else {
-                throw new Error("Failed to save note");
-            }
+            toast({
+                title: "Internal Note Saved",
+                description: "Note attached to contact record. Not visible to customer.",
+            });
+            setNoteDialogOpen(false);
+            setNoteText("");
         } catch (err: any) {
             toast({
                 title: "Could not save note",
@@ -108,6 +97,7 @@ export function ConversationHeaderMenu({
             setSavingNote(false);
         }
     };
+
 
     return (
         <>
@@ -139,12 +129,13 @@ export function ConversationHeaderMenu({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                        onClick={() => setNoteDialogOpen(true)}
+                        onClick={() => (onOpenNotes ? onOpenNotes() : setNoteDialogOpen(true))}
                         className="text-xs font-semibold text-slate-700 hover:bg-[#378179]/05 rounded-xl cursor-pointer py-2 px-2.5 flex items-center gap-2"
                     >
                         <StickyNote size={14} className="text-amber-500" />
-                        Add Internal Note
+                        Internal Notes
                     </DropdownMenuItem>
+
 
                     <DropdownMenuSeparator className="my-1 bg-slate-100" />
 

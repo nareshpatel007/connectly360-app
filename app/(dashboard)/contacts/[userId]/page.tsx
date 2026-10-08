@@ -31,11 +31,16 @@ import {
     ExternalLink,
     Edit2,
     Share2,
-    Flame
+    Flame,
+    StickyNote,
+    AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api-client-react";
+import { apiFetch, useCustomerDuplicates } from "@/lib/api-client-react";
 import { StageBadge, StageKey, STAGES } from "@/components/contacts/contact-crm-panel";
+import { InternalNotesPanel } from "@/components/notes/InternalNotesPanel";
+import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
+
 
 interface GroupedReaction {
     emoji: string;
@@ -114,6 +119,11 @@ export default function CustomerDetailPage() {
         },
         enabled: !!customerId,
     });
+
+    // Duplicate Contacts Check
+    const { data: duplicates = [] } = useCustomerDuplicates(customerId);
+    const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+    const [selectedDuplicateForMerge, setSelectedDuplicateForMerge] = useState<any>(null);
 
     // Send Message Mutation
     const [isSending, setIsSending] = useState(false);
@@ -237,6 +247,39 @@ export default function CustomerDetailPage() {
                     </div>
                 }
             />
+
+            {/* Duplicate Contact Warning Banner */}
+            {duplicates && duplicates.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 shadow-xs animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl shrink-0">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-sm text-amber-950 flex items-center gap-2">
+                                Potential Duplicate Contact Detected
+                                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px] font-semibold">
+                                    {duplicates.length} {duplicates.length === 1 ? "Match" : "Matches"}
+                                </Badge>
+                            </div>
+                            <div className="text-xs text-amber-800 mt-0.5">
+                                Another contact exists with matching phone or email:{" "}
+                                <strong>{duplicates[0].name || "Unnamed"}</strong> ({duplicates[0].phone}). Merge them to unify messages, notes, and timeline.
+                            </div>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => {
+                            setSelectedDuplicateForMerge(duplicates[0]);
+                            setIsMergeModalOpen(true);
+                        }}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs h-8 px-3.5 rounded-xl shrink-0 gap-1.5 shadow-xs"
+                    >
+                        Review & Merge
+                    </Button>
+                </div>
+            )}
 
             {/* Profile Overview Banner Card */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -701,32 +744,21 @@ export default function CustomerDetailPage() {
             {activeTab === "notes" && (
                 <Card className="rounded-2xl border-slate-200/90 shadow-xs bg-white">
                     <CardHeader className="p-5 border-b border-slate-100">
-                        <CardTitle className="text-sm font-bold text-slate-900">
-                            Internal Contact Notes
+                        <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <StickyNote size={16} className="text-amber-500" />
+                            Internal Contact &amp; Conversation Notes
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-5 space-y-4">
-                        <Textarea
-                            rows={6}
-                            value={notesText}
-                            onChange={(e) => setNotesText(e.target.value)}
-                            placeholder="Add notes about customer preferences, deals, meetings, or WhatsApp requirements..."
-                            className="text-xs rounded-xl"
+                    <CardContent className="p-5">
+                        <InternalNotesPanel
+                            customerId={customerId}
+                            customerName={customer?.name || customer?.phone}
+                            showScopeFilter={false}
                         />
-                        <div className="flex justify-end">
-                            <Button
-                                size="sm"
-                                disabled={isSavingNotes}
-                                onClick={handleSaveNotes}
-                                className="bg-[#35877D] hover:bg-[#2d736a] text-white text-xs font-semibold gap-1.5 shadow-sm"
-                            >
-                                {isSavingNotes && <Loader2 size={13} className="animate-spin" />}
-                                Save Notes
-                            </Button>
-                        </div>
                     </CardContent>
                 </Card>
             )}
+
 
             {/* TAB CONTENT: 5. TIMELINE */}
             {activeTab === "timeline" && (
@@ -845,6 +877,29 @@ export default function CustomerDetailPage() {
                         )}
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Merge Contact Dialog */}
+            {selectedDuplicateForMerge && (
+                <ContactMergeDialog
+                    open={isMergeModalOpen}
+                    onOpenChange={setIsMergeModalOpen}
+                    primaryContact={customer}
+                    secondaryContact={selectedDuplicateForMerge}
+                    onMergeComplete={(masterId) => {
+                        setIsMergeModalOpen(false);
+                        setSelectedDuplicateForMerge(null);
+                        if (masterId !== customerId) {
+                            router.push(`/contacts/${masterId}`);
+                        } else {
+                            queryClient.invalidateQueries({ queryKey: ["customerDetail", customerId] });
+                            queryClient.invalidateQueries({ queryKey: ["getCustomerDuplicates", customerId] });
+                            queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", customerId] });
+                            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", customerId] });
+                            queryClient.invalidateQueries({ queryKey: ["getCustomerNotes", customerId] });
+                        }
+                    }}
+                />
             )}
         </div>
     );
