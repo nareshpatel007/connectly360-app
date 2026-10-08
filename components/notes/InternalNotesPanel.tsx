@@ -39,6 +39,8 @@ import {
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 
+import { MentionTextarea, MentionFormattedText } from "./MentionTextarea";
+
 interface InternalNotesPanelProps {
     customerId: number;
     conversationId?: number | null;
@@ -54,12 +56,14 @@ export function InternalNotesPanel({
 }: InternalNotesPanelProps) {
     const { user: currentUser } = useAuth();
     const [noteContent, setNoteContent] = useState("");
+    const [mentionUserIds, setMentionUserIds] = useState<number[]>([]);
     const [isPinned, setIsPinned] = useState(false);
     const [scopeFilter, setScopeFilter] = useState<"all" | "conversation">("all");
 
     // Edit state
     const [editingNote, setEditingNote] = useState<InternalNoteItem | null>(null);
     const [editContent, setEditContent] = useState("");
+    const [editMentionUserIds, setEditMentionUserIds] = useState<number[]>([]);
     const [editPinned, setEditPinned] = useState(false);
 
     // Delete state
@@ -92,9 +96,11 @@ export function InternalNotesPanel({
                 conversationId: scopeFilter === "conversation" || conversationId ? (conversationId || undefined) : undefined,
                 content: trimmed,
                 is_pinned: isPinned,
+                mention_user_ids: mentionUserIds.length > 0 ? mentionUserIds : undefined,
             });
             toast.success("Internal note added.");
             setNoteContent("");
+            setMentionUserIds([]);
             setIsPinned(false);
         } catch (err: any) {
             toast.error(err.message || "Failed to add internal note.");
@@ -114,9 +120,11 @@ export function InternalNotesPanel({
                 id: editingNote.id,
                 content: trimmed,
                 is_pinned: editPinned,
+                mention_user_ids: editMentionUserIds.length > 0 ? editMentionUserIds : undefined,
             });
             toast.success("Note updated.");
             setEditingNote(null);
+            setEditMentionUserIds([]);
         } catch (err: any) {
             toast.error(err.message || "Failed to update note.");
         }
@@ -199,16 +207,16 @@ export function InternalNotesPanel({
 
             {/* Create New Note Form */}
             <form onSubmit={handleCreateNote} className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                <Textarea
+                <MentionTextarea
                     value={noteContent}
-                    onChange={(e) => setNoteContent(e.target.value)}
+                    onChange={setNoteContent}
+                    onMentionsChange={setMentionUserIds}
                     placeholder={
                         customerName
-                            ? `Add internal note about ${customerName}...`
-                            : "Add internal note for team members..."
+                            ? `Add internal note about ${customerName}... Type @ to mention teammates`
+                            : "Add internal note for team members... Type @ to mention teammates"
                     }
                     rows={3}
-                    className="text-xs bg-white border-slate-200 rounded-xl resize-none focus:ring-1 focus:ring-teal-500"
                 />
 
                 <div className="flex items-center justify-between pt-1">
@@ -349,9 +357,27 @@ export function InternalNotesPanel({
                                 </div>
 
                                 {/* Note Content */}
-                                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                    {note.content}
-                                </p>
+                                <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                    <MentionFormattedText text={note.content} mentions={note.mentions} />
+                                </div>
+
+                                {/* Tagged team members badges */}
+                                {note.mentions && note.mentions.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-100">
+                                        <span className="text-[10px] font-semibold text-slate-400">Mentioned:</span>
+                                        {note.mentions.map((m) => (
+                                            <span
+                                                key={m.id}
+                                                className="inline-flex items-center gap-1 text-[10px] font-medium bg-teal-50 text-[#2F8F83] border border-teal-200/70 rounded-full px-2 py-0.5"
+                                            >
+                                                <span className="h-3.5 w-3.5 rounded-full bg-teal-200 text-[#2F8F83] text-[8px] flex items-center justify-center font-bold">
+                                                    {m.name.charAt(0).toUpperCase()}
+                                                </span>
+                                                {m.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         );
                     })
@@ -372,11 +398,12 @@ export function InternalNotesPanel({
                     </DialogHeader>
 
                     <div className="space-y-3 pt-2">
-                        <Textarea
+                        <MentionTextarea
                             value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
+                            onChange={setEditContent}
+                            onMentionsChange={setEditMentionUserIds}
                             rows={4}
-                            className="text-xs bg-slate-50 border-slate-200 rounded-xl"
+                            placeholder="Edit note content... Type @ to mention team members"
                         />
 
                         <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">

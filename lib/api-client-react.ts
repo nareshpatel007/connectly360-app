@@ -216,13 +216,17 @@ export interface QuickReplyItem {
 }
 
 export interface InternalNoteItem {
-
     id: number;
     tenant_id: number;
     user_id: number;
     customer_id: number;
     conversation_id?: number | null;
     content: string;
+    mentions?: Array<{
+        id: number;
+        name: string;
+        email?: string;
+    }> | null;
     is_pinned: boolean;
     created_at: string;
     updated_at: string;
@@ -805,11 +809,11 @@ export function useConversationNotes(conversationId?: number) {
 export function useCreateCustomerNote() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ customerId, content, conversationId, is_pinned }: { customerId: number; content: string; conversationId?: number; is_pinned?: boolean }) => {
+        mutationFn: async ({ customerId, content, conversationId, is_pinned, mention_user_ids }: { customerId: number; content: string; conversationId?: number; is_pinned?: boolean; mention_user_ids?: number[] }) => {
             const res = await apiFetch(`${API_BASE}/customers/${customerId}/notes`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content, conversation_id: conversationId, is_pinned }),
+                body: JSON.stringify({ content, conversation_id: conversationId, is_pinned, mention_user_ids }),
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
@@ -831,11 +835,11 @@ export function useCreateCustomerNote() {
 export function useCreateConversationNote() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ conversationId, content, is_pinned }: { conversationId: number; content: string; is_pinned?: boolean }) => {
+        mutationFn: async ({ conversationId, content, is_pinned, mention_user_ids }: { conversationId: number; content: string; is_pinned?: boolean; mention_user_ids?: number[] }) => {
             const res = await apiFetch(`${API_BASE}/conversations/${conversationId}/notes`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content, is_pinned }),
+                body: JSON.stringify({ content, is_pinned, mention_user_ids }),
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
@@ -857,11 +861,11 @@ export function useCreateConversationNote() {
 export function useUpdateInternalNote() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, content, is_pinned }: { id: number; content?: string; is_pinned?: boolean }) => {
+        mutationFn: async ({ id, content, is_pinned, mention_user_ids }: { id: number; content?: string; is_pinned?: boolean; mention_user_ids?: number[] }) => {
             const res = await apiFetch(`${API_BASE}/internal-notes/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content, is_pinned }),
+                body: JSON.stringify({ content, is_pinned, mention_user_ids }),
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));

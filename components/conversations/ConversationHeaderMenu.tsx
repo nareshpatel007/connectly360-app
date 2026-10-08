@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea } from "@/components/notes/MentionTextarea";
 import { useUpdateConversationStatus, useCreateCustomerNote } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -54,6 +55,7 @@ export function ConversationHeaderMenu({
 
     const [noteDialogOpen, setNoteDialogOpen] = useState(false);
     const [noteText, setNoteText] = useState("");
+    const [mentionUserIds, setMentionUserIds] = useState<number[]>([]);
     const [savingNote, setSavingNote] = useState(false);
 
     const handleStatus = async (status: string) => {
@@ -79,6 +81,7 @@ export function ConversationHeaderMenu({
             await createNoteMutation.mutateAsync({
                 customerId,
                 content: noteText.trim(),
+                mention_user_ids: mentionUserIds.length > 0 ? mentionUserIds : undefined,
             });
 
             toast({
@@ -87,6 +90,7 @@ export function ConversationHeaderMenu({
             });
             setNoteDialogOpen(false);
             setNoteText("");
+            setMentionUserIds([]);
         } catch (err: any) {
             toast({
                 title: "Could not save note",
@@ -183,12 +187,13 @@ export function ConversationHeaderMenu({
                     </DialogHeader>
 
                     <div className="space-y-3 pt-2">
-                        <Textarea
+                        <MentionTextarea
                             rows={4}
-                            placeholder="Add private note about this customer conversation..."
+                            placeholder="Add private note about this customer conversation... Type @ to mention teammates"
                             value={noteText}
-                            onChange={(e) => setNoteText(e.target.value)}
-                            className="text-xs rounded-xl bg-slate-50 border-slate-200"
+                            onChange={setNoteText}
+                            onMentionsChange={setMentionUserIds}
+                            className="bg-slate-50 border-slate-200"
                         />
 
                         <div className="flex items-center justify-end gap-2 pt-2">
