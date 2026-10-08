@@ -26,7 +26,8 @@ import {
     Terminal,
     History,
     Receipt,
-    CreditCard
+    CreditCard,
+    Activity
 } from "lucide-react";
 import type { LeafNavigationItem, GroupNavigationItem, NavigationSection } from "./navigation-matcher";
 
@@ -235,6 +236,14 @@ export const CLIENT_NAV_SECTIONS: NavSection[] = [
                         label: "Business Profile",
                         icon: Building2,
                         href: "/integrations/whatsapp/business-profile",
+                        exact: true,
+                        permission: "whatsapp.view"
+                    },
+                    {
+                        id: "whatsapp-billing-diagnostics",
+                        label: "Billing & Diagnostics",
+                        icon: Activity,
+                        href: "/integrations/whatsapp/billing",
                         exact: true,
                         permission: "whatsapp.view"
                     }

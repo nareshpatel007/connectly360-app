@@ -768,6 +768,18 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             queryClient.invalidateQueries({ queryKey: ["credit-history"] });
         };
 
+        const onCampaignProgressUpdated = (event: any) => {
+            if (event?.campaign_id) {
+                queryClient.setQueriesData(
+                    { queryKey: ["campaign", String(event.campaign_id)] },
+                    (old: any) => (old ? { ...old, ...event } : old)
+                );
+            }
+            queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+            queryClient.invalidateQueries({ queryKey: ["campaign-stats"] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard-kpis"] });
+        };
+
         // Register listeners
         channel.listen(".whatsapp.message.received", onMessageReceived);
         channel.listen("whatsapp.message.received", onMessageReceived);
@@ -799,6 +811,10 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
         channel.listen("credit.balance.updated", onCreditBalanceUpdated);
         channel.listen(".CreditBalanceUpdated", onCreditBalanceUpdated);
         channel.listen("CreditBalanceUpdated", onCreditBalanceUpdated);
+        channel.listen(".campaign.progress.updated", onCampaignProgressUpdated);
+        channel.listen("campaign.progress.updated", onCampaignProgressUpdated);
+        channel.listen(".CampaignProgressUpdated", onCampaignProgressUpdated);
+        channel.listen("CampaignProgressUpdated", onCampaignProgressUpdated);
 
         // Also subscribe to private user notifications channel
         const userChannel = echo.private(`user.${user.id}.notifications`);
@@ -824,6 +840,10 @@ export function NotificationRealtimeProvider({ children }: { children: React.Rea
             channel.stopListening("credit.balance.updated");
             channel.stopListening(".CreditBalanceUpdated");
             channel.stopListening("CreditBalanceUpdated");
+            channel.stopListening(".campaign.progress.updated");
+            channel.stopListening("campaign.progress.updated");
+            channel.stopListening(".CampaignProgressUpdated");
+            channel.stopListening("CampaignProgressUpdated");
             userChannel.stopListening(".notification.created");
             userChannel.stopListening("notification.created");
 

@@ -145,8 +145,8 @@ export function ContactCreateModal({
 
             if (res.status === 409 || data.conflict) {
                 setExistingContactId(data.existing_id || null);
-                setExistingErrorMsg(data.message || "A contact with this phone number already exists.");
-                toast.error("Contact already exists with this phone number.");
+                setExistingErrorMsg(data.message || "This WhatsApp number already exists.");
+                toast.error(data.message || "This WhatsApp number already exists.");
                 return;
             }
 

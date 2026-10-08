@@ -28,7 +28,10 @@ import {
     Search,
     ArrowRight,
     X,
-    PlusCircle
+    PlusCircle,
+    Filter,
+    CheckSquare,
+    Activity
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -41,7 +44,9 @@ const NAVIGATION_ITEMS = [
     { label: "Dashboard Overview", icon: LayoutDashboard, href: "/dashboard", group: "Overview", desc: "Workspace metrics, KPIs & system status" },
     { label: "Conversations Inbox", icon: MessageSquare, href: "/conversations", group: "CRM", desc: "Realtime messaging & customer chats" },
     { label: "Contacts Directory", icon: Users, href: "/contacts", group: "CRM", desc: "Customer profiles, attributes & tags" },
+    { label: "Audience Segments", icon: Filter, href: "/segments", group: "CRM", desc: "Dynamic and static customer audience segmentation" },
     { label: "Leads & Pipeline", icon: GitBranch, href: "/leads", group: "CRM", desc: "Deal pipeline & lead stage management" },
+    { label: "Tasks & To-Dos", icon: CheckSquare, href: "/tasks", group: "CRM", desc: "Follow-up tasks, assignments & reminders" },
     { label: "AI Assistant", icon: Bot, href: "/ai-assistant", group: "AI & Automation", desc: "Custom AI agent configuration & behavior" },
     { label: "Knowledge Base", icon: BookOpen, href: "/knowledge-base", group: "AI & Automation", desc: "AI training documents & website indexing" },
     { label: "Automations & Workflows", icon: Zap, href: "/automations", group: "AI & Automation", desc: "Automated triggers, webhooks & responses" },
@@ -49,6 +54,7 @@ const NAVIGATION_ITEMS = [
     { label: "Message Templates", icon: FileText, href: "/marketing/templates", group: "Marketing", desc: "Meta-approved WhatsApp message templates" },
     { label: "WhatsApp Integration", icon: MessageCircle, href: "/integrations/whatsapp", group: "Integrations", desc: "Sandbox testing & official WABA connection" },
     { label: "WhatsApp Business Profile", icon: Building2, href: "/integrations/whatsapp/business-profile", group: "Integrations", desc: "WhatsApp display name, about, vertical, websites & profile photo" },
+    { label: "WhatsApp Billing & Diagnostics", icon: Activity, href: "/integrations/whatsapp/billing", group: "Integrations", desc: "Meta WABA billing status, phone registration & health check" },
     { label: "API Keys", icon: Key, href: "/integrations/api-keys", group: "Integrations", desc: "REST API keys & developer credentials" },
     { label: "Webhooks", icon: Webhook, href: "/integrations/webhooks", group: "Integrations", desc: "Custom HTTP callback endpoints" },
     { label: "Analytics", icon: PieChart, href: "/analytics", group: "Analytics", desc: "Performance breakdown & chat metrics" },

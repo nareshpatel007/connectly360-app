@@ -34,6 +34,7 @@ import {
     Flame
 } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api-client-react";
 import { StageBadge, StageKey, STAGES } from "@/components/contacts/contact-crm-panel";
 
 interface GroupedReaction {
@@ -65,7 +66,7 @@ export default function CustomerDetailPage() {
     const customerId = userId ? parseInt(userId, 10) : 0;
     const queryClient = useQueryClient();
 
-    const [activeTab, setActiveTab] = useState<"overview" | "conversations" | "campaigns" | "activity" | "notes">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "conversations" | "timeline" | "campaigns" | "tasks" | "notes">("overview");
     const [messageText, setMessageText] = useState("");
     const [notesText, setNotesText] = useState("");
     const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -75,9 +76,7 @@ export default function CustomerDetailPage() {
     const { data: customerData, isLoading: isLoadingCustomer } = useQuery({
         queryKey: ["customerDetail", customerId],
         queryFn: async () => {
-            const res = await fetch(`/api/customers/${customerId}`, {
-                headers: { "X-Tenant-Id": "8" },
-            });
+            const res = await apiFetch(`/api/customers/${customerId}`);
             if (!res.ok) throw new Error("Contact not found");
             const json = await res.json();
             return json.data;
@@ -97,11 +96,21 @@ export default function CustomerDetailPage() {
     const { data: conversations, isLoading: isLoadingConversations } = useQuery({
         queryKey: ["getCustomerConversations", customerId],
         queryFn: async () => {
-            const res = await fetch(`/api/customers/${customerId}/conversations`, {
-                headers: { "X-Tenant-Id": "8" },
-            });
+            const res = await apiFetch(`/api/customers/${customerId}/conversations`);
             if (!res.ok) return [];
             return res.json();
+        },
+        enabled: !!customerId,
+    });
+
+    // Fetch unified customer timeline events
+    const { data: timelineData = [], isLoading: isLoadingTimeline } = useQuery({
+        queryKey: ["getCustomerTimeline", customerId],
+        queryFn: async () => {
+            const res = await apiFetch(`/api/customers/${customerId}/timeline`);
+            if (!res.ok) return [];
+            const json = await res.json();
+            return json.data || [];
         },
         enabled: !!customerId,
     });
@@ -114,12 +123,8 @@ export default function CustomerDetailPage() {
 
         setIsSending(true);
         try {
-            const res = await fetch(`/api/messages/send`, {
+            const res = await apiFetch(`/api/messages/send`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Tenant-Id": "8",
-                },
                 body: JSON.stringify({
                     to: customer.phone,
                     body: messageText.trim(),
@@ -132,6 +137,7 @@ export default function CustomerDetailPage() {
             setMessageText("");
             toast.success("Message sent successfully");
             queryClient.invalidateQueries({ queryKey: ["getCustomerConversations", customerId] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", customerId] });
         } catch (err: any) {
             toast.error(err.message || "Failed to send message");
         } finally {
@@ -144,17 +150,20 @@ export default function CustomerDetailPage() {
         if (!customer) return;
         setIsSavingNotes(true);
         try {
-            const res = await fetch(`/api/customers/${customer.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Tenant-Id": "8",
-                },
-                body: JSON.stringify({ notes: notesText }),
+            const res = await apiFetch(`/api/customers/${customer.id}/notes`, {
+                method: "POST",
+                body: JSON.stringify({ note: notesText }),
             });
-            if (!res.ok) throw new Error("Failed to save notes");
+            if (!res.ok) {
+                // Fallback to PUT /api/customers/${customer.id} if needed
+                await apiFetch(`/api/customers/${customer.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ notes: notesText }),
+                });
+            }
             toast.success("Contact notes saved.");
             queryClient.invalidateQueries({ queryKey: ["customerDetail", customerId] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", customerId] });
         } catch (err: any) {
             toast.error(err.message || "Error saving notes");
         } finally {
@@ -318,6 +327,21 @@ export default function CustomerDetailPage() {
                     )}
                 </button>
                 <button
+                    onClick={() => setActiveTab("timeline")}
+                    className={`px-4 py-2.5 border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeTab === "timeline"
+                            ? "border-[#35877D] text-[#35877D]"
+                            : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                >
+                    <span>Timeline</span>
+                    {timelineData.length > 0 && (
+                        <Badge className="bg-teal-50 text-[#35877D] text-[10px] px-1.5 py-0 h-4 rounded-full">
+                            {timelineData.length}
+                        </Badge>
+                    )}
+                </button>
+                <button
                     onClick={() => setActiveTab("campaigns")}
                     className={`px-4 py-2.5 border-b-2 transition-all flex items-center gap-1.5 ${
                         activeTab === "campaigns"
@@ -325,10 +349,25 @@ export default function CustomerDetailPage() {
                             : "border-transparent text-slate-500 hover:text-slate-800"
                     }`}
                 >
-                    <span>Campaigns Received</span>
+                    <span>Campaigns</span>
                     {customer.campaigns?.length > 0 && (
                         <Badge className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0 h-4 rounded-full">
                             {customer.campaigns.length}
+                        </Badge>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab("tasks")}
+                    className={`px-4 py-2.5 border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeTab === "tasks"
+                            ? "border-[#35877D] text-[#35877D]"
+                            : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                >
+                    <span>Tasks</span>
+                    {customer.tasks?.length > 0 && (
+                        <Badge className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0 h-4 rounded-full">
+                            {customer.tasks.length}
                         </Badge>
                     )}
                 </button>
@@ -340,17 +379,7 @@ export default function CustomerDetailPage() {
                             : "border-transparent text-slate-500 hover:text-slate-800"
                     }`}
                 >
-                    Notes & CRM
-                </button>
-                <button
-                    onClick={() => setActiveTab("activity")}
-                    className={`px-4 py-2.5 border-b-2 transition-all ${
-                        activeTab === "activity"
-                            ? "border-[#35877D] text-[#35877D]"
-                            : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                >
-                    Timeline & History
+                    Notes
                 </button>
             </div>
 
@@ -699,38 +728,119 @@ export default function CustomerDetailPage() {
                 </Card>
             )}
 
-            {/* TAB CONTENT: 5. ACTIVITY TIMELINE */}
-            {activeTab === "activity" && (
+            {/* TAB CONTENT: 5. TIMELINE */}
+            {activeTab === "timeline" && (
                 <Card className="rounded-2xl border-slate-200/90 shadow-xs bg-white">
-                    <CardHeader className="p-5 border-b border-slate-100">
-                        <CardTitle className="text-sm font-bold text-slate-900">
-                            Activity Timeline
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-5 space-y-4 text-xs">
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-teal-50 text-[#35877D] flex items-center justify-center shrink-0">
-                                <CheckCircle2 size={15} />
-                            </div>
-                            <div>
-                                <div className="font-bold text-slate-800">Contact Record Created</div>
-                                <div className="text-[11px] text-slate-400">
-                                    {customer.createdAt ? new Date(customer.createdAt).toLocaleString() : "—"} via {customer.source || "System"}
-                                </div>
-                            </div>
+                    <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-sm font-bold text-slate-900">
+                                Customer Timeline & History
+                            </CardTitle>
+                            <p className="text-xs text-slate-500 mt-0.5">Chronological log of customer events, messages, campaigns and status changes.</p>
                         </div>
+                        <Badge className="bg-slate-100 text-slate-700 text-xs px-2.5 py-0.5">
+                            {timelineData.length} Events Recorded
+                        </Badge>
+                    </CardHeader>
+                    <CardContent className="p-5">
+                        {timelineData.length === 0 ? (
+                            <div className="py-12 text-center text-xs text-slate-400 italic">
+                                No timeline events recorded yet. Activity like messages, campaign deliveries, and tag updates will automatically appear here.
+                            </div>
+                        ) : (
+                            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                                {timelineData.map((ev: any) => {
+                                    let iconColor = "bg-teal-50 text-[#35877D]";
+                                    if (ev.event_type?.includes("campaign")) iconColor = "bg-blue-50 text-blue-600";
+                                    if (ev.event_type?.includes("tag")) iconColor = "bg-indigo-50 text-indigo-600";
+                                    if (ev.event_type?.includes("lead")) iconColor = "bg-amber-50 text-amber-600";
+                                    if (ev.event_type?.includes("note")) iconColor = "bg-purple-50 text-purple-600";
+                                    if (ev.event_type?.includes("task")) iconColor = "bg-emerald-50 text-emerald-600";
 
-                        {customer.whatsapp_opt_in && (
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                                    <ShieldCheck size={15} />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-slate-800">WhatsApp Marketing Permission Confirmed</div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Opt-in active for broadcast campaigns
+                                    return (
+                                        <div key={ev.id} className="relative flex items-start gap-4 text-xs">
+                                            <div className={`-ml-6 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shrink-0 ring-4 ring-white ${iconColor}`}>
+                                                <div className="w-2 h-2 rounded-full bg-current" />
+                                            </div>
+                                            <div className="flex-1 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="font-bold text-slate-900">{ev.title || ev.event_type}</span>
+                                                    <span className="text-[11px] text-slate-400 font-mono">
+                                                        {ev.occurred_at ? new Date(ev.occurred_at).toLocaleString() : "—"}
+                                                    </span>
+                                                </div>
+                                                {ev.description && (
+                                                    <p className="mt-1 text-slate-600 text-xs leading-relaxed">{ev.description}</p>
+                                                )}
+                                                {ev.metadata && Object.keys(ev.metadata).length > 0 && (
+                                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                                        {Object.entries(ev.metadata).map(([k, v]) => (
+                                                            <span key={k} className="inline-flex items-center text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
+                                                                <strong className="mr-1">{k}:</strong> {String(v)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* TAB CONTENT: 6. TASKS */}
+            {activeTab === "tasks" && (
+                <Card className="rounded-2xl border-slate-200/90 shadow-xs bg-white">
+                    <CardHeader className="p-5 border-b border-slate-100 flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-sm font-bold text-slate-900">
+                                Contact Tasks & Follow-ups
+                            </CardTitle>
+                            <p className="text-xs text-slate-500 mt-0.5">Tasks assigned for following up with this customer.</p>
+                        </div>
+                        <Button
+                            size="sm"
+                            onClick={() => router.push(`/tasks?contact_id=${customer.id}`)}
+                            className="bg-[#35877D] hover:bg-[#2d736a] text-white text-xs h-8 px-3 rounded-xl font-semibold gap-1"
+                        >
+                            <Clock size={13} />
+                            Add Task
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-5">
+                        {!customer.tasks || customer.tasks.length === 0 ? (
+                            <div className="py-12 text-center text-xs text-slate-400 italic">
+                                No open tasks for this contact. Create follow-up tasks to stay on top of leads.
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {customer.tasks.map((task: any) => (
+                                    <div key={task.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-4 text-xs">
+                                        <div className="space-y-1">
+                                            <div className="font-bold text-slate-900">{task.title}</div>
+                                            {task.description && (
+                                                <p className="text-slate-500 text-[11px]">{task.description}</p>
+                                            )}
+                                            {task.due_at && (
+                                                <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                                    <Clock size={11} /> Due: {new Date(task.due_at).toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <Badge
+                                            className={
+                                                task.status === "completed"
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                            }
+                                        >
+                                            {task.status || "pending"}
+                                        </Badge>
                                     </div>
-                                </div>
+                                ))}
                             </div>
                         )}
                     </CardContent>
