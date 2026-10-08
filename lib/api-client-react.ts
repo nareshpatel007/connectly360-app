@@ -1219,7 +1219,11 @@ export function useListTemplateAccounts() {
         queryFn: async () => {
             const res = await apiFetch(`${API_BASE}/whatsapp/templates/accounts`);
             if (!res.ok) return [];
-            return res.json();
+            const data = await res.json();
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data?.data)) return data.data;
+            if (Array.isArray(data?.accounts)) return data.accounts;
+            return [];
         },
     });
 }

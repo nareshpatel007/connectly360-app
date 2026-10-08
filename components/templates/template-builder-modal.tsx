@@ -674,11 +674,17 @@ export function TemplateBuilderModal({
                                                 <SelectValue placeholder="Select connected WhatsApp account" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {accounts.map((acc) => (
-                                                    <SelectItem key={acc.waba_id} value={acc.waba_id} className="text-xs">
-                                                        {acc.verified_name || "WhatsApp Account"} ({acc.display_phone_number || acc.waba_id})
-                                                    </SelectItem>
-                                                ))}
+                                                {accounts.length > 0 ? (
+                                                    accounts.map((acc) => (
+                                                        <SelectItem key={acc.waba_id} value={acc.waba_id} className="text-xs">
+                                                            {acc.verified_name || "WhatsApp Account"} ({acc.display_phone_number || acc.waba_id})
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-3 text-center text-xs text-slate-500">
+                                                        No connected WhatsApp accounts found.
+                                                    </div>
+                                                )}
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[11px] text-slate-400">Templates belong to and are reviewed by Meta under this WABA.</p>
