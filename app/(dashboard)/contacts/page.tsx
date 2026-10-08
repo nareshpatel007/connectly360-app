@@ -50,7 +50,8 @@ import {
     Calendar,
     Send,
     ExternalLink,
-    AlertCircle
+    AlertCircle,
+    Ban
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,7 @@ import { SegmentBuilderDialog, SegmentRule } from "@/components/segments/segment
 import { DuplicateContactsModal } from "@/components/contacts/DuplicateContactsModal";
 import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
 import { ManageConsentModal } from "@/components/contacts/ManageConsentModal";
+import { BlockContactModal } from "@/components/contacts/BlockContactModal";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -176,6 +178,12 @@ export default function ContactsPage() {
     const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
     const bulkOptInMutation = useBulkCustomerOptIn();
     const bulkOptOutMutation = useBulkCustomerOptOut();
+
+    // Blocklist & Suppression State
+    const [blockModalCustomer, setBlockModalCustomer] = useState<Customer | null>(null);
+    const [isSingleBlockOpen, setIsSingleBlockOpen] = useState(false);
+    const [isBulkBlockOpen, setIsBulkBlockOpen] = useState(false);
+    const [isBulkUnblockOpen, setIsBulkUnblockOpen] = useState(false);
 
     const handleBulkOptIn = async () => {
         if (selectedIds.length === 0) return;
@@ -426,6 +434,15 @@ export default function ContactsPage() {
                 breadcrumbs={[{ label: "Contacts" }]}
                 actions={
                     <div className="flex items-center gap-2">
+                        <Link href="/contacts/suppression">
+                            <Button
+                                variant="outline"
+                                className="border-slate-200 text-slate-700 text-xs h-9 px-3.5 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer shadow-xs"
+                            >
+                                <Ban size={14} className="text-red-500" />
+                                Suppression List
+                            </Button>
+                        </Link>
                         <Button
                             variant="outline"
                             onClick={() => setIsDuplicatesModalOpen(true)}
@@ -798,12 +815,28 @@ export default function ContactsPage() {
                                             {/* Contact Details */}
                                             <td className="p-3.5">
                                                 <div className="flex flex-col">
-                                                    <Link
-                                                        href={`/contacts/${customer.id}`}
-                                                        className="font-bold text-slate-900 hover:text-[#35877D] hover:underline transition-colors text-xs flex items-center gap-1.5"
-                                                    >
-                                                        <span>{customer.name || "WhatsApp User"}</span>
-                                                    </Link>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <Link
+                                                            href={`/contacts/${customer.id}`}
+                                                            className="font-bold text-slate-900 hover:text-[#35877D] hover:underline transition-colors text-xs flex items-center gap-1.5"
+                                                        >
+                                                            <span>{customer.name || "WhatsApp User"}</span>
+                                                        </Link>
+                                                        {customer.is_blocked && (
+                                                            <Badge
+                                                                variant="destructive"
+                                                                className="bg-red-50 text-red-700 border-red-200 text-[9px] font-bold px-1.5 py-0 h-4 uppercase tracking-wider cursor-pointer hover:bg-red-100"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setBlockModalCustomer(customer);
+                                                                    setIsSingleBlockOpen(true);
+                                                                }}
+                                                                title={`Blocked: ${customer.blocked_reason || "Suppressed"}. Click to view/unblock.`}
+                                                            >
+                                                                Blocked
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
                                                         <span>{phoneFormatted.flag}</span>
                                                         <span>{phoneFormatted.display}</span>
@@ -913,6 +946,20 @@ export default function ContactsPage() {
                                                     </button>
                                                     <button
                                                         onClick={() => {
+                                                            setBlockModalCustomer(customer);
+                                                            setIsSingleBlockOpen(true);
+                                                        }}
+                                                        className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${
+                                                            customer.is_blocked
+                                                                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                                                : "hover:bg-slate-100 text-slate-400 hover:text-red-600"
+                                                        }`}
+                                                        title={customer.is_blocked ? "Manage / Unblock Contact" : "Block Contact"}
+                                                    >
+                                                        <Ban size={13} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
                                                             setCustomerToDelete(customer);
                                                             setIsDeleteOpen(true);
                                                         }}
@@ -1002,6 +1049,26 @@ export default function ContactsPage() {
                         >
                             <ShieldAlert size={13} className="text-rose-400" />
                             {bulkOptOutMutation.isPending ? "Suppressing..." : "Opt-Out"}
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsBulkBlockOpen(true)}
+                            className="h-8 text-xs bg-red-950 border-red-800 text-red-200 hover:bg-red-900 font-semibold gap-1"
+                        >
+                            <Ban size={13} className="text-red-400" />
+                            Block
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsBulkUnblockOpen(true)}
+                            className="h-8 text-xs bg-emerald-950 border-emerald-700 text-emerald-200 hover:bg-emerald-900 font-semibold gap-1"
+                        >
+                            <ShieldCheck size={13} className="text-emerald-400" />
+                            Unblock
                         </Button>
 
                         <Button
@@ -1433,6 +1500,46 @@ export default function ContactsPage() {
                     setConsentCustomer(null);
                 }}
                 customer={consentCustomer}
+            />
+
+            {/* BLOCK / UNBLOCK SINGLE CONTACT MODAL */}
+            <BlockContactModal
+                isOpen={isSingleBlockOpen}
+                onClose={() => {
+                    setIsSingleBlockOpen(false);
+                    setBlockModalCustomer(null);
+                }}
+                customer={blockModalCustomer}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                    queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                }}
+            />
+
+            {/* BULK BLOCK MODAL */}
+            <BlockContactModal
+                isOpen={isBulkBlockOpen}
+                onClose={() => setIsBulkBlockOpen(false)}
+                bulkIds={selectedIds}
+                isBulkUnblock={false}
+                onSuccess={() => {
+                    setSelectedIds([]);
+                    queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                    queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                }}
+            />
+
+            {/* BULK UNBLOCK MODAL */}
+            <BlockContactModal
+                isOpen={isBulkUnblockOpen}
+                onClose={() => setIsBulkUnblockOpen(false)}
+                bulkIds={selectedIds}
+                isBulkUnblock={true}
+                onSuccess={() => {
+                    setSelectedIds([]);
+                    queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                    queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                }}
             />
         </div>
     );

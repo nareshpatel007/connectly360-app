@@ -271,11 +271,38 @@ export interface Customer {
     whatsapp_opt_out?: boolean;
     whatsapp_opt_out_at?: string;
     whatsapp_opt_out_reason?: string;
+    is_blocked?: boolean;
+    blocked_at?: string;
+    blocked_reason?: string;
+    blocked_notes?: string;
     notes?: string;
     custom_attributes?: Record<string, string>;
     messageCount: number;
     createdAt: string;
     last_interaction_at?: string;
+}
+
+export interface SuppressedNumber {
+    id: number;
+    tenant_id: number;
+    phone: string;
+    normalized_phone?: string;
+    customer_id?: number | null;
+    reason: string;
+    notes?: string | null;
+    blocked_by?: number | null;
+    created_at: string;
+    updated_at: string;
+    customer?: {
+        id: number;
+        name?: string;
+        phone: string;
+    } | null;
+    user?: {
+        id: number;
+        name?: string;
+        email?: string;
+    } | null;
 }
 
 export interface Product {
@@ -3191,3 +3218,192 @@ export function useBulkCustomerOptOut() {
         },
     });
 }
+
+// -------------------------------------------------------------
+// Blocklist & Suppression Hooks
+// -------------------------------------------------------------
+
+export function useBlockContact() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            customerId,
+            reason = "manual_block",
+            notes,
+        }: {
+            customerId: number;
+            reason?: string;
+            notes?: string;
+        }) => {
+            const res = await apiFetch(`/api/contacts/${customerId}/block`, {
+                method: "POST",
+                body: JSON.stringify({ reason, notes }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to block contact");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+        },
+    });
+}
+
+export function useUnblockContact() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ customerId }: { customerId: number }) => {
+            const res = await apiFetch(`/api/contacts/${customerId}/unblock`, {
+                method: "POST",
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to unblock contact");
+            }
+            return data;
+        },
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["customerDetail", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["getCustomerTimeline", variables.customerId] });
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+        },
+    });
+}
+
+export function useBulkBlockContacts() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            ids,
+            reason = "manual_block",
+            notes,
+        }: {
+            ids: number[];
+            reason?: string;
+            notes?: string;
+        }) => {
+            const res = await apiFetch(`/api/contacts/bulk-block`, {
+                method: "POST",
+                body: JSON.stringify({ ids, reason, notes }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to bulk block contacts");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+        },
+    });
+}
+
+export function useBulkUnblockContacts() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ ids }: { ids: number[] }) => {
+            const res = await apiFetch(`/api/contacts/bulk-unblock`, {
+                method: "POST",
+                body: JSON.stringify({ ids }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to bulk unblock contacts");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+        },
+    });
+}
+
+export function useSuppressionList(params?: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    reason?: string;
+}) {
+    const page = params?.page ?? 1;
+    const perPage = params?.per_page ?? 25;
+    const search = params?.search ?? "";
+    const reason = params?.reason ?? "";
+
+    const queryKey = ["suppressionList", page, perPage, search, reason];
+
+    return useQuery({
+        queryKey,
+        queryFn: async () => {
+            const searchParams = new URLSearchParams();
+            if (page) searchParams.append("page", String(page));
+            if (perPage) searchParams.append("per_page", String(perPage));
+            if (search) searchParams.append("search", search);
+            if (reason && reason !== "all") searchParams.append("reason", reason);
+
+            const res = await apiFetch(`/api/suppression-list?${searchParams.toString()}`);
+            if (!res.ok) {
+                throw new Error("Failed to fetch suppression list");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useAddSuppressedNumber() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            phone,
+            reason = "manual_suppression",
+            notes,
+        }: {
+            phone: string;
+            reason?: string;
+            notes?: string;
+        }) => {
+            const res = await apiFetch(`/api/suppression-list`, {
+                method: "POST",
+                body: JSON.stringify({ phone, reason, notes }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to suppress phone number");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+        },
+    });
+}
+
+export function useRemoveSuppressedNumber() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const res = await apiFetch(`/api/suppression-list/${id}`, {
+                method: "DELETE",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to remove from suppression list");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["suppressionList"] });
+            queryClient.invalidateQueries({ queryKey: ["customers"] });
+        },
+    });
+}
+

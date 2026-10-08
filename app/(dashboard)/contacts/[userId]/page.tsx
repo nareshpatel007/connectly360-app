@@ -34,7 +34,8 @@ import {
     Share2,
     Flame,
     StickyNote,
-    AlertTriangle
+    AlertTriangle,
+    Ban
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch, useCustomerDuplicates } from "@/lib/api-client-react";
@@ -42,6 +43,7 @@ import { StageBadge, StageKey, STAGES } from "@/components/contacts/contact-crm-
 import { InternalNotesPanel } from "@/components/notes/InternalNotesPanel";
 import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
 import { ManageConsentModal } from "@/components/contacts/ManageConsentModal";
+import { BlockContactModal } from "@/components/contacts/BlockContactModal";
 
 
 interface GroupedReaction {
@@ -127,6 +129,7 @@ export default function CustomerDetailPage() {
     const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
     const [selectedDuplicateForMerge, setSelectedDuplicateForMerge] = useState<any>(null);
     const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
     // Send Message Mutation
     const [isSending, setIsSending] = useState(false);
@@ -284,6 +287,36 @@ export default function CustomerDetailPage() {
                 </div>
             )}
 
+            {/* Blocked Contact Warning Banner */}
+            {customer.is_blocked && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-900 shadow-xs animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-red-100 text-red-800 rounded-xl shrink-0">
+                            <Ban className="w-5 h-5 text-red-600" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-sm text-red-950 flex items-center gap-2">
+                                Contact is Blocked & Suppressed
+                                <Badge variant="destructive" className="text-[10px] uppercase font-bold tracking-wider">
+                                    {customer.blocked_reason || "Blocked"}
+                                </Badge>
+                            </div>
+                            <div className="text-xs text-red-800 mt-0.5">
+                                This phone number is excluded from all WhatsApp campaigns and outbound messages.
+                                {customer.blocked_notes && ` Note: ${customer.blocked_notes}`}
+                            </div>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => setIsBlockModalOpen(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 px-3.5 rounded-xl shrink-0 gap-1.5 shadow-xs"
+                    >
+                        Unblock Contact
+                    </Button>
+                </div>
+            )}
+
             {/* Profile Overview Banner Card */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
@@ -294,6 +327,17 @@ export default function CustomerDetailPage() {
                         <div className="flex items-center gap-2.5">
                             <h2 className="text-lg font-bold text-slate-900">{customer.name || "WhatsApp User"}</h2>
                             <StageBadge stage={(customer.stage as StageKey) || "new_lead"} />
+                            {customer.is_blocked && (
+                                <Badge
+                                    variant="destructive"
+                                    onClick={() => setIsBlockModalOpen(true)}
+                                    className="bg-red-50 text-red-700 border-red-200 text-[10px] font-semibold cursor-pointer hover:bg-red-100 gap-1 transition-colors"
+                                    title="Click to manage contact blocklist status"
+                                >
+                                    <Ban size={11} className="text-red-600" />
+                                    Blocked
+                                </Badge>
+                            )}
                             {customer.whatsapp_opt_in && !customer.whatsapp_opt_out ? (
                                 <Badge
                                     onClick={() => setIsConsentModalOpen(true)}
@@ -342,6 +386,19 @@ export default function CustomerDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsBlockModalOpen(true)}
+                        className={`text-xs rounded-xl font-semibold gap-1.5 h-9 ${
+                            customer.is_blocked
+                                ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                : "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        }`}
+                    >
+                        <Ban size={14} className={customer.is_blocked ? "text-emerald-600" : "text-red-600"} />
+                        {customer.is_blocked ? "Unblock Contact" : "Block Contact"}
+                    </Button>
                     <Button
                         size="sm"
                         variant="outline"
@@ -981,6 +1038,13 @@ export default function CustomerDetailPage() {
             <ManageConsentModal
                 isOpen={isConsentModalOpen}
                 onClose={() => setIsConsentModalOpen(false)}
+                customer={customer}
+            />
+
+            {/* Block / Unblock Contact Modal */}
+            <BlockContactModal
+                isOpen={isBlockModalOpen}
+                onClose={() => setIsBlockModalOpen(false)}
                 customer={customer}
             />
         </div>
