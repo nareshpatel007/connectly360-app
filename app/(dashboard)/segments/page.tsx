@@ -13,7 +13,11 @@ import {
     Trash2,
     Eye,
     RotateCcw,
-    Layers
+    Layers,
+    Copy,
+    Send,
+    ShieldCheck,
+    CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -22,6 +26,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     SegmentBuilderDialog,
@@ -34,483 +39,420 @@ interface SegmentItem {
     id: string;
     name: string;
     description: string;
+    type: "dynamic" | "static";
     targetCount: number;
     rules_json?: SegmentRulesGroup | any;
     conditions: {
         field: string;
         operator: string;
         value: string;
+        field_label?: string;
+        operator_label?: string;
+        value_label?: string;
+        readable?: string;
     }[];
+    summaryText?: string;
     lastCalculated: string;
+    usageCount?: number;
+    lastUsed?: string | null;
     isSystem?: boolean;
 }
 
-function SegmentCardSkeleton({ index = 0 }: { index?: number }) {
-    const conditionWidths = [
-        ["w-40", "w-48"],
-        ["w-44", "w-36"],
-        ["w-52", "w-32"],
-        ["w-48", "w-44"],
-    ];
-    const widths = conditionWidths[index % conditionWidths.length];
-
+function SegmentCardSkeleton() {
     return (
         <Card className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-2.5">
+            <div className="space-y-3">
                 <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <Skeleton className="h-9 w-9 rounded-xl shrink-0 bg-slate-200/70" />
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-4 w-32 rounded-md" />
-                                <Skeleton className="h-3.5 w-12 rounded-md" />
-                            </div>
-                            <Skeleton className="h-3 w-56 max-w-xs rounded-md" />
-                        </div>
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                        <Skeleton className="h-4 w-40 rounded-md" />
+                        <Skeleton className="h-3 w-56 rounded-md" />
                     </div>
+                    <Skeleton className="h-5 w-16 rounded-full" />
                 </div>
-
-                {/* Condition tags skeleton */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                    {widths.map((w, idx) => (
-                        <Skeleton key={idx} className={`h-6 ${w} rounded-lg`} />
-                    ))}
+                    <Skeleton className="h-6 w-32 rounded-lg" />
+                    <Skeleton className="h-6 w-28 rounded-lg" />
                 </div>
             </div>
-
-            {/* Footer skeleton */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                        <Skeleton className="h-3.5 w-3.5 rounded-full" />
-                        <Skeleton className="h-3.5 w-16 rounded-md" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <Skeleton className="h-3 w-3 rounded-full" />
-                        <Skeleton className="h-3 w-20 rounded-md" />
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Skeleton className="h-6 w-12 rounded-lg" />
-                    <Skeleton className="h-6 w-20 rounded-lg" />
-                </div>
+                <Skeleton className="h-4 w-24 rounded-md" />
+                <Skeleton className="h-7 w-20 rounded-lg" />
             </div>
         </Card>
     );
 }
 
 export default function SegmentsPage() {
-    const { token, isLoading: isAuthLoading } = useAuth();
+    const { token } = useAuth();
     const [segments, setSegments] = useState<SegmentItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [filterTab, setFilterTab] = useState<"all" | "dynamic" | "static" | "system">("all");
 
     // Builder modal state
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
     const [editingSegment, setEditingSegment] = useState<SegmentData | null>(null);
 
-    // Audience contact inspector state
+    // Quick Contacts Dialog
     const [inspectingSegmentId, setInspectingSegmentId] = useState<string | null>(null);
     const [inspectingSegmentName, setInspectingSegmentName] = useState<string>("");
 
-    const fetchSegments = useCallback(async (showToast = false) => {
+    const fetchSegments = useCallback(async () => {
         setIsLoading(true);
         try {
             const res = await fetch("/api/segments", {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             const data = await res.json();
             if (data.status && Array.isArray(data.data)) {
                 setSegments(data.data);
-                if (showToast) toast.success("Segment audience counts updated");
+            } else if (Array.isArray(data)) {
+                setSegments(data);
             }
-        } catch {
-            // Keep existing
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to load audience segments");
         } finally {
             setIsLoading(false);
         }
     }, [token]);
 
     useEffect(() => {
-        if (token) {
-            fetchSegments(false);
-        } else if (!isAuthLoading) {
-            setIsLoading(false);
-        }
-    }, [token, isAuthLoading, fetchSegments]);
+        fetchSegments();
+    }, [fetchSegments]);
 
-    const handleRecalculateSingle = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
+    const handleClone = async (id: string, name: string) => {
         try {
-            const res = await fetch(`/api/segments/${id}/recalculate`, {
+            const res = await fetch(`/api/segments/${id}/clone`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` }
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             const data = await res.json();
             if (data.status) {
-                setSegments((prev) =>
-                    prev.map((s) =>
-                        s.id === id
-                            ? {
-                                  ...s,
-                                  targetCount: data.cached_count,
-                                  lastCalculated: "Just now"
-                              }
-                            : s
-                    )
-                );
-                toast.success("Segment recalculated");
+                toast.success(`Audience "${name}" cloned successfully`);
+                fetchSegments();
+            } else {
+                toast.error(data.message || "Failed to clone audience");
             }
-        } catch {
-            toast.error("Failed to recalculate segment");
+        } catch (e) {
+            toast.error("Error cloning audience");
         }
     };
 
-    const handleDeleteSegment = async (e: React.MouseEvent, id: string, name: string) => {
-        e.stopPropagation();
-        if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    const handleDelete = async (id: string, name: string, isSystem = false) => {
+        if (isSystem) {
+            toast.error("System audiences cannot be deleted.");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete audience "${name}"?`)) return;
 
         try {
             const res = await fetch(`/api/segments/${id}`, {
                 method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` }
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             const data = await res.json();
             if (data.status) {
+                toast.success(`Audience "${name}" removed`);
                 setSegments((prev) => prev.filter((s) => s.id !== id));
-                toast.success("Segment deleted successfully");
             } else {
-                toast.error(data.message || "Failed to delete segment");
+                toast.error(data.message || "Failed to delete audience");
             }
-        } catch {
-            toast.error("Network error deleting segment");
+        } catch (e) {
+            toast.error("Error deleting audience");
         }
     };
 
-    const handleDeleteAll = async () => {
-        if (!confirm("Are you sure you want to delete ALL segments in this workspace? This action cannot be undone.")) return;
-
-        setIsLoading(true);
-        try {
-            const res = await fetch("/api/segments/all", {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status) {
-                setSegments([]);
-                toast.success(data.message || "All segments deleted successfully");
-            } else {
-                toast.error(data.message || "Failed to delete segments");
-            }
-        } catch {
-            toast.error("Network error deleting all segments");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRestoreDefaults = async () => {
-        setIsLoading(true);
-        try {
-            const res = await fetch("/api/segments/seed-defaults", {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status && Array.isArray(data.data)) {
-                setSegments(data.data);
-                toast.success("Default system segments restored!");
-            } else {
-                toast.error("Failed to restore presets");
-            }
-        } catch {
-            toast.error("Network error restoring presets");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSaveSuccess = (savedSegment: SegmentItem) => {
-        setSegments((prev) => {
-            const index = prev.findIndex((s) => s.id === savedSegment.id);
-            if (index >= 0) {
-                const updated = [...prev];
-                updated[index] = savedSegment;
-                return updated;
-            }
-            return [savedSegment, ...prev];
-        });
-    };
-
-    const handleOpenEdit = (e: React.MouseEvent, seg: SegmentItem) => {
-        e.stopPropagation();
-        setEditingSegment({
-            id: seg.id,
-            name: seg.name,
-            description: seg.description,
-            rules_json: seg.rules_json || {
-                combinator: "AND",
-                rules: seg.conditions
-            },
-            isSystem: seg.isSystem
-        });
-        setIsBuilderOpen(true);
-    };
-
-    const handleInspectContacts = (seg: SegmentItem) => {
-        setInspectingSegmentId(seg.id);
-        setInspectingSegmentName(seg.name);
-    };
-
-    const filteredSegments = segments.filter(
-        (s) =>
+    // Filter segments
+    const filteredSegments = segments.filter((s) => {
+        const matchesSearch =
             s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.conditions?.some(
-                (c) =>
-                    c.field.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.value.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-    );
+            (s.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.summaryText || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (filterTab === "dynamic") return s.type === "dynamic" && !s.isSystem;
+        if (filterTab === "static") return s.type === "static";
+        if (filterTab === "system") return s.isSystem;
+
+        return true;
+    });
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-6 max-w-7xl mx-auto pb-12">
             {/* Header */}
             <PageHeader
-                icon={Filter}
+                icon={Users}
                 title="Customer Segments"
-                description="Build dynamic customer audiences for targeted WhatsApp campaigns, automations, and analytics."
-                breadcrumbs={[{ label: "Segments" }]}
+                description="Create reusable audiences for campaigns and customer targeting."
+                breadcrumbs={[
+                    { label: "Inbox & CRM" },
+                    { label: "Segments" }
+                ]}
                 actions={
                     <div className="flex items-center gap-2">
-                        {segments.length > 0 && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleDeleteAll}
-                                className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-9 px-3 cursor-pointer text-xs font-bold gap-1.5"
-                                title="Delete all segments in this workspace"
-                            >
-                                <Trash2 size={13} />
-                                Delete All
-                            </Button>
-                        )}
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => fetchSegments(true)}
-                            className="rounded-xl border-[#E5E9EE] text-slate-700 h-9 px-3 cursor-pointer"
-                            title="Recalculate Segments"
+                            onClick={() => fetchSegments()}
+                            className="rounded-xl border-slate-200 text-xs font-semibold"
                         >
-                            <RefreshCw size={14} className={isLoading ? "animate-spin text-[#2F8F83]" : ""} />
+                            <RefreshCw size={12} className="mr-1.5" /> Refresh
                         </Button>
+
                         <Button
+                            size="sm"
                             onClick={() => {
                                 setEditingSegment(null);
                                 setIsBuilderOpen(true);
                             }}
-                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs transition-colors cursor-pointer gap-1.5"
+                            className="rounded-xl bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs shadow-xs cursor-pointer"
                         >
-                            <Plus size={16} />
-                            New Segment
+                            <Plus size={14} className="mr-1" /> Create Segment
                         </Button>
                     </div>
                 }
             />
 
-            {/* Quick Filter Search & Stats */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            {/* Filter Tabs & Search Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                {/* Tabs */}
+                <div className="inline-flex rounded-xl p-1 bg-slate-100/80 border border-slate-200/60 self-start">
+                    <button
+                        type="button"
+                        onClick={() => setFilterTab("all")}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            filterTab === "all"
+                                ? "bg-white text-slate-900 shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}
+                    >
+                        All ({segments.length})
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFilterTab("dynamic")}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            filterTab === "dynamic"
+                                ? "bg-white text-slate-900 shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}
+                    >
+                        Dynamic
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFilterTab("static")}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            filterTab === "static"
+                                ? "bg-white text-slate-900 shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}
+                    >
+                        Static
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFilterTab("system")}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            filterTab === "system"
+                                ? "bg-white text-slate-900 shadow-2xs"
+                                : "text-slate-600 hover:text-slate-900"
+                        }`}
+                    >
+                        System Presets
+                    </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
                     <Input
-                        type="text"
-                        placeholder="Search segments by name or condition..."
+                        placeholder="Search audiences..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-10 rounded-xl border-[#E5E9EE] text-xs font-semibold"
+                        className="pl-9 h-9 rounded-xl border-slate-200 text-xs bg-white"
                     />
-                </div>
-                <div className="text-xs text-slate-500 font-medium">
-                    {isLoading ? (
-                        <div className="flex items-center gap-1.5">
-                            <span>Showing</span>
-                            <Skeleton className="h-4 w-6 rounded inline-block" />
-                            <span>active workspace segments</span>
-                        </div>
-                    ) : (
-                        <>
-                            Showing <span className="font-bold text-slate-900">{filteredSegments.length}</span> active workspace segments
-                        </>
-                    )}
                 </div>
             </div>
 
-            {/* Segment Grid, Skeleton, or Empty State */}
-            {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <SegmentCardSkeleton key={i} index={i} />
-                    ))}
-                </div>
-            ) : filteredSegments.length === 0 ? (
-                <div className="bg-white border border-dashed border-[#E5E9EE] rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 my-8">
-                    <div className="h-14 w-14 rounded-2xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center mx-auto font-bold shadow-2xs border border-[#BFE4DD]">
-                        <Layers size={26} />
-                    </div>
-                    <div className="space-y-1">
-                        <h3 className="text-base font-bold text-slate-900">
-                            {searchQuery.trim() ? "No matching segments found" : "No active customer segments"}
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                            {searchQuery.trim()
-                                ? `No segments match "${searchQuery}". Try a different search term or clear the filter.`
-                                : "Create custom dynamic segments with AND/OR conditions or restore default system presets."}
+            {/* Segments Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                {isLoading ? (
+                    <>
+                        <SegmentCardSkeleton />
+                        <SegmentCardSkeleton />
+                        <SegmentCardSkeleton />
+                        <SegmentCardSkeleton />
+                    </>
+                ) : filteredSegments.length === 0 ? (
+                    <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-slate-200 p-8 space-y-3">
+                        <Users className="h-10 w-10 text-slate-300 mx-auto" />
+                        <h3 className="text-sm font-bold text-slate-800">No audience segments found</h3>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                            {searchQuery
+                                ? "No audiences match your search term. Try a different query."
+                                : "Create your first reusable audience from your contacts using simple filters."}
                         </p>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 pt-2">
-                        {searchQuery.trim() ? (
+                        {!searchQuery && (
                             <Button
-                                variant="outline"
                                 size="sm"
-                                onClick={() => setSearchQuery("")}
-                                className="rounded-xl border-[#E5E9EE] text-slate-700 font-bold text-xs h-9 px-4 cursor-pointer"
+                                onClick={() => setIsBuilderOpen(true)}
+                                className="rounded-xl bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs mt-2"
                             >
-                                Clear Search
+                                <Plus size={13} className="mr-1" /> Create Audience
                             </Button>
-                        ) : (
-                            <>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleRestoreDefaults}
-                                    className="rounded-xl border-[#E5E9EE] text-slate-700 font-bold text-xs h-9 px-4 gap-1.5 cursor-pointer"
-                                >
-                                    <RotateCcw size={13} />
-                                    Restore Presets
-                                </Button>
-                                <Button
-                                    onClick={() => {
-                                        setEditingSegment(null);
-                                        setIsBuilderOpen(true);
-                                    }}
-                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-2xs gap-1.5 cursor-pointer"
-                                >
-                                    <Plus size={15} />
-                                    New Segment
-                                </Button>
-                            </>
                         )}
                     </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredSegments.map((segment) => (
+                ) : (
+                    filteredSegments.map((seg) => (
                         <Card
-                            key={segment.id}
-                            className="bg-white border border-[#E5E9EE] rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all space-y-4 flex flex-col justify-between group"
+                            key={seg.id}
+                            className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between gap-4"
                         >
-                            <div className="space-y-2.5">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="h-9 w-9 rounded-xl bg-[#E8F6F3] text-[#2F8F83] flex items-center justify-center font-bold shrink-0 border border-[#BFE4DD]">
-                                            <Filter size={16} />
+                            <div className="space-y-3">
+                                {/* Title & Badges */}
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="space-y-1 flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Link
+                                                href={`/segments/${seg.id}`}
+                                                className="text-sm font-bold text-slate-900 hover:text-[#35877D] transition-colors"
+                                            >
+                                                {seg.name}
+                                            </Link>
+                                            {seg.isSystem ? (
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] font-bold rounded-md px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200"
+                                                >
+                                                    SYSTEM
+                                                </Badge>
+                                            ) : (
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`text-[10px] font-bold rounded-md px-1.5 py-0 ${
+                                                        seg.type === "static"
+                                                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                                                            : "bg-teal-50 text-[#35877D] border-teal-200"
+                                                    }`}
+                                                >
+                                                    {seg.type === "static" ? "Static" : "Dynamic"}
+                                                </Badge>
+                                            )}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-sm font-bold text-slate-900">{segment.name}</h3>
-                                                {segment.isSystem && (
-                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-[#E8F6F3] text-[#2F8F83] border border-[#BFE4DD]">
-                                                        System
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{segment.description}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Action buttons on card hover */}
-                                    <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => handleRecalculateSingle(e, segment.id)}
-                                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-[#2F8F83] hover:bg-[#E8F6F3] rounded-lg transition-colors cursor-pointer"
-                                            title="Recalculate Audience"
-                                        >
-                                            <RefreshCw size={12} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleOpenEdit(e, segment)}
-                                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                            title="Edit Segment"
-                                        >
-                                            <Edit3 size={12} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDeleteSegment(e, segment.id, segment.name)}
-                                            className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                            title="Delete Segment"
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
+                                        <p className="text-xs text-slate-500 line-clamp-2">
+                                            {seg.description || seg.summaryText || "Audience filter criteria."}
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Conditions list */}
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                    {segment.conditions?.map((cond, i) => (
-                                        <span
-                                            key={i}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-[#E5E9EE] text-[11px] font-mono font-medium text-slate-700"
-                                        >
-                                            <span className="text-slate-400">#</span>
-                                            <span className="font-bold">{cond.field}</span>
-                                            <span className="text-slate-400">{cond.operator}</span>
-                                            <span className="text-[#2F8F83] font-bold">{cond.value}</span>
-                                        </span>
-                                    ))}
+                                {/* Human-readable Condition Summary */}
+                                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {seg.conditions && seg.conditions.length > 0 ? (
+                                            seg.conditions.slice(0, 3).map((cond, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700"
+                                                >
+                                                    <span className="font-bold text-[#35877D]">
+                                                        {cond.field_label || cond.field}:
+                                                    </span>
+                                                    <span>{cond.value_label || cond.value}</span>
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-[11px] text-slate-500">All eligible contacts</span>
+                                        )}
+                                        {seg.conditions && seg.conditions.length > 3 && (
+                                            <span className="text-[10px] font-semibold text-slate-400 self-center">
+                                                +{seg.conditions.length - 3} more
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Card Footer */}
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                            {/* Footer: Contacts Count & Actions */}
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleInspectContacts(segment)}
-                                        className="flex items-center gap-1 font-bold text-slate-800 hover:text-[#35877D] transition-colors cursor-pointer"
-                                        title="View Matching Contacts"
-                                    >
-                                        <Users size={14} className="text-[#35877D]" />
-                                        <span>{segment.targetCount} Contacts</span>
-                                    </button>
-                                    <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                                        <Clock size={12} />
-                                        {segment.lastCalculated}
+                                    <span className="font-bold text-slate-900 flex items-center gap-1 font-mono">
+                                        <Users size={12} className="text-[#35877D]" />
+                                        {seg.targetCount.toLocaleString()} Contacts
+                                    </span>
+                                    <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                        <Clock size={11} /> {seg.lastCalculated}
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleInspectContacts(segment)}
-                                        className="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                <div className="flex items-center gap-1.5">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setInspectingSegmentId(seg.id);
+                                            setInspectingSegmentName(seg.name);
+                                        }}
+                                        className="h-7 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 px-2 cursor-pointer"
                                     >
-                                        <Eye size={12} />
-                                        View
-                                    </button>
-                                    <Link
-                                        href={`/marketing/campaigns/new?segment_id=${segment.id}`}
-                                        className="px-2.5 py-1 text-[11px] font-bold text-[#35877D] hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
+                                        <Eye size={12} className="mr-1" /> View
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleClone(seg.id, seg.name)}
+                                        title="Clone audience"
+                                        className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
                                     >
-                                        Broadcast <ArrowUpRight size={12} />
+                                        <Copy size={13} />
+                                    </Button>
+
+                                    {!seg.isSystem && (
+                                        <>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setEditingSegment(seg as any);
+                                                    setIsBuilderOpen(true);
+                                                }}
+                                                title="Edit audience"
+                                                className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+                                            >
+                                                <Edit3 size={13} />
+                                            </Button>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDelete(seg.id, seg.name, seg.isSystem)}
+                                                title="Delete audience"
+                                                className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 rounded-lg cursor-pointer"
+                                            >
+                                                <Trash2 size={13} />
+                                            </Button>
+                                        </>
+                                    )}
+
+                                    <Link href={`/marketing/campaigns/new?segment_id=${seg.id}`}>
+                                        <Button
+                                            size="sm"
+                                            className="h-7 px-2.5 rounded-lg bg-[#35877D] hover:bg-[#2c6e66] text-white font-bold text-xs shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                        >
+                                            <Send size={11} />
+                                            Broadcast
+                                        </Button>
                                     </Link>
                                 </div>
                             </div>
                         </Card>
-                    ))}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
 
             {/* Segment Builder Dialog */}
             <SegmentBuilderDialog
@@ -518,14 +460,19 @@ export default function SegmentsPage() {
                 onOpenChange={setIsBuilderOpen}
                 token={token}
                 editingSegment={editingSegment}
-                onSaveSuccess={handleSaveSuccess}
+                onSaveSuccess={() => {
+                    fetchSegments();
+                    setEditingSegment(null);
+                }}
             />
 
-            {/* Inspect Audience Contacts Dialog */}
+            {/* Quick Contacts Dialog */}
             <SegmentContactsDialog
                 open={!!inspectingSegmentId}
                 onOpenChange={(open) => {
-                    if (!open) setInspectingSegmentId(null);
+                    if (!open) {
+                        setInspectingSegmentId(null);
+                    }
                 }}
                 segmentId={inspectingSegmentId}
                 segmentName={inspectingSegmentName}

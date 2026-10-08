@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
     Check, ChevronRight, Loader2, ArrowLeft, Radio, FileText,
@@ -58,6 +58,8 @@ const STEPS = [
 
 export default function NewCampaignPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const segmentParam = searchParams.get("segment_id");
     const { user } = useAuth();
     const workspaceId = user?.tenant_id;
 
@@ -76,8 +78,8 @@ export default function NewCampaignPage() {
     const [variableMappings, setVariableMappings] = useState<Record<string, { field: string; fallback: string }>>({});
 
     // Audience state
-    const [audienceType, setAudienceType] = useState<"all" | "segment" | "tags">("all");
-    const [selectedSegmentId, setSelectedSegmentId] = useState<string>("");
+    const [audienceType, setAudienceType] = useState<"all" | "segment" | "tags">(segmentParam ? "segment" : "all");
+    const [selectedSegmentId, setSelectedSegmentId] = useState<string>(segmentParam || "");
     const [tagsInput, setTagsInput] = useState<string>("");
     const [segmentsList, setSegmentsList] = useState<any[]>([]);
     const [audiencePreview, setAudiencePreview] = useState<AudienceValidationResult | null>(null);
@@ -744,7 +746,7 @@ export default function NewCampaignPage() {
                                                 <SelectContent>
                                                     {segmentsList.map((seg) => (
                                                         <SelectItem key={seg.id} value={String(seg.id)}>
-                                                            {seg.name} ({seg.contacts_count ?? seg.count ?? 0} contacts)
+                                                            {seg.name} ({seg.targetCount ?? seg.cached_count ?? seg.contacts_count ?? seg.count ?? 0} contacts)
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>

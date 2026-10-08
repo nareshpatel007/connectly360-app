@@ -1,8 +1,30 @@
 "use client";
 
-import { useListCustomers, useCreateCustomer, Customer } from "@workspace/api-client-react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    useListCustomers,
+    useCustomerStats,
+    Customer
+} from "@/lib/api-client-react";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
     Search,
     MapPin,
@@ -10,303 +32,337 @@ import {
     MessageCircle,
     Plus,
     Loader2,
-    PlayCircle,
     SlidersHorizontal,
     Upload,
     Download,
     Trash2,
     Edit2,
     ShieldCheck,
-    Users
+    Users,
+    BookmarkPlus,
+    X,
+    Filter,
+    CheckCircle2,
+    Building2,
+    Calendar,
+    Send,
+    ExternalLink,
+    AlertCircle
 } from "lucide-react";
-import { PageHeader } from "@/components/page-header";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import Link from "next/link";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ContactCrmPanel, StageBadge, CrmContact, StageKey, STAGES } from "@/components/contacts/contact-crm-panel";
 
-export default function CustomersPage() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const { data: customers, isLoading } = useListCustomers({ search: searchTerm });
-    const createCustomerMutation = useCreateCustomer();
+// CRM and Dialog Components
+import { ContactCrmPanel, StageBadge, CrmContact, StageKey, STAGES } from "@/components/contacts/contact-crm-panel";
+import { ContactCreateModal } from "@/components/contacts/contact-create-modal";
+import { ContactImportModal } from "@/components/contacts/contact-import-modal";
+import { ContactExportModal } from "@/components/contacts/contact-export-modal";
+import { ContactFilterDrawer, ContactFilterState } from "@/components/contacts/contact-filter-drawer";
+import { SegmentBuilderDialog, SegmentRule } from "@/components/segments/segment-builder-dialog";
+
+export default function ContactsPage() {
+    const router = useRouter();
     const queryClient = useQueryClient();
 
-    // Dialog & Form States
-    const [isOpen, setIsOpen] = useState(false);
-    const [isImportOpen, setIsImportOpen] = useState(false);
-    const [importFile, setImportFile] = useState<File | null>(null);
-    const [isImporting, setIsImporting] = useState(false);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
-    const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [city, setCity] = useState("");
-    const [firstMessage, setFirstMessage] = useState("");
+    // Data Queries
+    const { data: stats, isLoading: isStatsLoading } = useCustomerStats();
 
-    // New States for Redesigned UI
-    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    // Search and Filters
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filters, setFilters] = useState<ContactFilterState>({});
     const [sortBy, setSortBy] = useState("last_updated");
-    const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [isEditOpen, setIsEditOpen] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // CRM Panel
+    // Filter params sent to backend query
+    const queryParams = useMemo(() => ({
+        search: searchTerm || undefined,
+        city: filters.city || undefined,
+        stage: filters.stage || undefined,
+        whatsapp_opt_in: filters.whatsapp_opt_in || undefined,
+        last_interaction: filters.last_interaction || undefined,
+        created_within: filters.created_within || undefined,
+        company: filters.company || undefined,
+        sort_by: sortBy,
+    }), [searchTerm, filters, sortBy]);
+
+    const { data: rawCustomers, isLoading: isCustomersLoading } = useListCustomers(queryParams);
+
+    // Active customer list
+    const customers = useMemo(() => {
+        if (!rawCustomers || !Array.isArray(rawCustomers)) return [];
+        return rawCustomers;
+    }, [rawCustomers]);
+
+    // Modal States
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
+    const [isExportOpen, setIsExportOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isSegmentBuilderOpen, setIsSegmentBuilderOpen] = useState(false);
+    const [segmentInitialRules, setSegmentInitialRules] = useState<SegmentRule[]>([]);
+
+    // Edit Modal State
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+    const [editForm, setEditForm] = useState({
+        name: "",
+        phone: "",
+        email: "",
+        city: "",
+        company: "",
+        stage: "new_lead",
+    });
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    // Delete Modals
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Bulk Delete
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+    // Table Selection State
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    // CRM Panel State
     const [crmContact, setCrmContact] = useState<CrmContact | null>(null);
     const [isCrmOpen, setIsCrmOpen] = useState(false);
-    // Local overrides for stage & attributes (so table updates instantly)
     const [stageOverrides, setStageOverrides] = useState<Record<number, StageKey>>({});
     const [attrsOverrides, setAttrsOverrides] = useState<Record<number, Record<string, string>>>({});
 
-    // Filter & Sort customers
-    const filteredCustomers = (customers?.filter(customer =>
-        (customer.name || "WhatsApp User").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (customer.city || "").toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => {
-        if (sortBy === "name") {
-            return (a.name || "WhatsApp User").localeCompare(b.name || "WhatsApp User");
-        } else if (sortBy === "phone") {
-            return a.phone.localeCompare(b.phone);
-        }
-        // Default: Sort by last updated/created (id desc/created_at desc)
-        return b.id - a.id;
-    })) || [];
+    // Bulk Stage Change State
+    const [isBulkStageOpen, setIsBulkStageOpen] = useState(false);
+    const [bulkNewStage, setBulkNewStage] = useState<string>("qualified");
+    const [isUpdatingBulkStage, setIsUpdatingBulkStage] = useState(false);
 
-    const handleCreateContact = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!phone.trim()) {
-            toast.error("Phone number is required");
-            return;
-        }
+    // Pagination calculations
+    const paginatedCustomers = useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage;
+        return customers.slice(start, start + rowsPerPage);
+    }, [customers, currentPage, rowsPerPage]);
 
-        try {
-            await createCustomerMutation.mutateAsync({
-                data: {
-                    name: name.trim() || "WhatsApp User",
-                    phone: phone.trim(),
-                    city: city.trim() || undefined,
-                    firstMessage: firstMessage.trim() || undefined,
-                },
-            });
+    const totalPages = Math.max(1, Math.ceil(customers.length / rowsPerPage));
 
-            toast.success("Contact created successfully");
-            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
-
-            // Reset form and close dialog
-            setName("");
-            setPhone("");
-            setCity("");
-            setFirstMessage("");
-            setIsOpen(false);
-        } catch (err: any) {
-            toast.error(err.message || "Failed to create contact");
-        }
-    };
-
-    // Checkbox selection handlers
+    // Selection Handlers
     const handleSelectAll = (checked: boolean) => {
-        if (checked && filteredCustomers) {
-            setSelectedIds(filteredCustomers.map(c => c.id));
+        if (checked) {
+            setSelectedIds(paginatedCustomers.map((c) => c.id));
         } else {
             setSelectedIds([]);
         }
     };
 
-    const handleSelect = (id: number, checked: boolean) => {
+    const handleSelectRow = (id: number, checked: boolean) => {
         if (checked) {
-            setSelectedIds(prev => [...prev, id]);
+            setSelectedIds((prev) => [...prev, id]);
         } else {
-            setSelectedIds(prev => prev.filter(item => item !== id));
+            setSelectedIds((prev) => prev.filter((item) => item !== id));
         }
     };
 
-    // WhatsApp SVG Icon
-    const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" {...props}>
-            <path d="M12.004 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.83L2.06 22l4.31-1.13c1.62.88 3.48 1.39 5.47 1.39 5.52 0 10-4.48 10-10S17.52 2 12.004 2zm5.73 13.91c-.24.68-1.24 1.25-1.91 1.33-.57.07-1.3.1-3.69-.89-3.06-1.27-5.01-4.36-5.16-4.57-.15-.2-.17-.26-.17-.46s.1-.37.2-.56c.1-.19.2-.24.3-.39.1-.15.15-.24.22-.39.07-.15.03-.29-.02-.39s-.49-1.2-.67-1.63c-.17-.43-.35-.37-.48-.38l-.41-.01c-.15 0-.39.06-.59.28-.2.22-.78.76-.78 1.85 0 1.09.8 2.14.91 2.29.11.15 1.57 2.4 3.8 3.36 1.86.8 2.48.64 2.87.6.86-.09 1.91-.78 2.18-1.5.27-.72.27-1.34.19-1.47-.08-.13-.29-.21-.61-.37s-1.89-.93-2.18-1.04-.51-.16-.72.16c-.21.32-.82 1.04-1.01 1.25-.19.21-.38.24-.7.08-.32-.16-1.35-.5-2.58-1.59-.95-.85-1.6-1.9-1.78-2.22-.19-.32-.02-.49.14-.65.15-.14.32-.37.48-.56.16-.19.22-.32.32-.53.1-.21.05-.4-.02-.56s-.67-1.63-.92-2.24c-.24-.6-.49-.52-.67-.53-.18-.01-.39-.01-.6-.01z" />
-        </svg>
-    );
+    // Filter count
+    const activeFiltersCount = useMemo(() => {
+        return Object.values(filters).filter((v) => v && v !== "").length;
+    }, [filters]);
 
-    // Phone Flag Helper
+    // Format phone display
     const formatPhoneNumber = (phone: string) => {
-        const cleaned = phone.replace(/\D/g, "");
-        if (cleaned.startsWith("91")) {
-            return {
-                flag: "🇮🇳",
-                display: `(+91) ${cleaned.substring(2)}`
-            };
+        const cleaned = (phone || "").replace(/\D/g, "");
+        if (cleaned.startsWith("91") && cleaned.length >= 12) {
+            return { flag: "🇮🇳", display: `+91 ${cleaned.substring(2)}` };
         }
-        return {
-            flag: "📞",
-            display: phone
-        };
+        if (cleaned.startsWith("1") && cleaned.length >= 11) {
+            return { flag: "🇺🇸", display: `+1 ${cleaned.substring(1)}` };
+        }
+        if (cleaned.startsWith("971")) {
+            return { flag: "🇦🇪", display: `+971 ${cleaned.substring(3)}` };
+        }
+        if (cleaned.startsWith("44")) {
+            return { flag: "🇬🇧", display: `+44 ${cleaned.substring(2)}` };
+        }
+        return { flag: "📞", display: phone || "—" };
     };
 
-    // Mock utility handlers
-    const handleExport = () => {
-        toast.success(`Exported ${filteredCustomers?.length ?? 0} contacts successfully to CSV.`);
-    };
+    // Save active filters as Reusable Segment
+    const handleSaveFilterAsSegment = (activeFilt?: ContactFilterState) => {
+        const f = activeFilt || filters;
+        const rules: SegmentRule[] = [];
 
-    const handleImport = () => {
-        setIsImportOpen(true);
-    };
-
-    const downloadSampleFile = () => {
-        const csvContent = "data:text/csv;charset=utf-8,"
-            + "Name,Phone,City,First Message\n"
-            + "John Doe,919876543210,Mumbai,Hello there\n"
-            + "Jane Smith,919876543211,Delhi,Interested in your product\n";
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "sample_contacts.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const cleanField = (field: string) => {
-        if (!field) return "";
-        return field.replace(/^["']|["']$/g, "").trim();
-    };
-
-    const handleFileUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!importFile) {
-            toast.error("Please select a file first");
-            return;
+        if (f.city) {
+            rules.push({ field: "city", operator: "equals", value: f.city });
+        }
+        if (f.stage) {
+            rules.push({ field: "lead_status", operator: "equals", value: f.stage });
+        }
+        if (f.whatsapp_opt_in) {
+            rules.push({
+                field: "whatsapp_opt_in",
+                operator: "equals",
+                value: f.whatsapp_opt_in === "true" ? "true" : "false",
+            });
+        }
+        if (f.last_interaction) {
+            rules.push({ field: "last_interaction", operator: "older_than_days", value: f.last_interaction });
+        }
+        if (f.company) {
+            rules.push({ field: "company", operator: "equals", value: f.company });
+        }
+        if (f.created_within) {
+            rules.push({ field: "created_at", operator: "within_days", value: f.created_within });
         }
 
-        setIsImporting(true);
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            if (!text) {
-                toast.error("Failed to read file");
-                setIsImporting(false);
-                return;
-            }
-
-            const lines = text.split(/\r?\n/);
-            if (lines.length === 0) {
-                toast.error("File is empty");
-                setIsImporting(false);
-                return;
-            }
-
-            const headers = lines[0].split(",");
-
-            // Basic validation
-            if (headers.length < 2 || !headers[0].toLowerCase().includes("name") || !headers[1].toLowerCase().includes("phone")) {
-                toast.error("Invalid CSV format. Please make sure headers are: Name, Phone, City, First Message");
-                setIsImporting(false);
-                return;
-            }
-
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-
-                const columns = line.split(",");
-                const cName = cleanField(columns[0]);
-                const cPhone = cleanField(columns[1]);
-                const cCity = cleanField(columns[2]);
-                const cFirstMessage = cleanField(columns[3]);
-
-                if (!cPhone) {
-                    errorCount++;
-                    continue;
-                }
-
-                try {
-                    await createCustomerMutation.mutateAsync({
-                        data: {
-                            name: cName || "WhatsApp User",
-                            phone: cPhone,
-                            city: cCity || undefined,
-                            firstMessage: cFirstMessage || undefined
-                        }
-                    });
-                    successCount++;
-                } catch (err) {
-                    errorCount++;
-                }
-            }
-
-            toast.success(`Import completed: ${successCount} contacts imported successfully.${errorCount > 0 ? ` ${errorCount} failed.` : ""}`);
-            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
-            setIsImportOpen(false);
-            setImportFile(null);
-            setIsImporting(false);
-        };
-
-        reader.onerror = () => {
-            toast.error("Error reading file");
-            setIsImporting(false);
-        };
-
-        reader.readAsText(importFile);
+        setSegmentInitialRules(rules);
+        setIsSegmentBuilderOpen(true);
     };
 
-    const handleBulkDelete = () => {
-        setIsBulkDeleteOpen(true);
-    };
-
-    const confirmBulkDelete = () => {
-        toast.success(`Deleted ${selectedIds.length} contacts successfully.`);
-        setSelectedIds([]);
-        setIsBulkDeleteOpen(false);
-    };
-
-    const handleDeleteClick = (customer: Customer) => {
-        setCustomerToDelete(customer);
-        setIsDeleteOpen(true);
-    };
-
-    const confirmDeleteContact = () => {
-        if (customerToDelete) {
-            toast.success(`Contact "${customerToDelete.name || 'WhatsApp User'}" deleted successfully.`);
-            setIsDeleteOpen(false);
-            setCustomerToDelete(null);
-        }
-    };
-
-    const openEditDialog = (customer: Customer) => {
-        setSelectedCustomer(customer);
-        setName(customer.name || "");
-        setPhone(customer.phone);
-        setCity(customer.city || "");
+    // Open Edit Dialog
+    const handleOpenEdit = (customer: Customer) => {
+        setCustomerToEdit(customer);
+        setEditForm({
+            name: customer.name || "",
+            phone: customer.phone || "",
+            email: customer.email || "",
+            city: customer.city || "",
+            company: customer.company || "",
+            stage: (customer as any).stage || "new_lead",
+        });
         setIsEditOpen(true);
     };
 
-    const handleEditContact = (e: React.FormEvent) => {
+    // Execute Edit Contact
+    const handleSaveEdit = async (e: React.FormEvent) => {
         e.preventDefault();
-        toast.success("Contact details updated successfully.");
-        setIsEditOpen(false);
-        setSelectedCustomer(null);
-        setName("");
-        setPhone("");
-        setCity("");
+        if (!customerToEdit) return;
+
+        setIsSavingEdit(true);
+        try {
+            const res = await fetch(`/api/customers/${customerToEdit.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Tenant-Id": "8",
+                },
+                body: JSON.stringify(editForm),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast.error(data.message || "Failed to update contact.");
+                return;
+            }
+
+            toast.success("Contact updated successfully.");
+            setIsEditOpen(false);
+            setCustomerToEdit(null);
+            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+            queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+        } catch (err: any) {
+            toast.error(err.message || "Network error while updating contact.");
+        } finally {
+            setIsSavingEdit(false);
+        }
     };
 
-    const openCrmPanel = (customer: Customer) => {
+    // Delete Single Contact
+    const handleConfirmDelete = async () => {
+        if (!customerToDelete) return;
+
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`/api/customers/${customerToDelete.id}`, {
+                method: "DELETE",
+                headers: { "X-Tenant-Id": "8" },
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast.error(data.message || "Failed to delete contact.");
+                return;
+            }
+
+            toast.success(data.message || "Contact deleted successfully.");
+            setIsDeleteOpen(false);
+            setCustomerToDelete(null);
+            setSelectedIds((prev) => prev.filter((id) => id !== customerToDelete.id));
+            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+            queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+        } catch (err: any) {
+            toast.error(err.message || "Failed to delete contact.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    // Bulk Delete
+    const handleConfirmBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+
+        setIsBulkDeleting(true);
+        try {
+            const res = await fetch("/api/customers/bulk-delete", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Tenant-Id": "8",
+                },
+                body: JSON.stringify({ ids: selectedIds }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast.error(data.message || "Failed to delete contacts.");
+                return;
+            }
+
+            toast.success(data.message || `Deleted ${selectedIds.length} contacts.`);
+            setIsBulkDeleteOpen(false);
+            setSelectedIds([]);
+            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+            queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+        } catch (err: any) {
+            toast.error(err.message || "Error deleting selected contacts.");
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    };
+
+    // Bulk Stage Change
+    const handleConfirmBulkStage = async () => {
+        if (selectedIds.length === 0) return;
+
+        setIsUpdatingBulkStage(true);
+        try {
+            const res = await fetch("/api/customers/bulk-update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Tenant-Id": "8",
+                },
+                body: JSON.stringify({ ids: selectedIds, stage: bulkNewStage }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast.error(data.message || "Failed to update stage.");
+                return;
+            }
+
+            toast.success(`Updated lead stage for ${selectedIds.length} contacts.`);
+            setIsBulkStageOpen(false);
+            setSelectedIds([]);
+            queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+        } catch (err: any) {
+            toast.error(err.message || "Error updating contacts stage.");
+        } finally {
+            setIsUpdatingBulkStage(false);
+        }
+    };
+
+    // Open CRM Drawer
+    const handleOpenCrm = (customer: Customer) => {
         const c: CrmContact = {
             id: customer.id,
-            name: customer.name,
+            name: customer.name || "WhatsApp User",
             phone: customer.phone,
-            city: customer.city,
+            city: customer.city ?? undefined,
             stage: (stageOverrides[customer.id] ?? (customer as any).stage ?? "new_lead") as StageKey,
             custom_attributes: attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {},
             createdAt: customer.createdAt,
@@ -316,46 +372,36 @@ export default function CustomersPage() {
         setIsCrmOpen(true);
     };
 
-    const handleCrmStageChange = (id: number, stage: StageKey) => {
-        setStageOverrides(prev => ({ ...prev, [id]: stage }));
-        setCrmContact(prev => prev && prev.id === id ? { ...prev, stage } : prev);
-    };
-
-    const handleCrmAttrsChange = (id: number, attrs: Record<string, string>) => {
-        setAttrsOverrides(prev => ({ ...prev, [id]: attrs }));
-        setCrmContact(prev => prev && prev.id === id ? { ...prev, custom_attributes: attrs } : prev);
-    };
-
     return (
-        <div className="space-y-6 w-full">
-            {/* Standard PageHeader */}
+        <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-16">
+            {/* 1. Header with primary actions */}
             <PageHeader
                 icon={Users}
                 title="Contacts"
-                badge={filteredCustomers ? `${filteredCustomers.length}` : undefined}
-                description="Manage customer contact cards, conversational history, and pipeline CRM stages."
+                badge={customers.length.toString()}
+                description="Manage your customers, organize audiences, and target the right people."
                 breadcrumbs={[{ label: "Contacts" }]}
                 actions={
                     <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            onClick={handleExport}
-                            className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
+                            onClick={() => setIsExportOpen(true)}
+                            className="border-slate-200 text-slate-700 text-xs h-9 px-3.5 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer shadow-xs"
                         >
-                            <Upload size={14} />
+                            <Download size={14} className="text-slate-600" />
                             Export
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={handleImport}
-                            className="border-slate-200 text-slate-700 text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer"
+                            onClick={() => setIsImportOpen(true)}
+                            className="border-slate-200 text-slate-700 text-xs h-9 px-3.5 rounded-xl flex items-center gap-1.5 bg-white font-semibold hover:bg-slate-50 cursor-pointer shadow-xs"
                         >
-                            <Download size={14} />
-                            Import
+                            <Upload size={14} className="text-[#35877D]" />
+                            Import Contacts
                         </Button>
                         <Button
-                            onClick={() => setIsOpen(true)}
-                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-semibold cursor-pointer shadow-2xs"
+                            onClick={() => setIsCreateOpen(true)}
+                            className="bg-[#35877D] hover:bg-[#2d736a] text-white text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 border-0 font-semibold cursor-pointer shadow-sm"
                         >
                             <Plus size={15} />
                             Add Contact
@@ -364,366 +410,703 @@ export default function CustomersPage() {
                 }
             />
 
-            {/* Create Contact Dialog */}
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
-                            <Plus size={16} className="text-[#2F8F83]" />
-                        </div>
+            {/* 2. Lightweight KPI Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white hover:border-[#35877D]/40 transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
                         <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">Create New Contact</DialogTitle>
-                            <DialogDescription className="text-slate-600 text-xs mt-0.5">
-                                Add a contact manually to your database.
-                            </DialogDescription>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                Total Contacts
+                            </div>
+                            <div className="text-xl font-black text-slate-900 mt-1">
+                                {isStatsLoading ? <Skeleton className="h-6 w-16" /> : (stats?.total ?? customers.length).toLocaleString()}
+                            </div>
                         </div>
-                    </div>
-                    <form onSubmit={handleCreateContact} className="p-6 space-y-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="name" className="text-xs font-semibold text-slate-700">Name</Label>
-                            <Input
-                                id="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. John Doe"
-                                className="text-xs text-slate-700 h-9"
-                            />
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
+                            <Users size={18} />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="phone" className="text-xs font-semibold text-slate-700">
-                                Phone Number <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="phone"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="e.g. 919876543210"
-                                className="text-xs text-slate-700 h-9"
-                                required
-                            />
-                            <p className="text-[10px] text-slate-400">
-                                Include country code without + or spaces (e.g. 919876543210).
-                            </p>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="city" className="text-xs font-semibold text-slate-700">City</Label>
-                            <Input
-                                id="city"
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                placeholder="e.g. Mumbai"
-                                className="text-xs text-slate-700 h-9"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="firstMessage" className="text-xs font-semibold text-slate-700">First Message (Optional)</Label>
-                            <Textarea
-                                id="firstMessage"
-                                value={firstMessage}
-                                onChange={(e) => setFirstMessage(e.target.value)}
-                                placeholder="Type a message to start conversation immediately..."
-                                className="min-h-[80px] text-xs text-slate-700 leading-relaxed resize-none"
-                            />
-                        </div>
-                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsOpen(false)}
-                                disabled={createCustomerMutation.isPending}
-                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
-                                disabled={createCustomerMutation.isPending}
-                            >
-                                {createCustomerMutation.isPending ? (
-                                    <span className="flex items-center gap-1.5">
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        Creating...
-                                    </span>
-                                ) : (
-                                    "Create Contact"
-                                )}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                    </CardContent>
+                </Card>
 
-            {/* Filter and Action Bar */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
-                        <span>Sort by:</span>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="h-9 px-2 border border-[#E5E9EE] bg-white rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2F8F83] cursor-pointer"
-                        >
-                            <option value="last_updated">Last Updated</option>
-                            <option value="name">Name</option>
-                            <option value="phone">Phone Number</option>
-                        </select>
-                    </div>
+                <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white hover:border-[#35877D]/40 transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <div className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">
+                                WhatsApp Opt-in
+                            </div>
+                            <div className="text-xl font-black text-slate-900 mt-1">
+                                {isStatsLoading ? <Skeleton className="h-6 w-16" /> : (stats?.opted_in ?? 0).toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#35877D] flex items-center justify-center font-bold">
+                            <ShieldCheck size={18} />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <div className="relative w-full sm:w-64">
-                        <Input
-                            type="search"
-                            placeholder="Search contacts"
-                            className="pr-9 h-9 text-xs text-slate-600 bg-white border-[#E5E9EE] rounded-lg focus-visible:ring-1 focus-visible:ring-[#2F8F83]"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    </div>
-                </div>
+                <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white hover:border-[#35877D]/40 transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+                                Active Contacts
+                            </div>
+                            <div className="text-xl font-black text-slate-900 mt-1">
+                                {isStatsLoading ? <Skeleton className="h-6 w-16" /> : (stats?.active_30d ?? 0).toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <CheckCircle2 size={18} />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                {/* Bulk Actions */}
-                <div className="flex items-center gap-2">
-                    {selectedIds.length > 0 && (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleBulkDelete}
-                            className="text-xs h-9 px-3 rounded-xl flex items-center gap-1.5 font-bold cursor-pointer"
-                        >
-                            <Trash2 size={13} />
-                            Delete ({selectedIds.length})
-                        </Button>
-                    )}
-                </div>
+                <Card className="rounded-2xl border-slate-200/80 shadow-xs bg-white hover:border-[#35877D]/40 transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <div className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">
+                                New This Month
+                            </div>
+                            <div className="text-xl font-black text-slate-900 mt-1">
+                                {isStatsLoading ? <Skeleton className="h-6 w-16" /> : (stats?.new_this_month ?? 0).toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                            <Calendar size={18} />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Table Container */}
-            <Card className="border border-[#E5E9EE] bg-white shadow-2xs rounded-xl overflow-hidden">
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                                <TableHead className="w-[50px] pl-6 py-3">
+            {/* 3. Filter Toolbar & Search Bar */}
+            <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                            <Input
+                                placeholder="Search by name, phone, city, or company..."
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="pl-9 text-xs h-9 bg-slate-50/60 border-slate-200 rounded-xl focus:bg-white transition-colors"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                    <X size={13} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Filter Drawer Trigger */}
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsFilterOpen(true)}
+                            className={`h-9 text-xs px-3.5 rounded-xl border-slate-200 flex items-center gap-1.5 font-semibold transition-all ${
+                                activeFiltersCount > 0
+                                    ? "bg-[#35877D]/10 border-[#35877D] text-[#35877D]"
+                                    : "bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                        >
+                            <SlidersHorizontal size={14} />
+                            Filter
+                            {activeFiltersCount > 0 && (
+                                <span className="bg-[#35877D] text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-0.5">
+                                    {activeFiltersCount}
+                                </span>
+                            )}
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                        {/* Sort selector */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                            <span className="hidden md:inline">Sort:</span>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-[#35877D]"
+                            >
+                                <option value="last_updated">Recently Updated</option>
+                                <option value="name">Name (A-Z)</option>
+                                <option value="phone">Phone Number</option>
+                                <option value="created_at">Date Created</option>
+                            </select>
+                        </div>
+
+                        {/* Page Size */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                            <span className="hidden md:inline">Show:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => {
+                                    setRowsPerPage(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-slate-800 font-semibold focus:outline-none"
+                            >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Active Filters Bar with "Save as Segment" CTA */}
+                {(activeFiltersCount > 0 || searchTerm) && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-teal-50/40 p-2.5 px-4 rounded-xl border border-teal-100 text-xs">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] font-bold text-teal-900 uppercase tracking-wider">
+                                Active Filters:
+                            </span>
+
+                            {searchTerm && (
+                                <Badge className="bg-white border-teal-200 text-teal-900 text-xs font-semibold gap-1 pl-2.5 pr-1.5 py-0.5 shadow-2xs">
+                                    Search: &quot;{searchTerm}&quot;
+                                    <button onClick={() => setSearchTerm("")} className="hover:text-rose-600">
+                                        <X size={12} />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            {filters.city && (
+                                <Badge className="bg-white border-teal-200 text-teal-900 text-xs font-semibold gap-1 pl-2.5 pr-1.5 py-0.5 shadow-2xs">
+                                    City: {filters.city}
+                                    <button onClick={() => setFilters((prev) => ({ ...prev, city: "" }))} className="hover:text-rose-600">
+                                        <X size={12} />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            {filters.stage && (
+                                <Badge className="bg-white border-teal-200 text-teal-900 text-xs font-semibold gap-1 pl-2.5 pr-1.5 py-0.5 shadow-2xs">
+                                    Stage: {filters.stage}
+                                    <button onClick={() => setFilters((prev) => ({ ...prev, stage: "" }))} className="hover:text-rose-600">
+                                        <X size={12} />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            {filters.whatsapp_opt_in && (
+                                <Badge className="bg-white border-teal-200 text-teal-900 text-xs font-semibold gap-1 pl-2.5 pr-1.5 py-0.5 shadow-2xs">
+                                    WhatsApp: {filters.whatsapp_opt_in === "true" ? "Opted In" : "Opted Out"}
+                                    <button onClick={() => setFilters((prev) => ({ ...prev, whatsapp_opt_in: "" }))} className="hover:text-rose-600">
+                                        <X size={12} />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            {filters.last_interaction && (
+                                <Badge className="bg-white border-teal-200 text-teal-900 text-xs font-semibold gap-1 pl-2.5 pr-1.5 py-0.5 shadow-2xs">
+                                    Interaction: {filters.last_interaction}d
+                                    <button onClick={() => setFilters((prev) => ({ ...prev, last_interaction: "" }))} className="hover:text-rose-600">
+                                        <X size={12} />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            <button
+                                onClick={() => {
+                                    setSearchTerm("");
+                                    setFilters({});
+                                }}
+                                className="text-[11px] text-slate-500 hover:text-slate-800 underline ml-1 cursor-pointer font-medium"
+                            >
+                                Clear all
+                            </button>
+                        </div>
+
+                        {/* Save as Segment CTA Button */}
+                        <Button
+                            size="sm"
+                            onClick={() => handleSaveFilterAsSegment()}
+                            className="bg-[#35877D] hover:bg-[#2d736a] text-white text-xs h-7 px-3 rounded-lg font-bold gap-1.5 shadow-sm"
+                        >
+                            <BookmarkPlus size={13} />
+                            Save as Segment ({customers.length})
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            {/* 5. Contacts Table */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                        <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <th className="p-3.5 pl-4 w-10">
                                     <Checkbox
-                                        checked={filteredCustomers?.length > 0 && selectedIds.length === filteredCustomers.length}
-                                        onCheckedChange={handleSelectAll}
-                                        className="h-4 w-4 rounded border-slate-300 text-[#2F8F83] focus:ring-[#2F8F83]"
+                                        checked={
+                                            paginatedCustomers.length > 0 &&
+                                            paginatedCustomers.every((c) => selectedIds.includes(c.id))
+                                        }
+                                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
                                     />
-                                </TableHead>
-                                <TableHead className="font-semibold text-slate-700 text-xs">Basic info</TableHead>
-                                <TableHead className="font-semibold text-slate-700 text-xs">Phone number</TableHead>
-                                <TableHead className="font-semibold text-slate-700 text-xs">Source</TableHead>
-                                <TableHead className="font-semibold text-slate-700 text-xs">Stage</TableHead>
-                                <TableHead className="font-semibold text-slate-700 text-xs">Contact Attributes</TableHead>
-                                <TableHead className="w-[100px] text-right font-semibold text-slate-700 text-xs pr-6">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                [...Array(3)].map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell className="pl-6"><Skeleton className="h-4 w-4 bg-slate-100" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-32 bg-slate-100" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24 bg-slate-100" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-12 bg-slate-100" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-48 bg-slate-100" /></TableCell>
-                                        <TableCell className="text-right pr-6"><Skeleton className="h-8 w-16 ml-auto bg-slate-100" /></TableCell>
-                                    </TableRow>
+                                </th>
+                                <th className="p-3.5">Contact Details</th>
+                                <th className="p-3.5">WhatsApp Opt-in</th>
+                                <th className="p-3.5">CRM Stage</th>
+                                <th className="p-3.5">Location & Company</th>
+                                <th className="p-3.5">Created</th>
+                                <th className="p-3.5 pr-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {isCustomersLoading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i}>
+                                        <td className="p-3.5 pl-4"><Skeleton className="h-4 w-4" /></td>
+                                        <td className="p-3.5"><Skeleton className="h-4 w-32" /></td>
+                                        <td className="p-3.5"><Skeleton className="h-4 w-20" /></td>
+                                        <td className="p-3.5"><Skeleton className="h-4 w-16" /></td>
+                                        <td className="p-3.5"><Skeleton className="h-4 w-24" /></td>
+                                        <td className="p-3.5"><Skeleton className="h-4 w-16" /></td>
+                                        <td className="p-3.5 pr-4 text-right"><Skeleton className="h-4 w-12 ml-auto" /></td>
+                                    </tr>
                                 ))
-                            ) : filteredCustomers?.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-slate-500 text-xs pl-6 pr-6">
-                                        No contacts found. Click "+ Add Contact" to manually create a contact.
-                                    </TableCell>
-                                </TableRow>
+                            ) : paginatedCustomers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="py-16 text-center">
+                                        <div className="max-w-sm mx-auto flex flex-col items-center justify-center space-y-3">
+                                            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#35877D] flex items-center justify-center font-bold">
+                                                <Users size={24} />
+                                            </div>
+                                            <h3 className="text-sm font-bold text-slate-900">
+                                                {searchTerm || activeFiltersCount > 0
+                                                    ? "No contacts match these filters"
+                                                    : "No contacts yet"}
+                                            </h3>
+                                            <p className="text-xs text-slate-500">
+                                                {searchTerm || activeFiltersCount > 0
+                                                    ? "Try clearing your search query or adjusting your filter criteria."
+                                                    : "Import your customer spreadsheet or create your first contact to start building audiences."}
+                                            </p>
+                                            <div className="flex items-center gap-2 pt-2">
+                                                {searchTerm || activeFiltersCount > 0 ? (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSearchTerm("");
+                                                            setFilters({});
+                                                        }}
+                                                        className="text-xs font-semibold"
+                                                    >
+                                                        Clear Filters
+                                                    </Button>
+                                                ) : (
+                                                    <>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setIsImportOpen(true)}
+                                                            className="text-xs font-semibold gap-1.5"
+                                                        >
+                                                            <Upload size={13} /> Import Contacts
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => setIsCreateOpen(true)}
+                                                            className="bg-[#35877D] hover:bg-[#2d736a] text-white text-xs font-semibold gap-1.5"
+                                                        >
+                                                            <Plus size={13} /> Add Contact
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : (
-                                filteredCustomers?.map((customer) => {
-                                    const { flag, display } = formatPhoneNumber(customer.phone);
+                                paginatedCustomers.map((customer) => {
+                                    const phoneFormatted = formatPhoneNumber(customer.phone);
                                     const isSelected = selectedIds.includes(customer.id);
+                                    const optIn = (customer as any).whatsapp_opt_in ?? true;
+                                    const stage = (stageOverrides[customer.id] ?? (customer as any).stage ?? "new_lead") as StageKey;
+
                                     return (
-                                        <TableRow
+                                        <tr
                                             key={customer.id}
-                                            className="hover:bg-slate-50/40 text-slate-650 cursor-pointer"
-                                            onClick={() => openCrmPanel(customer)}
+                                            className={`hover:bg-slate-50/70 transition-colors ${
+                                                isSelected ? "bg-teal-50/20" : ""
+                                            }`}
                                         >
-                                            <TableCell className="py-3" onClick={e => e.stopPropagation()}>
+                                            <td className="p-3.5 pl-4">
                                                 <Checkbox
                                                     checked={isSelected}
-                                                    onCheckedChange={(checked) => handleSelect(customer.id, !!checked)}
-                                                    className="h-4 w-4 rounded border-slate-300 text-[#2F8F83] focus:ring-[#2F8F83]"
+                                                    onCheckedChange={(checked) => handleSelectRow(customer.id, !!checked)}
                                                 />
-                                            </TableCell>
-                                            <TableCell className="py-3">
+                                            </td>
+
+                                            {/* Contact Details */}
+                                            <td className="p-3.5">
                                                 <div className="flex flex-col">
-                                                    <button
-                                                        onClick={e => { e.stopPropagation(); openCrmPanel(customer); }}
-                                                        className="text-slate-700 hover:text-[#2F8F83] hover:underline font-semibold text-xs transition-colors text-left cursor-pointer"
+                                                    <Link
+                                                        href={`/contacts/${customer.id}`}
+                                                        className="font-bold text-slate-900 hover:text-[#35877D] hover:underline transition-colors text-xs flex items-center gap-1.5"
                                                     >
-                                                        {customer.name || "WhatsApp User"}
-                                                    </button>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-3 text-slate-700 text-xs font-semibold">
-                                                <span className="flex items-center">
-                                                    {display}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="py-3">
-                                                <span className="text-xs font-semibold border border-[#E5E9EE] text-slate-600 px-2 py-0.5 bg-slate-50 rounded-md">
-                                                    Connectly360
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="py-3">
-                                                <StageBadge stage={stageOverrides[customer.id] ?? (customer as any).stage ?? "new_lead"} />
-                                            </TableCell>
-                                            <TableCell className="py-3">
-                                                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                                                    {Object.entries(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).slice(0, 2).map(([k, v]) => (
-                                                        <span key={k} className="bg-slate-50 text-slate-600 px-2 py-0.5 rounded font-medium border border-[#E5E9EE] max-w-[130px] truncate">
-                                                            {k}: {String(v)}
-                                                        </span>
-                                                    ))}
-                                                    {Object.keys(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).length > 2 && (
-                                                        <span className="text-[10px] font-semibold text-[#2F8F83] cursor-pointer hover:underline" onClick={e => { e.stopPropagation(); openCrmPanel(customer); }}>
-                                                            +{Object.keys(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).length - 2} more
+                                                        <span>{customer.name || "WhatsApp User"}</span>
+                                                    </Link>
+                                                    <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                                                        <span>{phoneFormatted.flag}</span>
+                                                        <span>{phoneFormatted.display}</span>
+                                                    </div>
+                                                    {customer.email && (
+                                                        <span className="text-[10px] text-slate-400 truncate max-w-[180px]">
+                                                            {customer.email}
                                                         </span>
                                                     )}
-                                                    {Object.keys(attrsOverrides[customer.id] ?? (customer as any).custom_attributes ?? {}).length === 0 && (
-                                                        <span className="text-[10px] text-slate-400 italic">Click row to add</span>
+                                                </div>
+                                            </td>
+
+                                            {/* WhatsApp Opt-in */}
+                                            <td className="p-3.5">
+                                                {optIn ? (
+                                                    <Badge className="bg-teal-50 border-teal-200 text-teal-800 text-[10px] font-semibold gap-1 py-0.5">
+                                                        <ShieldCheck size={11} className="text-[#35877D]" />
+                                                        Opted-in
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-slate-500 border-slate-200 text-[10px]">
+                                                        Opted-out
+                                                    </Badge>
+                                                )}
+                                                {(customer as any).last_interaction_at && (
+                                                    <div className="text-[10px] text-slate-400 mt-1">
+                                                        Active {new Date((customer as any).last_interaction_at).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                            </td>
+
+                                            {/* CRM Stage */}
+                                            <td className="p-3.5">
+                                                <div
+                                                    onClick={() => handleOpenCrm(customer)}
+                                                    className="cursor-pointer inline-block"
+                                                    title="Click to manage CRM stage"
+                                                >
+                                                    <StageBadge stage={stage} />
+                                                </div>
+                                            </td>
+
+                                            {/* Location & Company */}
+                                            <td className="p-3.5 text-slate-600">
+                                                <div className="space-y-0.5">
+                                                    {customer.city ? (
+                                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-700">
+                                                            <MapPin size={11} className="text-slate-400" />
+                                                            {customer.city}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-300 text-[11px]">—</span>
+                                                    )}
+                                                    {(customer as any).company && (
+                                                        <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                                            <Building2 size={10} className="text-slate-400" />
+                                                            {(customer as any).company}
+                                                        </div>
                                                     )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="py-3 text-right pr-6" onClick={e => e.stopPropagation()}>
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => openCrmPanel(customer)}
-                                                        className="h-8 w-8 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                            </td>
+
+                                            {/* Created */}
+                                            <td className="p-3.5 text-slate-400 text-[11px]">
+                                                {customer.createdAt
+                                                    ? new Date(customer.createdAt).toLocaleDateString()
+                                                    : "—"}
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td className="p-3.5 pr-4 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <Link
+                                                        href={`/inbox?phone=${customer.phone}`}
+                                                        className="h-7 w-7 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#35877D] flex items-center justify-center transition-colors"
+                                                        title="Start WhatsApp Conversation"
+                                                    >
+                                                        <MessageCircle size={13} />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleOpenEdit(customer)}
+                                                        className="h-7 w-7 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                                                        title="Edit Contact"
                                                     >
                                                         <Edit2 size={13} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDeleteClick(customer)}
-                                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg cursor-pointer"
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setCustomerToDelete(customer);
+                                                            setIsDeleteOpen(true);
+                                                        }}
+                                                        className="h-7 w-7 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-colors"
+                                                        title="Delete Contact"
                                                     >
                                                         <Trash2 size={13} />
-                                                    </Button>
+                                                    </button>
                                                 </div>
-                                            </TableCell>
-                                        </TableRow>
+                                            </td>
+                                        </tr>
                                     );
                                 })
                             )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 font-medium">
-                <div className="flex items-center gap-2">
-                    <span>Rows per page:</span>
-                    <select
-                        value={rowsPerPage}
-                        onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                        className="h-8 px-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#378179] cursor-pointer"
-                    >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                    </select>
+                        </tbody>
+                    </table>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span>
-                        1-{filteredCustomers?.length || 0} of {filteredCustomers?.length || 0}
-                    </span>
-                    <div className="flex items-center gap-1">
+
+                {/* Table Footer with Pagination */}
+                <div className="p-3.5 px-4 bg-slate-50/60 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                    <div>
+                        Showing <strong>{paginatedCustomers.length}</strong> of <strong>{customers.length}</strong> contacts
+                    </div>
+                    <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            disabled
-                            className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 bg-white text-slate-400 opacity-60 cursor-not-allowed"
+                            size="sm"
+                            disabled={currentPage <= 1}
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            className="h-7 text-xs px-2.5 rounded-lg font-semibold"
                         >
-                            &lt; Previous
+                            Previous
                         </Button>
+                        <span className="text-[11px] font-bold text-slate-700">
+                            Page {currentPage} of {totalPages}
+                        </span>
                         <Button
                             variant="outline"
-                            disabled
-                            className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 bg-white text-slate-400 opacity-60 cursor-not-allowed"
+                            size="sm"
+                            disabled={currentPage >= totalPages}
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            className="h-7 text-xs px-2.5 rounded-lg font-semibold"
                         >
-                            Next &gt;
+                            Next
                         </Button>
                     </div>
                 </div>
             </div>
 
-            {/* EDIT CONTACT DIALOG */}
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
-                            <Edit2 size={15} className="text-[#2F8F83]" />
-                        </div>
-                        <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">Edit Contact</DialogTitle>
-                            <DialogDescription className="text-slate-600 text-xs mt-0.5">
-                                Modify contact parameters and save changes.
-                            </DialogDescription>
-                        </div>
+            {/* 6. Floating Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-2 pr-3 border-r border-slate-700 text-xs">
+                        <span className="w-5 h-5 rounded-full bg-[#35877D] text-white flex items-center justify-center text-[10px] font-bold">
+                            {selectedIds.length}
+                        </span>
+                        <span className="font-semibold">Selected</span>
                     </div>
-                    <form onSubmit={handleEditContact} className="p-6 space-y-4">
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsBulkStageOpen(true)}
+                            className="h-8 text-xs bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold"
+                        >
+                            Change Stage
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsExportOpen(true)}
+                            className="h-8 text-xs bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-semibold gap-1"
+                        >
+                            <Download size={13} />
+                            Export
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            onClick={() => router.push(`/marketing/campaigns/new`)}
+                            className="h-8 text-xs bg-[#35877D] hover:bg-[#2d736a] text-white font-bold gap-1 shadow-sm"
+                        >
+                            <Send size={13} />
+                            Send Campaign
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setIsBulkDeleteOpen(true)}
+                            className="h-8 text-xs bg-rose-600 hover:bg-rose-700 font-semibold gap-1"
+                        >
+                            <Trash2 size={13} />
+                            Delete
+                        </Button>
+
+                        <button
+                            onClick={() => setSelectedIds([])}
+                            className="text-slate-400 hover:text-white text-xs pl-2 underline"
+                        >
+                            Deselect
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 1: Contact Create Modal */}
+            <ContactCreateModal
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                onContactCreated={() => {
+                    queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                    queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                }}
+            />
+
+            {/* MODAL 2: Guided Contact Import Modal */}
+            <ContactImportModal
+                open={isImportOpen}
+                onOpenChange={setIsImportOpen}
+                onImportSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ["listCustomers"] });
+                    queryClient.invalidateQueries({ queryKey: ["customerStats"] });
+                }}
+            />
+
+            {/* MODAL 3: Contact Export Modal */}
+            <ContactExportModal
+                open={isExportOpen}
+                onOpenChange={setIsExportOpen}
+                totalCount={customers.length}
+                selectedCount={selectedIds.length}
+                selectedIds={selectedIds}
+                activeFiltersCount={activeFiltersCount}
+                searchQuery={searchTerm}
+            />
+
+            {/* DRAWER 4: Filter Drawer */}
+            <ContactFilterDrawer
+                open={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                filters={filters}
+                onApplyFilters={(f) => {
+                    setFilters(f);
+                    setCurrentPage(1);
+                }}
+                onResetFilters={() => {
+                    setFilters({});
+                    setCurrentPage(1);
+                }}
+                onSaveAsSegment={(f) => handleSaveFilterAsSegment(f)}
+                matchingCount={customers.length}
+            />
+
+            {/* DIALOG 5: Segment Builder Dialog (pre-filled from filters) */}
+            <SegmentBuilderDialog
+                open={isSegmentBuilderOpen}
+                onOpenChange={setIsSegmentBuilderOpen}
+                token={null}
+                initialRules={segmentInitialRules}
+                onSaveSuccess={() => {
+                    toast.success("Segment saved successfully! You can find it in your Audience Library.");
+                    setIsSegmentBuilderOpen(false);
+                }}
+            />
+
+            {/* DIALOG 6: Edit Contact Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white rounded-2xl border-slate-200">
+                    <DialogHeader className="p-6 pb-4 bg-slate-50/70 border-b border-slate-100">
+                        <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <Edit2 size={16} className="text-[#35877D]" />
+                            Edit Contact Details
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500">
+                            Update profile information for {customerToEdit?.name || "this contact"}.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
                         <div className="space-y-1.5">
-                            <Label htmlFor="editName" className="text-xs font-semibold text-slate-700">Name</Label>
+                            <Label className="text-xs font-semibold text-slate-700">Full Name</Label>
                             <Input
-                                id="editName"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. John Doe"
-                                className="text-xs text-slate-700 h-9"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                                className="text-xs h-9"
+                                placeholder="e.g. Rohan Mehta"
                             />
                         </div>
+
                         <div className="space-y-1.5">
-                            <Label htmlFor="editPhone" className="text-xs font-semibold text-slate-700">
-                                Phone Number <span className="text-red-500">*</span>
-                            </Label>
+                            <Label className="text-xs font-semibold text-slate-700">Phone Number *</Label>
                             <Input
-                                id="editPhone"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="e.g. 919876543210"
-                                className="text-xs text-slate-700 h-9"
+                                value={editForm.phone}
+                                onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
+                                className="text-xs h-9"
                                 required
                             />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-slate-700">City</Label>
+                                <Input
+                                    value={editForm.city}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, city: e.target.value }))}
+                                    className="text-xs h-9"
+                                    placeholder="e.g. Ahmedabad"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-slate-700">Company</Label>
+                                <Input
+                                    value={editForm.company}
+                                    onChange={(e) => setEditForm((p) => ({ ...p, company: e.target.value }))}
+                                    className="text-xs h-9"
+                                    placeholder="e.g. Acme Corp"
+                                />
+                            </div>
+                        </div>
+
                         <div className="space-y-1.5">
-                            <Label htmlFor="editCity" className="text-xs font-semibold text-slate-700">City</Label>
+                            <Label className="text-xs font-semibold text-slate-700">Email Address</Label>
                             <Input
-                                id="editCity"
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                placeholder="e.g. Mumbai"
-                                className="text-xs text-slate-700 h-9"
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                                className="text-xs h-9"
+                                placeholder="name@company.com"
                             />
                         </div>
-                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">Lead Stage</Label>
+                            <select
+                                value={editForm.stage}
+                                onChange={(e) => setEditForm((p) => ({ ...p, stage: e.target.value }))}
+                                className="w-full text-xs h-9 border border-slate-200 rounded-lg px-2.5 bg-white text-slate-800"
+                            >
+                                {Object.entries(STAGES).map(([key, info]) => (
+                                    <option key={key} value={key}>
+                                        {info.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <DialogFooter className="pt-2">
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => {
-                                    setIsEditOpen(false);
-                                    setSelectedCustomer(null);
-                                }}
-                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
+                                size="sm"
+                                onClick={() => setIsEditOpen(false)}
+                                className="h-9 text-xs"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
+                                size="sm"
+                                disabled={isSavingEdit}
+                                className="bg-[#35877D] hover:bg-[#2d736a] text-white h-9 text-xs font-semibold gap-1.5"
                             >
+                                {isSavingEdit && <Loader2 size={14} className="animate-spin" />}
                                 Save Changes
                             </Button>
                         </DialogFooter>
@@ -731,220 +1114,176 @@ export default function CustomersPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* IMPORT CONTACTS DIALOG */}
-            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-[#E8F6F3] border-b border-[#BFE4DD] px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
-                            <Download size={16} className="text-[#2F8F83]" />
-                        </div>
-                        <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">Import Contacts</DialogTitle>
-                            <DialogDescription className="text-slate-600 text-xs mt-0.5">
-                                Bulk upload contacts from a CSV or Excel file.
-                            </DialogDescription>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleFileUpload} className="p-6 space-y-5">
-                        {/* Sample file download area */}
-                        <div className="bg-slate-50 border border-[#E5E9EE] rounded-xl p-3.5 flex items-center justify-between gap-3">
-                            <div className="space-y-0.5">
-                                <p className="text-xs font-semibold text-slate-700">Need a template?</p>
-                                <p className="text-[11px] text-slate-500">Download our sample CSV to format your data.</p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={downloadSampleFile}
-                                className="h-8 text-xs px-2.5 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 font-medium cursor-pointer"
-                            >
-                                <Download size={12} />
-                                Sample.csv
-                            </Button>
-                        </div>
-
-                        {/* File Upload input */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="csvFile" className="text-xs font-semibold text-slate-700">Select File</Label>
-                            <div className="border-2 border-dashed border-slate-200 hover:border-[#2F8F83]/65 transition-colors rounded-xl p-6 text-center cursor-pointer relative bg-slate-50/50">
-                                <input
-                                    type="file"
-                                    id="csvFile"
-                                    accept=".csv"
-                                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
-                                <div className="flex flex-col items-center justify-center gap-2">
-                                    <Upload className="h-8 w-8 text-slate-400" />
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-semibold text-slate-700">
-                                            {importFile ? importFile.name : "Click to upload CSV or Excel"}
-                                        </p>
-                                        <p className="text-[10px] text-slate-500">
-                                            {importFile ? `${(importFile.size / 1024).toFixed(1)} KB` : "Max file size: 5MB"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setIsImportOpen(false);
-                                    setImportFile(null);
-                                }}
-                                disabled={isImporting}
-                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer shadow-2xs"
-                                disabled={isImporting || !importFile}
-                            >
-                                {isImporting ? (
-                                    <span className="flex items-center gap-1.5">
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        Importing...
-                                    </span>
-                                ) : (
-                                    "Import Contacts"
-                                )}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* DELETE CONFIRMATION DIALOG */}
+            {/* DIALOG 7: Single Delete Confirmation */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent className="sm:max-w-[400px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-red-50 border-b border-red-100 px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                            <Trash2 size={16} className="text-red-600" />
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white rounded-2xl border-slate-200">
+                    <div className="bg-rose-50 border-b border-rose-100 p-6 pb-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                            <Trash2 size={20} />
                         </div>
                         <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">Delete Contact</DialogTitle>
-                            <DialogDescription className="text-slate-605 text-xs mt-0.5">
-                                Are you sure you want to delete this contact?
+                            <DialogTitle className="text-base font-bold text-slate-900">
+                                Delete Contact
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-500">
+                                This will permanently remove this customer from your database.
                             </DialogDescription>
                         </div>
                     </div>
 
-                    <div className="p-6 space-y-4">
+                    <div className="p-6 space-y-3 text-xs text-slate-600">
                         {customerToDelete && (
-                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2.5 text-xs text-slate-700 font-medium">
-                                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                                    <span className="text-slate-400">Name:</span>
-                                    <span className="font-bold text-slate-800">{customerToDelete.name || "WhatsApp User"}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                                    <span className="text-slate-400">Phone:</span>
-                                    <span className="font-semibold text-slate-800">{customerToDelete.phone}</span>
-                                </div>
-                                {customerToDelete.city && (
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400">City:</span>
-                                        <span className="font-medium text-slate-800">{customerToDelete.city}</span>
-                                    </div>
-                                )}
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                <div className="font-bold text-slate-800 text-sm">{customerToDelete.name || "WhatsApp User"}</div>
+                                <div className="text-slate-500 font-mono">{customerToDelete.phone}</div>
                             </div>
                         )}
-
-                        <p className="text-[11px] text-slate-500 leading-normal">
-                            This action cannot be undone. All messages and history associated with this contact will be permanently deleted from the database.
+                        <p className="text-[11px] text-slate-500">
+                            Deleting this contact will also clean up associated custom attributes and conversation references.
                         </p>
-
-                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setIsDeleteOpen(false);
-                                    setCustomerToDelete(null);
-                                }}
-                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={confirmDeleteContact}
-                                className="bg-red-600 hover:bg-red-700 text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
-                            >
-                                Delete Contact
-                            </Button>
-                        </DialogFooter>
                     </div>
+
+                    <DialogFooter className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsDeleteOpen(false)}
+                            className="h-9 text-xs"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={isDeleting}
+                            onClick={handleConfirmDelete}
+                            className="bg-rose-600 hover:bg-rose-700 text-white h-9 text-xs font-semibold gap-1.5 shadow-sm"
+                        >
+                            {isDeleting && <Loader2 size={14} className="animate-spin" />}
+                            Delete Contact
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* BULK DELETE CONFIRMATION DIALOG */}
+            {/* DIALOG 8: Bulk Delete Confirmation */}
             <Dialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
-                <DialogContent className="sm:max-w-[420px] rounded-2xl overflow-hidden p-0 border border-slate-100 shadow-xl bg-white">
-                    <div className="bg-red-50 border-b border-red-100 px-6 py-4 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                            <Trash2 size={16} className="text-red-650 text-red-600" />
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white rounded-2xl border-slate-200">
+                    <div className="bg-rose-50 border-b border-rose-100 p-6 pb-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                            <Trash2 size={20} />
                         </div>
                         <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">Bulk Delete Contacts</DialogTitle>
-                            <DialogDescription className="text-slate-600 text-xs mt-0.5">
-                                Are you sure you want to delete {selectedIds.length} selected contacts?
+                            <DialogTitle className="text-base font-bold text-slate-900">
+                                Bulk Delete {selectedIds.length} Contacts
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-500">
+                                Permanent action across selected customer records.
                             </DialogDescription>
                         </div>
                     </div>
 
-                    <div className="p-6 space-y-4">
-                        <p className="text-xs font-semibold text-slate-700">Contacts to be deleted:</p>
-
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-1 max-h-48 overflow-y-auto divide-y divide-slate-100">
-                            {customers?.filter(c => selectedIds.includes(c.id)).map(customer => (
-                                <div key={customer.id} className="p-2.5 flex items-center justify-between gap-3 text-xs">
-                                    <span className="font-bold text-slate-800 truncate">{customer.name || "WhatsApp User"}</span>
-                                    <span className="text-slate-500 font-medium shrink-0">{customer.phone}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <p className="text-[11px] text-slate-500 leading-normal">
-                            This action cannot be undone. All messages and history associated with these contacts will be permanently deleted from the database.
+                    <div className="p-6 space-y-3 text-xs text-slate-600">
+                        <p>
+                            Are you sure you want to permanently delete <strong>{selectedIds.length}</strong> selected contacts?
                         </p>
-
-                        <DialogFooter className="pt-2 flex justify-end gap-2.5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setIsBulkDeleteOpen(false);
-                                }}
-                                className="text-xs rounded-xl h-9 px-4 font-semibold cursor-pointer"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={confirmBulkDelete}
-                                className="bg-red-600 hover:bg-red-750 text-white text-xs rounded-xl h-9 px-5 font-semibold border-0 cursor-pointer"
-                            >
-                                Delete {selectedIds.length} Contacts
-                            </Button>
-                        </DialogFooter>
+                        <p className="text-[11px] text-slate-500">
+                            This action cannot be undone. All related customer data will be deleted.
+                        </p>
                     </div>
+
+                    <DialogFooter className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsBulkDeleteOpen(false)}
+                            className="h-9 text-xs"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={isBulkDeleting}
+                            onClick={handleConfirmBulkDelete}
+                            className="bg-rose-600 hover:bg-rose-700 text-white h-9 text-xs font-semibold gap-1.5 shadow-sm"
+                        >
+                            {isBulkDeleting && <Loader2 size={14} className="animate-spin" />}
+                            Delete {selectedIds.length} Contacts
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* CRM Slide-over Panel */}
+            {/* DIALOG 9: Bulk Stage Change */}
+            <Dialog open={isBulkStageOpen} onOpenChange={setIsBulkStageOpen}>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white rounded-2xl border-slate-200">
+                    <DialogHeader className="p-6 pb-4 bg-slate-50/70 border-b border-slate-100">
+                        <DialogTitle className="text-base font-bold text-slate-900">
+                            Update Lead Stage
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500">
+                            Change pipeline stage for {selectedIds.length} selected contacts.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="p-6 space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">Select New Stage</Label>
+                            <select
+                                value={bulkNewStage}
+                                onChange={(e) => setBulkNewStage(e.target.value)}
+                                className="w-full text-xs h-9 border border-slate-200 rounded-lg px-2.5 bg-white text-slate-800 font-medium"
+                            >
+                                {Object.entries(STAGES).map(([key, info]) => (
+                                    <option key={key} value={key}>
+                                        {info.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsBulkStageOpen(false)}
+                            className="h-9 text-xs"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            disabled={isUpdatingBulkStage}
+                            onClick={handleConfirmBulkStage}
+                            className="bg-[#35877D] hover:bg-[#2d736a] text-white h-9 text-xs font-semibold gap-1.5 shadow-sm"
+                        >
+                            {isUpdatingBulkStage && <Loader2 size={14} className="animate-spin" />}
+                            Apply to {selectedIds.length} Contacts
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* SLIDE-OVER CRM PANEL */}
             <ContactCrmPanel
                 contact={crmContact}
                 isOpen={isCrmOpen}
                 onClose={() => setIsCrmOpen(false)}
-                onStageChange={handleCrmStageChange}
-                onAttributesChange={handleCrmAttrsChange}
+                onStageChange={(id, stage) => {
+                    setStageOverrides((prev) => ({ ...prev, [id]: stage }));
+                    setCrmContact((prev) => (prev && prev.id === id ? { ...prev, stage } : prev));
+                }}
+                onAttributesChange={(id, attrs) => {
+                    setAttrsOverrides((prev) => ({ ...prev, [id]: attrs }));
+                    setCrmContact((prev) => (prev && prev.id === id ? { ...prev, custom_attributes: attrs } : prev));
+                }}
             />
-
         </div>
     );
 }

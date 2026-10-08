@@ -223,10 +223,23 @@ export interface WhatsappStatus {
 export interface Customer {
     id: number;
     name?: string;
+    first_name?: string;
+    last_name?: string;
     phone: string;
+    email?: string;
     city?: string;
+    state?: string;
+    country?: string;
+    company?: string;
+    source?: string;
+    stage?: string;
+    whatsapp_opt_in?: boolean;
+    whatsapp_opt_in_at?: string;
+    notes?: string;
+    custom_attributes?: Record<string, string>;
     messageCount: number;
     createdAt: string;
+    last_interaction_at?: string;
 }
 
 export interface Product {
@@ -724,14 +737,51 @@ export function useRetryMessage() {
 }
 
 // Customers
-export function useListCustomers(params?: { search?: string }) {
+export function useListCustomers(params?: {
+    search?: string;
+    city?: string;
+    stage?: string;
+    whatsapp_opt_in?: string;
+    last_interaction?: string;
+    created_within?: string;
+    company?: string;
+    sort_by?: string;
+}) {
     return useQuery<Customer[]>({
-        queryKey: ["listCustomers", params?.search],
+        queryKey: ["listCustomers", params],
         queryFn: async () => {
-            const url = params?.search ? `${API_BASE}/customers?search=${encodeURIComponent(params.search)}` : `${API_BASE}/customers`;
+            const query = new URLSearchParams();
+            if (params?.search) query.set("search", params.search);
+            if (params?.city) query.set("city", params.city);
+            if (params?.stage) query.set("stage", params.stage);
+            if (params?.whatsapp_opt_in) query.set("whatsapp_opt_in", params.whatsapp_opt_in);
+            if (params?.last_interaction) query.set("last_interaction", params.last_interaction);
+            if (params?.created_within) query.set("created_within", params.created_within);
+            if (params?.company) query.set("company", params.company);
+            if (params?.sort_by) query.set("sort_by", params.sort_by);
+
+            const queryString = query.toString();
+            const url = queryString ? `${API_BASE}/customers?${queryString}` : `${API_BASE}/customers`;
             const res = await apiFetch(url);
             if (!res.ok) throw new Error("Failed to fetch customers");
             return res.json();
+        },
+    });
+}
+
+export function useCustomerStats() {
+    return useQuery<{
+        total: number;
+        opted_in: number;
+        active_30d: number;
+        new_this_month: number;
+    }>({
+        queryKey: ["customerStats"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/customers/stats`);
+            if (!res.ok) throw new Error("Failed to fetch customer stats");
+            const data = await res.json();
+            return data.data;
         },
     });
 }
