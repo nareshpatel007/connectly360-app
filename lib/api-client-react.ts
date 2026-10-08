@@ -95,6 +95,15 @@ export interface Conversation {
     } | null;
     createdAt: string;
 
+    // SLA / Response Time fields
+    sla?: any;
+    isOverdue?: boolean;
+    slaStatus?: "on_track" | "warning" | "breached" | "met" | "disabled";
+    waitingTimeSeconds?: number;
+    waitingTimeFormatted?: string;
+    firstResponseTimeSeconds?: number | null;
+    averageResponseTimeSeconds?: number | null;
+
     // WhatsApp Rich Message Fields
     type?: string;
     mediaType?: string | null;
@@ -153,6 +162,7 @@ export interface ConversationCounts {
     pending: number;
     resolved: number;
     unread: number;
+    overdue?: number;
 }
 
 export interface InboxSettings {
@@ -424,6 +434,7 @@ export function useListConversations(params?: {
     date_to?: string;
     waba?: string | number;
     message_type?: string;
+    sla?: string;
 }) {
     return useQuery<Conversation[]>({
         queryKey: [
@@ -441,6 +452,7 @@ export function useListConversations(params?: {
             params?.date_to,
             params?.waba,
             params?.message_type,
+            params?.sla,
         ],
         queryFn: async () => {
             const query = new URLSearchParams();
@@ -457,6 +469,7 @@ export function useListConversations(params?: {
             if (params?.date_to) query.set("date_to", params.date_to);
             if (params?.waba && params.waba !== "all") query.set("waba", String(params.waba));
             if (params?.message_type && params.message_type !== "all") query.set("message_type", params.message_type);
+            if (params?.sla) query.set("sla", params.sla);
 
             const queryString = query.toString();
             const url = queryString ? `${API_BASE}/conversations?${queryString}` : `${API_BASE}/conversations`;
@@ -3634,5 +3647,263 @@ export function useBulkTagConversations() {
         },
     });
 }
+
+// -------------------------------------------------------------
+// Business Hours Interfaces & Hooks
+// -------------------------------------------------------------
+
+export interface BusinessHoursDaySchedule {
+    is_open: boolean;
+    open: string;
+    close: string;
+}
+
+export interface BusinessHoursWeeklySchedule {
+    monday: BusinessHoursDaySchedule;
+    tuesday: BusinessHoursDaySchedule;
+    wednesday: BusinessHoursDaySchedule;
+    thursday: BusinessHoursDaySchedule;
+    friday: BusinessHoursDaySchedule;
+    saturday: BusinessHoursDaySchedule;
+    sunday: BusinessHoursDaySchedule;
+}
+
+export interface BusinessHoursHoliday {
+    date: string;
+    name: string;
+}
+
+export interface BusinessHoursConfig {
+    id: number;
+    tenant_id: number;
+    timezone: string;
+    is_enabled: boolean;
+    weekly_schedule: BusinessHoursWeeklySchedule;
+    holidays: BusinessHoursHoliday[];
+    outside_hours_action: "auto_reply" | "none";
+    outside_hours_message: string;
+    cooldown_minutes: number;
+    automation_id?: number | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface BusinessHoursStatus {
+    is_open: boolean;
+    status: "open" | "closed" | "holiday" | "disabled";
+    reason: string;
+    timezone: string;
+    current_time: string;
+    current_day: string;
+    next_open_at: string | null;
+    today_schedule?: BusinessHoursDaySchedule | null;
+    holiday?: BusinessHoursHoliday | null;
+}
+
+export interface BusinessHoursSimulationResult {
+    evaluated_at: string;
+    timezone: string;
+    is_open: boolean;
+    status: string;
+    reason: string;
+    would_reply: boolean;
+    reply_message: string | null;
+    cooldown_minutes: number;
+}
+
+export function useBusinessHoursConfig() {
+    return useQuery<{ success: boolean; config: BusinessHoursConfig; status: BusinessHoursStatus }>({
+        queryKey: ["businessHoursConfig"],
+        queryFn: async () => {
+            const res = await apiFetch("/api/business-hours");
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch business hours configuration");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useUpdateBusinessHoursConfig() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: Partial<BusinessHoursConfig>) => {
+            const res = await apiFetch("/api/business-hours", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to update business hours configuration");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["businessHoursConfig"] });
+            queryClient.invalidateQueries({ queryKey: ["businessHoursStatus"] });
+        },
+    });
+}
+
+export function useBusinessHoursStatus(datetime?: string) {
+    return useQuery<{ success: boolean; status: BusinessHoursStatus }>({
+        queryKey: ["businessHoursStatus", datetime],
+        queryFn: async () => {
+            const url = datetime
+                ? `/api/business-hours/status?datetime=${encodeURIComponent(datetime)}`
+                : "/api/business-hours/status";
+            const res = await apiFetch(url);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch business hours status");
+            }
+            return res.json();
+        },
+        refetchInterval: 60 * 1000, // Refresh status every minute
+    });
+}
+
+export function useTestBusinessHoursSimulation() {
+    return useMutation({
+        mutationFn: async (payload: { datetime?: string }) => {
+            const res = await apiFetch("/api/business-hours/test", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to run business hours simulation");
+            }
+            return data as { success: boolean; simulation: BusinessHoursSimulationResult };
+        },
+    });
+}
+
+// -------------------------------------------------------------
+// SLA & Response Time Interfaces & Hooks
+// -------------------------------------------------------------
+
+export interface SlaConfig {
+    id: number;
+    tenant_id: number;
+    is_enabled: boolean;
+    first_response_time_minutes: number;
+    next_response_time_minutes: number;
+    resolution_time_minutes: number;
+    warning_threshold_percentage: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface ConversationSla {
+    is_enabled: boolean;
+    is_overdue: boolean;
+    sla_status: "on_track" | "warning" | "breached" | "met" | "disabled";
+    is_waiting: boolean;
+    waiting_time_seconds: number;
+    waiting_time_formatted: string;
+    first_response_time_seconds: number | null;
+    first_response_time_formatted: string | null;
+    average_response_time_seconds: number | null;
+    average_response_time_formatted: string | null;
+    resolution_time_seconds: number | null;
+    resolution_time_formatted: string | null;
+    target_type: "first_response" | "next_response" | "resolution";
+    target_limit_seconds: number;
+    time_to_breach_seconds: number | null;
+    time_to_breach_formatted: string | null;
+    breach_reason?: string | null;
+}
+
+export interface SlaMetrics {
+    is_enabled: boolean;
+    compliance_rate: number;
+    total_conversations: number;
+    active_waiting_count: number;
+    overdue_count: number;
+    warning_count: number;
+    on_track_count: number;
+    met_count: number;
+    breached_count: number;
+    avg_first_response_time_seconds: number | null;
+    avg_first_response_time_formatted: string;
+    avg_response_time_seconds: number | null;
+    avg_response_time_formatted: string;
+    avg_resolution_time_seconds: number | null;
+    avg_resolution_time_formatted: string;
+    config: SlaConfig;
+}
+
+export function useSlaConfig() {
+    return useQuery<{ success: boolean; config: SlaConfig }>({
+        queryKey: ["slaConfig"],
+        queryFn: async () => {
+            const res = await apiFetch("/api/sla/config");
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch SLA configuration");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useUpdateSlaConfig() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: Partial<SlaConfig>) => {
+            const res = await apiFetch("/api/sla/config", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to update SLA configuration");
+            }
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["slaConfig"] });
+            queryClient.invalidateQueries({ queryKey: ["slaMetrics"] });
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+            queryClient.invalidateQueries({ queryKey: ["getConversationCounts"] });
+        },
+    });
+}
+
+export function useSlaMetrics() {
+    return useQuery<{ success: boolean; metrics: SlaMetrics }>({
+        queryKey: ["slaMetrics"],
+        queryFn: async () => {
+            const res = await apiFetch("/api/sla/metrics");
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch SLA metrics");
+            }
+            return res.json();
+        },
+        refetchInterval: 60 * 1000,
+    });
+}
+
+export function useConversationSla(conversationId?: number) {
+    return useQuery<{ success: boolean; conversation_id: number; sla: ConversationSla }>({
+        queryKey: ["conversationSla", conversationId],
+        queryFn: async () => {
+            if (!conversationId) throw new Error("Conversation ID is required");
+            const res = await apiFetch(`/api/conversations/${conversationId}/sla`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to fetch conversation SLA");
+            }
+            return res.json();
+        },
+        enabled: !!conversationId,
+        refetchInterval: 30 * 1000,
+    });
+}
+
+
 
 

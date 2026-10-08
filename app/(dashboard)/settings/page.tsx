@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/page-header";
-import { Building2, Phone, Truck, Clock, Webhook, Copy, Check } from "lucide-react";
+import { Building2, Phone, Truck, Clock, Webhook, Copy, Check, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const settingsSchema = z.object({
     companyName: z.string().min(1, "Company name is required"),
@@ -182,6 +183,16 @@ export default function SettingsPage() {
                                                     className="h-10 text-xs sm:text-sm rounded-lg border border-[#E5E9EE] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:border-[#2F8F83]"
                                                 />
                                             </FormControl>
+                                            <div className="pt-1">
+                                                <Link
+                                                    href="/settings/business-hours"
+                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2F8F83] hover:text-[#267A70] transition-colors"
+                                                    data-testid="link-business-hours-studio"
+                                                >
+                                                    Configure Advanced Business Hours, Holidays & Out-of-Office Auto-Replies
+                                                    <ArrowRight className="w-3.5 h-3.5" />
+                                                </Link>
+                                            </div>
                                             <FormMessage />
                                         </FormItem>
                                     )}

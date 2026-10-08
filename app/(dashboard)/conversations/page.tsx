@@ -43,6 +43,8 @@ import { ConversationAssigneeDropdown } from "@/components/conversations/Convers
 import { ConversationHeaderMenu } from "@/components/conversations/ConversationHeaderMenu";
 import { ConversationTagsManager } from "@/components/conversations/ConversationTagsManager";
 import { BulkTagConversationsModal } from "@/components/conversations/BulkTagConversationsModal";
+import { SlaSettingsModal } from "@/components/conversations/SlaSettingsModal";
+import { SlaThreadBadge, SlaHeaderIndicator } from "@/components/conversations/SlaBadge";
 import {
     ConversationFilterPopover,
     type ConversationFiltersState,
@@ -140,6 +142,7 @@ function ConversationsContent() {
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
     const [isNotesSheetOpen, setIsNotesSheetOpen] = useState(false);
     const [isBulkTagModalOpen, setIsBulkTagModalOpen] = useState(false);
+    const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
 
     // Bulk selection state
     const [isBulkSelecting, setIsBulkSelecting] = useState(false);
@@ -242,7 +245,7 @@ function ConversationsContent() {
 
     // Fetch conversation dynamic counts
     const { data: countsData } = useGetConversationCounts();
-    const counts = countsData?.counts || { all: 0, open: 0, pending: 0, resolved: 0, unread: 0 };
+    const counts = countsData?.counts || { all: 0, open: 0, pending: 0, resolved: 0, unread: 0, overdue: 0 };
 
     // Fetch inbox configuration settings
     const { data: settingsData } = useGetInboxSettings();
@@ -830,16 +833,26 @@ function ConversationsContent() {
                             )}
                         </div>
 
-                        {/* + New Conversation Button */}
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => setIsNewConvOpen(true)}
-                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-7.5 px-2.5 rounded-lg flex items-center gap-1 shadow-2xs cursor-pointer"
-                        >
-                            <Plus size={13} strokeWidth={2} />
-                            <span>New Message</span>
-                        </Button>
+                        {/* Top action controls */}
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setIsSlaModalOpen(true)}
+                                className="p-1.5 text-slate-400 hover:text-[#2F8F83] hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                                title="SLA & Response Time Policy Settings"
+                            >
+                                <Clock size={15} />
+                            </button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setIsNewConvOpen(true)}
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-7.5 px-2.5 rounded-lg flex items-center gap-1 shadow-2xs cursor-pointer"
+                            >
+                                <Plus size={13} strokeWidth={2} />
+                                <span>New Message</span>
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Filter Pills with Dynamic Counts */}
@@ -850,21 +863,30 @@ function ConversationsContent() {
                             { key: "pending", label: "Pending", count: counts.pending },
                             { key: "resolved", label: "Resolved", count: counts.resolved },
                             { key: "unread", label: "Unread", count: counts.unread },
+                            { key: "overdue", label: "Overdue", count: counts.overdue || 0 },
                         ].map((tabItem) => (
                             <button
                                 key={tabItem.key}
                                 onClick={() => handleTabChange(tabItem.key)}
                                 className={`text-[10px] font-medium py-1 px-1.5 sm:px-2 rounded-full border transition-all cursor-pointer uppercase tracking-tight flex items-center justify-center gap-1 shrink-0 ${
                                     selectedTab === tabItem.key
-                                        ? "bg-[#2F8F83] text-white border-transparent shadow-xs"
-                                        : "bg-white border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
+                                        ? tabItem.key === "overdue"
+                                            ? "bg-rose-600 text-white border-transparent shadow-xs"
+                                            : "bg-[#2F8F83] text-white border-transparent shadow-xs"
+                                        : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
+                                            ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                                            : "bg-white border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
                                 }`}
                             >
                                 <span>{tabItem.label}</span>
                                 {tabItem.count !== undefined && (
                                     <span
                                         className={`text-[9px] px-1 py-0.2 rounded-full font-semibold ${
-                                            selectedTab === tabItem.key ? "bg-white/25 text-white" : "bg-slate-100 text-slate-500"
+                                            selectedTab === tabItem.key
+                                                ? "bg-white/25 text-white"
+                                                : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
+                                                    ? "bg-rose-100 text-rose-800"
+                                                    : "bg-slate-100 text-slate-500"
                                         }`}
                                     >
                                         {tabItem.count}
@@ -1122,7 +1144,7 @@ function ConversationsContent() {
                                             )}
 
                                             <div className="flex items-center justify-between pt-1 gap-1">
-                                                {/* Status indicator & Tag Chips */}
+                                                {/* Status indicator & SLA Badge & Tag Chips */}
                                                 <div className="flex items-center gap-1 flex-wrap min-w-0">
                                                     <span
                                                         className={`text-[9px] font-bold px-1.5 py-0.5 rounded capitalize shrink-0 ${
@@ -1135,6 +1157,9 @@ function ConversationsContent() {
                                                     >
                                                         {threadStatus}
                                                     </span>
+
+                                                    {/* Overdue / SLA waiting badge */}
+                                                    <SlaThreadBadge thread={thread} />
 
                                                     {/* Tag chips */}
                                                     {thread.tags && thread.tags.length > 0 && (
@@ -1223,6 +1248,12 @@ function ConversationsContent() {
                             </div>
 
                             <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                                {/* SLA & Response Time Header Pill */}
+                                <SlaHeaderIndicator
+                                    thread={activeThread}
+                                    onConfigureSla={() => setIsSlaModalOpen(true)}
+                                />
+
                                 {/* Live Realtime Status Pill */}
                                 <div className="hidden sm:flex items-center text-[10px] font-medium mr-1">
                                     {connectionStatus === "connected" ? (
@@ -1665,6 +1696,12 @@ function ConversationsContent() {
                     setSelectedThreadIds([]);
                     setIsBulkSelecting(false);
                 }}
+            />
+
+            {/* Modal: SLA Policy & Response Time Settings */}
+            <SlaSettingsModal
+                open={isSlaModalOpen}
+                onOpenChange={setIsSlaModalOpen}
             />
         </div>
 
