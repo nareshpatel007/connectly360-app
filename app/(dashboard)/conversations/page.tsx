@@ -43,6 +43,10 @@ import { ConversationAssigneeDropdown } from "@/components/conversations/Convers
 import { ConversationHeaderMenu } from "@/components/conversations/ConversationHeaderMenu";
 import { ConversationTagsManager } from "@/components/conversations/ConversationTagsManager";
 import { BulkTagConversationsModal } from "@/components/conversations/BulkTagConversationsModal";
+import {
+    ConversationFilterPopover,
+    type ConversationFiltersState,
+} from "@/components/conversations/ConversationFilterPopover";
 import { CopilotDropdown } from "@/components/conversations/CopilotDropdown";
 import { QuickReplyPicker } from "@/components/conversations/QuickReplyPicker";
 import { TemplatePickerModal } from "@/components/conversations/TemplatePickerModal";
@@ -140,6 +144,14 @@ function ConversationsContent() {
     // Bulk selection state
     const [isBulkSelecting, setIsBulkSelecting] = useState(false);
     const [selectedThreadIds, setSelectedThreadIds] = useState<number[]>([]);
+
+    // Advanced search & filter state
+    const [extraFilters, setExtraFilters] = useState<ConversationFiltersState>({
+        date_preset: "all_time",
+        agent: "all",
+        waba: "all",
+        message_type: "all",
+    });
 
 
     // Reply & Attachment State
@@ -251,11 +263,15 @@ function ConversationsContent() {
     const { data: workspaceTagsData } = useWorkspaceTags();
     const workspaceTags = workspaceTagsData?.data || [];
 
-    // Fetch conversation thread list
+    // Fetch conversation thread list with server-side filters
     const { data: conversations, isLoading: isLoadingAll } = useListConversations({
         status: selectedTab,
         search: debouncedSearch,
         tag: selectedTag !== "all" ? selectedTag : undefined,
+        agent: extraFilters.agent !== "all" ? extraFilters.agent : undefined,
+        date_preset: extraFilters.date_preset !== "all_time" ? extraFilters.date_preset : undefined,
+        waba: extraFilters.waba !== "all" ? extraFilters.waba : undefined,
+        message_type: extraFilters.message_type !== "all" ? extraFilters.message_type : undefined,
     });
 
     // Chat threads list
@@ -898,13 +914,13 @@ function ConversationsContent() {
                     )}
                 </div>
 
-                {/* Search Box */}
-                <div className="px-3 py-2 border-b border-[#E5E9EE] bg-white">
-                    <div className="relative">
+                {/* Search Box & Advanced Filters */}
+                <div className="px-3 py-2 border-b border-[#E5E9EE] bg-white flex items-center gap-1.5">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#8A95A3]" />
                         <Input
                             type="search"
-                            placeholder="Search active chats..."
+                            placeholder="Search chats, contacts, messages..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-8 text-xs h-8.5 rounded-lg bg-[#F7F9FA] border-[#E5E9EE] focus:bg-white text-[#172033] placeholder-[#8A95A3] focus-visible:ring-1 focus-visible:ring-[#2F8F83] focus-visible:ring-offset-0"
@@ -919,6 +935,17 @@ function ConversationsContent() {
                             </button>
                         )}
                     </div>
+
+                    <ConversationFilterPopover
+                        filters={extraFilters}
+                        onChange={(upd) => setExtraFilters((prev) => ({ ...prev, ...upd }))}
+                        onReset={() => setExtraFilters({
+                            date_preset: "all_time",
+                            agent: "all",
+                            waba: "all",
+                            message_type: "all",
+                        })}
+                    />
                 </div>
 
                 {/* Chats Thread List */}
@@ -1084,6 +1111,15 @@ function ConversationsContent() {
                                                     ? "Reacted to your message"
                                                     : thread.lastMessage || "No messages yet"}
                                             </p>
+
+                                            {/* Matched message snippet if search matched an older message */}
+                                            {debouncedSearch && thread.matchedMessage && thread.matchedMessage.message !== thread.lastMessage && (
+                                                <div className="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/60 text-[9px] text-amber-800 flex items-center gap-1 truncate">
+                                                    <Search size={9} className="text-amber-600 shrink-0" />
+                                                    <span className="font-semibold shrink-0">Matched:</span>
+                                                    <span className="truncate italic">&quot;{thread.matchedMessage.message || thread.matchedMessage.caption}&quot;</span>
+                                                </div>
+                                            )}
 
                                             <div className="flex items-center justify-between pt-1 gap-1">
                                                 {/* Status indicator & Tag Chips */}

@@ -86,6 +86,13 @@ export interface Conversation {
     secondsRemaining?: number;
     notes?: string | null;
     tags?: Array<{ id: number; name: string; color?: string }>;
+    matchedMessage?: {
+        id: number;
+        message: string;
+        caption?: string | null;
+        type: string;
+        createdAt: string;
+    } | null;
     createdAt: string;
 
     // WhatsApp Rich Message Fields
@@ -382,6 +389,26 @@ export function useGetTopIntents() {
     });
 }
 
+export interface ConversationFilterOptions {
+    agents: Array<{ id: number; name: string; email: string }>;
+    waba_accounts: Array<{ id: number; waba_id: string; phone_number_id: string; whatsapp_number: string; display_name: string; status: string }>;
+    message_types: Array<{ id: string; name: string }>;
+    statuses: Array<{ id: string; name: string }>;
+    date_presets: Array<{ id: string; name: string }>;
+}
+
+export function useConversationFilterOptions() {
+    return useQuery<{ success: boolean; data: ConversationFilterOptions }>({
+        queryKey: ["conversationFilterOptions"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/conversations/filter-options`);
+            if (!res.ok) throw new Error("Failed to fetch conversation filter options");
+            return res.json();
+        },
+        staleTime: 60_000,
+    });
+}
+
 // Conversations
 export function useListConversations(params?: {
     status?: string;
@@ -390,9 +417,31 @@ export function useListConversations(params?: {
     format?: string;
     tag?: string;
     tag_id?: number;
+    agent?: string | number;
+    team?: number;
+    date_preset?: string;
+    date_from?: string;
+    date_to?: string;
+    waba?: string | number;
+    message_type?: string;
 }) {
     return useQuery<Conversation[]>({
-        queryKey: ["listConversations", params?.status, params?.search, params?.limit, params?.format, params?.tag, params?.tag_id],
+        queryKey: [
+            "listConversations",
+            params?.status,
+            params?.search,
+            params?.limit,
+            params?.format,
+            params?.tag,
+            params?.tag_id,
+            params?.agent,
+            params?.team,
+            params?.date_preset,
+            params?.date_from,
+            params?.date_to,
+            params?.waba,
+            params?.message_type,
+        ],
         queryFn: async () => {
             const query = new URLSearchParams();
             if (params?.status) query.set("status", params.status);
@@ -401,6 +450,13 @@ export function useListConversations(params?: {
             if (params?.format) query.set("format", params.format);
             if (params?.tag && params.tag !== "all") query.set("tag", params.tag);
             if (params?.tag_id) query.set("tag_id", String(params.tag_id));
+            if (params?.agent && params.agent !== "all") query.set("agent", String(params.agent));
+            if (params?.team) query.set("team", String(params.team));
+            if (params?.date_preset && params.date_preset !== "all_time") query.set("date_preset", params.date_preset);
+            if (params?.date_from) query.set("date_from", params.date_from);
+            if (params?.date_to) query.set("date_to", params.date_to);
+            if (params?.waba && params.waba !== "all") query.set("waba", String(params.waba));
+            if (params?.message_type && params.message_type !== "all") query.set("message_type", params.message_type);
 
             const queryString = query.toString();
             const url = queryString ? `${API_BASE}/conversations?${queryString}` : `${API_BASE}/conversations`;
