@@ -9,9 +9,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useListWorkspaceMembers, useAssignConversation } from "@workspace/api-client-react";
+import { useListWorkspaceMembers, useAssignConversation, useAutoAssignConversation } from "@/lib/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { UserCheck, UserX, ChevronDown, Check, Loader2 } from "lucide-react";
+import { UserCheck, UserX, ChevronDown, Check, Loader2, Sparkles } from "lucide-react";
 
 interface ConversationAssigneeDropdownProps {
     customerId: number;
@@ -27,6 +27,7 @@ export function ConversationAssigneeDropdown({
     const { toast } = useToast();
     const { data: members = [], isLoading } = useListWorkspaceMembers();
     const assignMutation = useAssignConversation();
+    const autoAssignMutation = useAutoAssignConversation();
 
     const handleAssign = async (userId: number | null) => {
         try {
@@ -44,14 +45,31 @@ export function ConversationAssigneeDropdown({
         }
     };
 
+    const handleAutoAssign = async () => {
+        try {
+            const res = await autoAssignMutation.mutateAsync(customerId);
+            const assignedName = res?.data?.user?.name || "next agent";
+            toast({
+                title: "Auto-Assigned",
+                description: `Conversation routed to ${assignedName} via Round Robin / Rules.`,
+            });
+        } catch (err: any) {
+            toast({
+                title: "Auto-assignment failed",
+                description: err.message || "Could not automatically route conversation.",
+                variant: "destructive",
+            });
+        }
+    };
+
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild disabled={assignMutation.isPending}>
+            <DropdownMenuTrigger asChild disabled={assignMutation.isPending || autoAssignMutation.isPending}>
                 <button
                     type="button"
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
                 >
-                    {assignMutation.isPending ? (
+                    {assignMutation.isPending || autoAssignMutation.isPending ? (
                         <Loader2 size={11} className="animate-spin text-[#378179]" />
                     ) : (
                         <UserCheck size={12} className="text-[#378179]" />
@@ -60,10 +78,21 @@ export function ConversationAssigneeDropdown({
                     <ChevronDown size={10} className="text-slate-400 ml-0.5" />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-52 bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50">
+            <DropdownMenuContent className="w-56 bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50">
                 <DropdownMenuLabel className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2 py-1">
                     Assign Agent
                 </DropdownMenuLabel>
+
+                {/* Auto Assign Action */}
+                <DropdownMenuItem
+                    onClick={handleAutoAssign}
+                    className="text-xs font-semibold text-[#378179] hover:bg-[#378179]/10 rounded-xl cursor-pointer py-1.5 px-2.5 flex items-center justify-between"
+                >
+                    <div className="flex items-center gap-2">
+                        <Sparkles size={13} className="text-[#378179]" />
+                        <span>Auto-Assign (Round Robin)</span>
+                    </div>
+                </DropdownMenuItem>
 
                 <DropdownMenuItem
                     onClick={() => handleAssign(null)}

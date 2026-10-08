@@ -553,6 +553,25 @@ export function useAssignConversation() {
     });
 }
 
+export function useAutoAssignConversation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const res = await apiFetch(`${API_BASE}/conversations/${id}/auto-assign`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to auto-assign conversation");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["listConversations"] });
+        },
+    });
+}
+
 export function useCreateConversation() {
     const queryClient = useQueryClient();
     return useMutation({
