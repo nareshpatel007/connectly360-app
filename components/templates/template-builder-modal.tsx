@@ -75,6 +75,10 @@ const COMMON_LOCALES = [
     { code: "id_ID", label: "Indonesian" },
 ];
 
+const AUTH_DEFAULT_BODY = "{{1}} is your verification code. For your security, do not share this code with anyone.";
+const AUTH_DEFAULT_SAMPLE = "492810";
+const AUTH_DEFAULT_FOOTER = "Expires in 10 minutes";
+
 export function TemplateBuilderModal({
     open,
     onOpenChange,
@@ -172,6 +176,46 @@ export function TemplateBuilderModal({
         setFooterText("");
         setButtons([]);
         setStep(1);
+    }
+
+    function handleCategoryChange(newCategory: "Marketing" | "Utility" | "Authentication") {
+        if (newCategory === category) return;
+
+        if (newCategory === "Authentication") {
+            setCategory("Authentication");
+            setTemplateType("AUTHENTICATION");
+            setHeaderType("none");
+            setHeaderContent("");
+            setHeaderMediaUrl("");
+            setHeaderSample("");
+            if (!bodyText || bodyText.trim() === "") {
+                setBodyText(AUTH_DEFAULT_BODY);
+                setBodySamples([AUTH_DEFAULT_SAMPLE]);
+                setButtons([{ type: "COPY_CODE", text: "Copy Code", example: AUTH_DEFAULT_SAMPLE }]);
+                setFooterText(AUTH_DEFAULT_FOOTER);
+            }
+        } else {
+            // Switching to Marketing or Utility
+            setCategory(newCategory);
+            setTemplateType("STANDARD");
+
+            // If the fields currently match the default Authentication template or contains OTP/COPY_CODE buttons, clear them
+            const isAuthDefaultBody = bodyText === AUTH_DEFAULT_BODY;
+            const hasAuthOnlyButtons = buttons.some((b) => b.type === "COPY_CODE" || b.type === "OTP");
+
+            if (category === "Authentication" || isAuthDefaultBody || hasAuthOnlyButtons) {
+                if (isAuthDefaultBody) {
+                    setBodyText("");
+                    setBodySamples([]);
+                }
+                if (hasAuthOnlyButtons) {
+                    setButtons([]);
+                }
+                if (footerText === AUTH_DEFAULT_FOOTER) {
+                    setFooterText("");
+                }
+            }
+        }
     }
 
     // Load from Starter Template Library
@@ -646,10 +690,7 @@ export function TemplateBuilderModal({
                                         <div className="grid grid-cols-3 gap-3">
                                             {/* Marketing */}
                                             <div
-                                                onClick={() => {
-                                                    setCategory("Marketing");
-                                                    setTemplateType("STANDARD");
-                                                }}
+                                                onClick={() => handleCategoryChange("Marketing")}
                                                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Marketing"
                                                     ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
                                                     : "border-slate-200 hover:border-slate-300 bg-white"
@@ -669,10 +710,7 @@ export function TemplateBuilderModal({
 
                                             {/* Utility */}
                                             <div
-                                                onClick={() => {
-                                                    setCategory("Utility");
-                                                    setTemplateType("STANDARD");
-                                                }}
+                                                onClick={() => handleCategoryChange("Utility")}
                                                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Utility"
                                                     ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
                                                     : "border-slate-200 hover:border-slate-300 bg-white"
@@ -692,17 +730,7 @@ export function TemplateBuilderModal({
 
                                             {/* Authentication */}
                                             <div
-                                                onClick={() => {
-                                                    setCategory("Authentication");
-                                                    setTemplateType("AUTHENTICATION");
-                                                    setHeaderType("none");
-                                                    if (!bodyText) {
-                                                        setBodyText("{{1}} is your verification code. For your security, do not share this code with anyone.");
-                                                        setBodySamples(["492810"]);
-                                                        setButtons([{ type: "COPY_CODE", text: "Copy Code", example: "492810" }]);
-                                                        setFooterText("Expires in 10 minutes");
-                                                    }
-                                                }}
+                                                onClick={() => handleCategoryChange("Authentication")}
                                                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${category === "Authentication"
                                                     ? "border-[#2F8F83] bg-[#2F8F83]/5 ring-1 ring-[#2F8F83]"
                                                     : "border-slate-200 hover:border-slate-300 bg-white"
