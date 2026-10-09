@@ -20,6 +20,7 @@ import {
     AlertCircle, MessageCircle, Download, Trash2, Megaphone,
     Play, Pause, XCircle, RotateCcw, Copy, Coins, Calendar,
     Search, AlertTriangle, ShieldCheck, ChevronLeft, ChevronRight,
+    AlertOctagon,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
@@ -31,12 +32,23 @@ import {
     usePauseCampaign,
     useResumeCampaign,
     useCancelCampaign,
+    useEmergencyStopCampaign,
+    useGetCampaignState,
     useRetryCampaignFailed,
     useDuplicateCampaign,
     useDeleteCampaign,
     useGetCampaignPreflight,
     CampaignRecipient,
 } from "@/lib/api-client-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { CampaignPreflightModal, CampaignPreflightWidget } from "@/components/campaigns";
 import { useRealtimeCampaign } from "@/lib/realtime-campaign";
 import { useQueryClient } from "@tanstack/react-query";
@@ -111,10 +123,13 @@ export default function CampaignDetailPage() {
     const [page, setPage] = useState(1);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [showPreflightModal, setShowPreflightModal] = useState(false);
+    const [showEmergencyStopModal, setShowEmergencyStopModal] = useState(false);
+    const [stopReason, setStopReason] = useState("");
 
     // Queries
     const { data, isLoading, error } = useGetCampaign(id);
     const { data: analytics } = useGetCampaignAnalytics(id);
+    const { data: campaignState } = useGetCampaignState(id);
     const { data: recipientsData, isLoading: isLoadingRecipients } = useGetCampaignRecipients(id, {
         status: recipientStatus !== "all" ? recipientStatus : undefined,
         search: recipientSearch.trim() ? recipientSearch.trim() : undefined,
@@ -132,6 +147,7 @@ export default function CampaignDetailPage() {
     const pauseMutation = usePauseCampaign();
     const resumeMutation = useResumeCampaign();
     const cancelMutation = useCancelCampaign();
+    const emergencyStopMutation = useEmergencyStopCampaign();
     const retryMutation = useRetryCampaignFailed();
     const duplicateMutation = useDuplicateCampaign();
     const deleteMutation = useDeleteCampaign();
@@ -186,8 +202,28 @@ export default function CampaignDetailPage() {
             await cancelMutation.mutateAsync({ id: campaign.id });
             toast.success("Campaign cancelled and unused credits released");
             queryClient.invalidateQueries({ queryKey: ["getCampaign", id] });
+            queryClient.invalidateQueries({ queryKey: ["campaignState", Number(id)] });
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to cancel campaign");
+        }
+    }
+
+    async function handleEmergencyStop(reasonText?: string) {
+        if (!campaign) return;
+        try {
+            const finalReason = (reasonText ?? stopReason).trim() || "Emergency stop invoked by operator";
+            await emergencyStopMutation.mutateAsync({
+                id: campaign.id,
+                reason: finalReason,
+            });
+            toast.success("Emergency stop executed: Queue halted & remaining recipients cancelled.");
+            setShowEmergencyStopModal(false);
+            setStopReason("");
+            queryClient.invalidateQueries({ queryKey: ["getCampaign", id] });
+            queryClient.invalidateQueries({ queryKey: ["campaignState", Number(id)] });
+            queryClient.invalidateQueries({ queryKey: ["campaignRecipients", id] });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to emergency stop campaign");
         }
     }
 
@@ -299,7 +335,7 @@ export default function CampaignDetailPage() {
                             </>
                         )}
 
-                        {/* Running controls: Pause & Cancel */}
+                        {/* Running controls: Pause & Emergency Stop */}
                         {isRunning && (
                             <>
                                 <Button
@@ -307,41 +343,39 @@ export default function CampaignDetailPage() {
                                     variant="outline"
                                     onClick={handlePause}
                                     disabled={pauseMutation.isPending}
-                                    className="text-yellow-600 border-yellow-300 hover:bg-yellow-50 text-xs h-9 px-3"
+                                    className="text-yellow-700 border-yellow-300 hover:bg-yellow-50 text-xs h-9 px-3 font-medium"
                                 >
                                     <Pause className="h-3.5 w-3.5 mr-1" /> Pause
                                 </Button>
                                 <Button
                                     size="sm"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                    disabled={cancelMutation.isPending}
-                                    className="text-red-600 border-red-300 hover:bg-red-50 text-xs h-9 px-3"
+                                    onClick={() => setShowEmergencyStopModal(true)}
+                                    disabled={emergencyStopMutation.isPending}
+                                    className="bg-red-600 hover:bg-red-700 text-white text-xs h-9 px-3 gap-1.5 font-semibold shadow-xs"
                                 >
-                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
+                                    <AlertOctagon className="h-4 w-4" /> Emergency Stop
                                 </Button>
                             </>
                         )}
 
-                        {/* Paused controls: Resume & Cancel */}
+                        {/* Paused controls: Resume & Emergency Stop */}
                         {isPaused && (
                             <>
                                 <Button
                                     size="sm"
                                     onClick={handleResume}
                                     disabled={resumeMutation.isPending}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-3.5"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-3.5 font-semibold"
                                 >
                                     <Play className="h-3.5 w-3.5 mr-1" /> Resume
                                 </Button>
                                 <Button
                                     size="sm"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                    disabled={cancelMutation.isPending}
-                                    className="text-red-600 border-red-300 hover:bg-red-50 text-xs h-9 px-3"
+                                    onClick={() => setShowEmergencyStopModal(true)}
+                                    disabled={emergencyStopMutation.isPending}
+                                    className="bg-red-600 hover:bg-red-700 text-white text-xs h-9 px-3 gap-1.5 font-semibold shadow-xs"
                                 >
-                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
+                                    <AlertOctagon className="h-4 w-4" /> Emergency Stop
                                 </Button>
                             </>
                         )}
@@ -402,6 +436,96 @@ export default function CampaignDetailPage() {
                     </div>
                 }
             />
+
+            {/* Emergency Stop Banner (if Cancelled) */}
+            {campaign.status === "cancelled" && (
+                <Card className="border-red-300 bg-red-50/70 dark:border-red-900/50 dark:bg-red-950/20 shadow-2xs">
+                    <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="rounded-full bg-red-100 p-2.5 text-red-600 dark:bg-red-900/40 dark:text-red-400 mt-0.5">
+                                <AlertOctagon className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-red-900 dark:text-red-300 text-sm">
+                                        Campaign Terminated via Emergency Stop
+                                    </span>
+                                    <span className="text-[11px] rounded bg-red-200/70 dark:bg-red-900/60 text-red-800 dark:text-red-200 px-2 py-0.5 font-medium">
+                                        Status: CANCELLED
+                                    </span>
+                                </div>
+                                <p className="text-xs text-red-700 dark:text-red-400">
+                                    <strong>Stop Reason:</strong> {campaign.stop_reason || "Emergency halt triggered by operator"}
+                                </p>
+                                <p className="text-[11px] text-red-600/90 dark:text-red-400/80">
+                                    {campaign.cancelled_at && `Stopped on ${new Date(campaign.cancelled_at).toLocaleString()} · `}
+                                    Unused reserved credits released: <strong>{campaign.credits_refunded ?? 0}</strong> credits.
+                                </p>
+                                <p className="text-[11px] text-muted-foreground pt-0.5 flex items-center gap-1">
+                                    <ShieldCheck className="inline h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                    <span>
+                                        <strong>Meta Sent History Integrity:</strong> All {campaign.sent_count.toLocaleString()} sent and {campaign.delivered_count.toLocaleString()} delivered messages remain preserved in history and were not recalled.
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        {hasFailed && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleRetryFailed}
+                                disabled={retryMutation.isPending}
+                                className="shrink-0 text-amber-700 border-amber-300 bg-white hover:bg-amber-50 text-xs h-8 px-3"
+                            >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Retry Failed ({campaign.failed_count})
+                            </Button>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Campaign Paused Banner */}
+            {campaign.status === "paused" && (
+                <Card className="border-yellow-300 bg-yellow-50/70 dark:border-yellow-900/50 dark:bg-yellow-950/20 shadow-2xs">
+                    <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="rounded-full bg-yellow-100 p-2.5 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 mt-0.5">
+                                <Pause className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <span className="font-semibold text-yellow-900 dark:text-yellow-300 text-sm">
+                                    Campaign Execution Paused
+                                </span>
+                                <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                                    Batch workers are halted. No new messages are currently being dispatched.
+                                    {campaign.paused_at && ` Paused at ${new Date(campaign.paused_at).toLocaleString()}.`}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                    You can resume broadcasting at any time, or execute an Emergency Stop to cancel remaining queued recipients and release credits.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                                size="sm"
+                                onClick={handleResume}
+                                disabled={resumeMutation.isPending}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3.5 font-semibold"
+                            >
+                                <Play className="h-3.5 w-3.5 mr-1" /> Resume Broadcast
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={() => setShowEmergencyStopModal(true)}
+                                disabled={emergencyStopMutation.isPending}
+                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-8 px-3 gap-1.5 font-semibold"
+                            >
+                                <AlertOctagon className="h-3.5 w-3.5" /> Emergency Stop
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Live Progress Card (if Running or in-flight) */}
             {(isRunning || isPaused || progressPct > 0) && (
@@ -707,6 +831,99 @@ export default function CampaignDetailPage() {
                     onConfirmLaunch={handleConfirmLaunch}
                     isLaunching={launchMutation.isPending}
                 />
+            )}
+
+            {/* Emergency Stop Confirmation Modal */}
+            {campaign && (
+                <Dialog open={showEmergencyStopModal} onOpenChange={setShowEmergencyStopModal}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <div className="flex items-center gap-2 text-red-600">
+                                <AlertOctagon className="h-5 w-5" />
+                                <DialogTitle className="text-red-700 dark:text-red-400">
+                                    Emergency Stop Campaign
+                                </DialogTitle>
+                            </div>
+                            <DialogDescription className="text-xs text-muted-foreground pt-1">
+                                Are you sure you want to trigger an immediate emergency halt on <strong>{campaign.name}</strong>?
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-3.5 py-2">
+                            <div className="rounded-lg bg-red-50 p-3 text-xs text-red-900 border border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-900/60 space-y-1.5">
+                                <p className="font-semibold flex items-center gap-1.5 text-red-800 dark:text-red-300">
+                                    <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                                    Immediate Impact:
+                                </p>
+                                <ul className="list-disc pl-5 space-y-1 text-[11px] text-red-700 dark:text-red-300/90">
+                                    <li>Queue workers will immediately halt further batch executions.</li>
+                                    <li>All queued, pending, and validating recipients will transition to <strong>CANCELLED</strong>.</li>
+                                    <li>Unused reserved credits will be settled and credited back to your tenant wallet.</li>
+                                    <li><strong>Meta Rule:</strong> Already sent messages ({campaign.sent_count}) cannot be recalled and will be preserved in message history.</li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground">
+                                    Reason for Emergency Stop (Optional / Audit Log)
+                                </label>
+                                <Textarea
+                                    placeholder="e.g. Meta rate limit alert, incorrect template copy, audience mismatch..."
+                                    value={stopReason}
+                                    onChange={(e) => setStopReason(e.target.value)}
+                                    className="text-xs min-h-[70px]"
+                                />
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {[
+                                        "Meta rate limit alert",
+                                        "Template copy / variable error",
+                                        "Audience segment error",
+                                        "Manual operator intervention",
+                                    ].map((preset) => (
+                                        <button
+                                            key={preset}
+                                            type="button"
+                                            onClick={() => setStopReason(preset)}
+                                            className="rounded border border-border bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                        >
+                                            {preset}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowEmergencyStopModal(false)}
+                                disabled={emergencyStopMutation.isPending}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleEmergencyStop()}
+                                disabled={emergencyStopMutation.isPending}
+                                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                            >
+                                {emergencyStopMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                                        Halting Campaign...
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertOctagon className="h-3.5 w-3.5 mr-1.5" />
+                                        Confirm Emergency Stop
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );

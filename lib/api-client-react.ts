@@ -1906,12 +1906,51 @@ export interface Campaign {
     completed_at?: string | null;
     paused_at?: string | null;
     cancelled_at?: string | null;
+    stop_reason?: string | null;
+    stopped_by?: number | null;
     created_at: string;
     updated_at: string;
     template?: any;
     whatsapp_account?: any;
     creator?: any;
     batches?: any[];
+}
+
+export interface CampaignStateResponse {
+    campaign_id: number;
+    name: string;
+    status: string;
+    is_running: boolean;
+    is_paused: boolean;
+    is_cancelled: boolean;
+    can_pause: boolean;
+    can_resume: boolean;
+    can_cancel: boolean;
+    progress_percentage: number;
+    stop_reason: string | null;
+    stopped_by: number | null;
+    paused_at: string | null;
+    cancelled_at: string | null;
+    recipients_breakdown: {
+        total: number;
+        eligible: number;
+        pending: number;
+        queued: number;
+        validating: number;
+        sending: number;
+        sent: number;
+        delivered: number;
+        read: number;
+        failed: number;
+        cancelled: number;
+        skipped: number;
+    };
+    credits: {
+        reserved: number;
+        consumed: number;
+        refunded: number;
+    };
+    message_recall_notice: string;
 }
 
 export interface CampaignRecipient {
@@ -2300,15 +2339,52 @@ export function useResumeCampaign() {
 
 export function useCancelCampaign() {
     return useMutation({
-        mutationFn: async ({ id }: { id: number }) => {
+        mutationFn: async ({ id, reason }: { id: number; reason?: string }) => {
             const res = await apiFetch(`${API_BASE}/campaigns/${id}/cancel`, {
                 method: "POST",
+                body: reason ? JSON.stringify({ reason }) : undefined,
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err.message || "Failed to cancel campaign");
             }
             return res.json();
+        },
+    });
+}
+
+export function useEmergencyStopCampaign() {
+    return useMutation({
+        mutationFn: async ({ id, reason }: { id: number; reason?: string }) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/emergency-stop`, {
+                method: "POST",
+                body: reason ? JSON.stringify({ reason }) : undefined,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to stop campaign");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useGetCampaignState(id: string | number) {
+    const numId = typeof id === "string" ? parseInt(id, 10) : id;
+    return useQuery<CampaignStateResponse>({
+        queryKey: ["campaignState", numId],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/campaigns/${numId}/state`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to fetch campaign state");
+            }
+            return res.json();
+        },
+        enabled: !isNaN(numId) && numId > 0,
+        refetchInterval: (query) => {
+            const status = query.state.data?.status;
+            return status === "running" || status === "queued" || status === "sending" ? 3000 : false;
         },
     });
 }
