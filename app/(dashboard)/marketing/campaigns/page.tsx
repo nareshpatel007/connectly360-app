@@ -32,7 +32,9 @@ import {
     useCancelCampaign,
     useDuplicateCampaign,
     Campaign,
+    type SavedViewItem,
 } from "@/lib/api-client-react";
+import { SavedViewsBar } from "@/components/saved-views";
 import { useRealtimeCampaign } from "@/lib/realtime-campaign";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -102,10 +104,28 @@ export default function CampaignsPage() {
     const [channelFilter, setChannelFilter] = useState("all");
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
+    // Saved Views State (TASK 14)
+    const [activeViewId, setActiveViewId] = useState<number | null>(null);
+
+    const handleSelectView = (view: SavedViewItem | null) => {
+        if (!view) {
+            setActiveViewId(null);
+            setStatusFilter("all");
+            setChannelFilter("all");
+        } else {
+            setActiveViewId(view.id);
+            if (view.filters) {
+                if (view.filters.status) setStatusFilter(view.filters.status);
+                if (view.filters.channel) setChannelFilter(view.filters.channel);
+            }
+        }
+    };
+
     const { data: campaigns = [], isLoading, error, refetch } = useListCampaigns({
         status: statusFilter !== "all" ? statusFilter : undefined,
         channel: channelFilter !== "all" ? channelFilter : undefined,
         search: search.trim() ? search.trim() : undefined,
+        view_id: activeViewId || undefined,
     });
 
     const { data: stats } = useGetCampaignStats();
@@ -297,6 +317,21 @@ export default function CampaignsPage() {
                             <p className="text-[11px] text-muted-foreground mt-0.5">Authoritative billed</p>
                         </CardContent>
                     </Card>
+                </div>
+
+                {/* Reusable Saved Views Pills (TASK 14) */}
+                <div className="bg-white dark:bg-zinc-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
+                    <SavedViewsBar
+                        entityType="campaigns"
+                        activeViewId={activeViewId}
+                        onSelectView={handleSelectView}
+                        currentFilters={{
+                            status: statusFilter,
+                            channel: channelFilter,
+                            search: search.trim() || undefined,
+                        }}
+                        hasActiveFilters={statusFilter !== "all" || channelFilter !== "all" || !!search.trim()}
+                    />
                 </div>
 
                 {/* Broadcast History Container */}

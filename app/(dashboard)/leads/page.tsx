@@ -1,17 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { useListLeads, useUpdateLead } from "@/lib/api-client-react";
+import { useListLeads, useUpdateLead, type SavedViewItem } from "@/lib/api-client-react";
 import { PipelineBoard } from "@/components/pipelines/pipeline-board";
 import { PipelineAnalytics } from "@/components/pipelines/pipeline-analytics";
 import { DealForm } from "@/components/pipelines/deal-form";
+import { SavedViewsBar } from "@/components/saved-views";
 import { Button } from "@/components/ui/button";
 import { Plus, Users2, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 
 export default function LeadsPage() {
-    const { data: leads = [], isLoading, refetch } = useListLeads();
+    const [activeViewId, setActiveViewId] = useState<number | null>(null);
+    const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+
+    const handleSelectView = (view: SavedViewItem | null) => {
+        if (!view) {
+            setActiveViewId(null);
+            setActiveFilters({});
+        } else {
+            setActiveViewId(view.id);
+            setActiveFilters(view.filters || {});
+        }
+    };
+
+    const { data: leads = [], isLoading, refetch } = useListLeads({
+        view_id: activeViewId || undefined,
+        ...activeFilters,
+    });
     const updateLeadMutation = useUpdateLead();
 
     const [formOpen, setFormOpen] = useState(false);
@@ -83,6 +100,17 @@ export default function LeadsPage() {
 
             {/* Analytics */}
             <PipelineAnalytics leads={leads} />
+
+            {/* Reusable Saved Views Pills (TASK 14) */}
+            <div className="bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <SavedViewsBar
+                    entityType="leads"
+                    activeViewId={activeViewId}
+                    onSelectView={handleSelectView}
+                    currentFilters={activeFilters}
+                    hasActiveFilters={Object.keys(activeFilters).length > 0}
+                />
+            </div>
 
             {/* Pipeline Board */}
             {leads.length === 0 ? (

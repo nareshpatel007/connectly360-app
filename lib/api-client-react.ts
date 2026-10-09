@@ -439,6 +439,7 @@ export function useListConversations(params?: {
     waba?: string | number;
     message_type?: string;
     sla?: string;
+    view_id?: number;
 }) {
     return useQuery<Conversation[]>({
         queryKey: [
@@ -457,6 +458,7 @@ export function useListConversations(params?: {
             params?.waba,
             params?.message_type,
             params?.sla,
+            params?.view_id,
         ],
         queryFn: async () => {
             const query = new URLSearchParams();
@@ -474,6 +476,7 @@ export function useListConversations(params?: {
             if (params?.waba && params.waba !== "all") query.set("waba", String(params.waba));
             if (params?.message_type && params.message_type !== "all") query.set("message_type", params.message_type);
             if (params?.sla) query.set("sla", params.sla);
+            if (params?.view_id) query.set("view_id", String(params.view_id));
 
             const queryString = query.toString();
             const url = queryString ? `${API_BASE}/conversations?${queryString}` : `${API_BASE}/conversations`;
@@ -932,11 +935,29 @@ export function useListWorkspaceMembers() {
 }
 
 // Leads
-export function useListLeads(params?: { status?: string }) {
+export function useListLeads(params?: {
+    status?: string;
+    priority?: string;
+    stage?: string;
+    source?: string;
+    assigned_user_id?: number;
+    search?: string;
+    view_id?: number;
+}) {
     return useQuery<Lead[]>({
-        queryKey: [getListLeadsQueryKey(), params?.status],
+        queryKey: [getListLeadsQueryKey(), params],
         queryFn: async () => {
-            const url = params?.status ? `${API_BASE}/leads?status=${params.status}` : `${API_BASE}/leads`;
+            const query = new URLSearchParams();
+            if (params?.status) query.set("status", params.status);
+            if (params?.priority) query.set("priority", params.priority);
+            if (params?.stage) query.set("stage", params.stage);
+            if (params?.source) query.set("source", params.source);
+            if (params?.assigned_user_id) query.set("assigned_user_id", String(params.assigned_user_id));
+            if (params?.search) query.set("search", params.search);
+            if (params?.view_id) query.set("view_id", String(params.view_id));
+
+            const queryString = query.toString();
+            const url = queryString ? `${API_BASE}/leads?${queryString}` : `${API_BASE}/leads`;
             const res = await apiFetch(url);
             if (!res.ok) throw new Error("Failed to fetch leads");
             return res.json();
@@ -1991,7 +2012,7 @@ export interface CampaignAnalytics {
 // Campaign Hooks
 // -------------------------------------------------------------
 
-export function useListCampaigns(params?: { status?: string; channel?: string; search?: string; page?: number; per_page?: number }, options?: any) {
+export function useListCampaigns(params?: { status?: string; channel?: string; search?: string; page?: number; per_page?: number; view_id?: number }, options?: any) {
     return useQuery<Campaign[]>({
         queryKey: ["listCampaigns", params],
         queryFn: async () => {
@@ -2001,6 +2022,7 @@ export function useListCampaigns(params?: { status?: string; channel?: string; s
             if (params?.search) query.set('search', params.search);
             if (params?.page) query.set('page', String(params.page));
             if (params?.per_page) query.set('per_page', String(params.per_page));
+            if (params?.view_id) query.set('view_id', String(params.view_id));
 
             const res = await apiFetch(`${API_BASE}/campaigns?${query.toString()}`);
             if (!res.ok) throw new Error("Failed to fetch campaigns");
@@ -4017,6 +4039,131 @@ export function useUpdatePresence() {
                     data.data
                 );
             }
+        },
+    });
+}
+
+// -------------------------------------------------------------
+// Saved Views / Filters (TASK 14)
+// -------------------------------------------------------------
+
+export interface SavedViewItem {
+    id: number;
+    tenant_id: number;
+    user_id?: number | null;
+    entity_type: "contacts" | "inbox" | "leads" | "campaigns";
+    name: string;
+    description?: string | null;
+    icon?: string | null;
+    color?: string | null;
+    filters: Record<string, any>;
+    rules_json?: any;
+    segment_id?: number | null;
+    is_default?: boolean;
+    is_shared?: boolean;
+    is_system?: boolean;
+    sort_order?: number;
+    calculated_count?: number | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export function useListSavedViews(entityType?: string) {
+    return useQuery<SavedViewItem[]>({
+        queryKey: ["savedViews", entityType],
+        queryFn: async () => {
+            const endpoint = entityType
+                ? `${API_BASE}/saved-views?entity_type=${encodeURIComponent(entityType)}`
+                : `${API_BASE}/saved-views`;
+            const res = await apiFetch(endpoint);
+            if (!res.ok) {
+                throw new Error("Failed to fetch saved views");
+            }
+            const body = await res.json();
+            return body.data || [];
+        },
+    });
+}
+
+export function useCreateSavedView() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: Partial<SavedViewItem>) => {
+            const res = await apiFetch(`${API_BASE}/saved-views`, {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to create saved view");
+            }
+            const body = await res.json();
+            return body.data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["savedViews"] });
+            if (variables.entity_type) {
+                queryClient.invalidateQueries({ queryKey: ["savedViews", variables.entity_type] });
+            }
+        },
+    });
+}
+
+export function useUpdateSavedView() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, data }: { id: number; data: Partial<SavedViewItem> }) => {
+            const res = await apiFetch(`${API_BASE}/saved-views/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to update saved view");
+            }
+            const body = await res.json();
+            return body.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["savedViews"] });
+        },
+    });
+}
+
+export function useDeleteSavedView() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const res = await apiFetch(`${API_BASE}/saved-views/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to delete saved view");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["savedViews"] });
+        },
+    });
+}
+
+export function useSetDefaultSavedView() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const res = await apiFetch(`${API_BASE}/saved-views/${id}/set-default`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to set view as default");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["savedViews"] });
         },
     });
 }

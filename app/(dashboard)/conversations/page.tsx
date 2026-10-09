@@ -30,6 +30,8 @@ import {
     CollisionWarningBanner,
     CollisionConfirmModal,
 } from "@/components/conversations/CollisionProtectionBar";
+import { SavedViewsBar } from "@/components/saved-views";
+import { type SavedViewItem } from "@/lib/api-client-react";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -168,6 +170,28 @@ function ConversationsContent() {
         message_type: "all",
     });
 
+    // Saved Views State (TASK 14)
+    const [activeViewId, setActiveViewId] = useState<number | null>(null);
+
+    const handleSelectView = (view: SavedViewItem | null) => {
+        if (!view) {
+            setActiveViewId(null);
+        } else {
+            setActiveViewId(view.id);
+            if (view.filters) {
+                if (view.filters.status) setSelectedTab(view.filters.status);
+                if (view.filters.tag) setSelectedTag(view.filters.tag);
+                setExtraFilters((prev) => ({
+                    ...prev,
+                    agent: view.filters.agent || prev.agent,
+                    date_preset: view.filters.date_preset || prev.date_preset,
+                    waba: view.filters.waba || prev.waba,
+                    message_type: view.filters.message_type || prev.message_type,
+                }));
+            }
+        }
+    };
+
 
     // Reply & Attachment State
     const [replyingTo, setReplyingTo] = useState<any>(null);
@@ -287,6 +311,7 @@ function ConversationsContent() {
         date_preset: extraFilters.date_preset !== "all_time" ? extraFilters.date_preset : undefined,
         waba: extraFilters.waba !== "all" ? extraFilters.waba : undefined,
         message_type: extraFilters.message_type !== "all" ? extraFilters.message_type : undefined,
+        view_id: activeViewId || undefined,
     });
 
     // Chat threads list
@@ -935,6 +960,21 @@ function ConversationsContent() {
                                 <span>New Message</span>
                             </Button>
                         </div>
+                    </div>
+
+                    {/* Reusable Saved Views Pills (TASK 14) */}
+                    <div className="pb-1 border-b border-slate-100">
+                        <SavedViewsBar
+                            entityType="inbox"
+                            activeViewId={activeViewId}
+                            onSelectView={handleSelectView}
+                            currentFilters={{
+                                status: selectedTab,
+                                tag: selectedTag,
+                                ...extraFilters,
+                            }}
+                            hasActiveFilters={selectedTab !== "all" || selectedTag !== "all"}
+                        />
                     </div>
 
                     {/* Filter Pills with Dynamic Counts */}

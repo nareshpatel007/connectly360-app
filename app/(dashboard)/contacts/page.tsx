@@ -66,6 +66,8 @@ import { DuplicateContactsModal } from "@/components/contacts/DuplicateContactsM
 import { ContactMergeDialog } from "@/components/contacts/ContactMergeDialog";
 import { ManageConsentModal } from "@/components/contacts/ManageConsentModal";
 import { BlockContactModal } from "@/components/contacts/BlockContactModal";
+import { SavedViewsBar } from "@/components/saved-views";
+import { SavedViewItem } from "@/lib/api-client-react";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -77,6 +79,7 @@ export default function ContactsPage() {
     // Search and Filters
     const [searchTerm, setSearchTerm] = useState("");
     const [filters, setFilters] = useState<ContactFilterState>({});
+    const [activeViewId, setActiveViewId] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState("last_updated");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -91,7 +94,28 @@ export default function ContactsPage() {
         created_within: filters.created_within || undefined,
         company: filters.company || undefined,
         sort_by: sortBy,
-    }), [searchTerm, filters, sortBy]);
+        view_id: activeViewId || undefined,
+    }), [searchTerm, filters, sortBy, activeViewId]);
+
+    const handleSelectView = (view: SavedViewItem | null) => {
+        if (!view) {
+            setActiveViewId(null);
+            setFilters({});
+        } else {
+            setActiveViewId(view.id);
+            if (view.filters) {
+                setFilters({
+                    city: view.filters.city,
+                    stage: view.filters.stage,
+                    whatsapp_opt_in: view.filters.whatsapp_opt_in !== undefined ? String(view.filters.whatsapp_opt_in) : undefined,
+                    company: view.filters.company,
+                    last_interaction: view.filters.last_interaction,
+                    created_within: view.filters.created_within,
+                });
+            }
+        }
+        setCurrentPage(1);
+    };
 
     const { data: rawCustomers, isLoading: isCustomersLoading } = useListCustomers(queryParams);
 
@@ -547,6 +571,17 @@ export default function ContactsPage() {
 
             {/* 3. Filter Toolbar & Search Bar */}
             <div className="space-y-3">
+                {/* Reusable Saved Views Pills (TASK 14) */}
+                <div className="bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <SavedViewsBar
+                        entityType="contacts"
+                        activeViewId={activeViewId}
+                        onSelectView={handleSelectView}
+                        currentFilters={filters}
+                        hasActiveFilters={activeFiltersCount > 0}
+                    />
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs">
                     <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1">
                         <div className="relative flex-1 max-w-md">
