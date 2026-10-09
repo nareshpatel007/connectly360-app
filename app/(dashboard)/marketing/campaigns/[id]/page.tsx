@@ -34,8 +34,10 @@ import {
     useRetryCampaignFailed,
     useDuplicateCampaign,
     useDeleteCampaign,
+    useGetCampaignPreflight,
     CampaignRecipient,
 } from "@/lib/api-client-react";
+import { CampaignPreflightModal, CampaignPreflightWidget } from "@/components/campaigns";
 import { useRealtimeCampaign } from "@/lib/realtime-campaign";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -108,6 +110,7 @@ export default function CampaignDetailPage() {
     const [recipientSearch, setRecipientSearch] = useState("");
     const [page, setPage] = useState(1);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showPreflightModal, setShowPreflightModal] = useState(false);
 
     // Queries
     const { data, isLoading, error } = useGetCampaign(id);
@@ -117,6 +120,11 @@ export default function CampaignDetailPage() {
         search: recipientSearch.trim() ? recipientSearch.trim() : undefined,
         page,
         per_page: 25,
+    });
+
+    // Preflight query for inline draft status
+    const { data: preflightData, refetch: refetchPreflight } = useGetCampaignPreflight(id, {
+        enabled: Boolean(id),
     });
 
     // Mutations
@@ -131,12 +139,20 @@ export default function CampaignDetailPage() {
     const campaign = data?.campaign;
 
     // Actions
-    async function handleLaunch() {
+    function handleLaunch() {
+        if (!campaign) return;
+        // Open preflight audit modal to verify 12-point readiness before launching
+        setShowPreflightModal(true);
+    }
+
+    async function handleConfirmLaunch() {
         if (!campaign) return;
         try {
             await launchMutation.mutateAsync({ id: campaign.id });
             toast.success("Campaign launched into batch processing!");
+            setShowPreflightModal(false);
             queryClient.invalidateQueries({ queryKey: ["getCampaign", id] });
+            queryClient.invalidateQueries({ queryKey: ["campaignPreflight", id] });
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to launch campaign");
         }
@@ -259,17 +275,28 @@ export default function CampaignDetailPage() {
                 badge={CAMPAIGN_STATUS[campaign.status]?.label}
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Draft Launch */}
+                        {/* Draft Launch & Preflight */}
                         {isDraft && (
-                            <Button
-                                size="sm"
-                                onClick={handleLaunch}
-                                disabled={launchMutation.isPending}
-                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 font-semibold shadow-xs"
-                            >
-                                {launchMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Play className="h-3.5 w-3.5 mr-1" />}
-                                Launch Campaign
-                            </Button>
+                            <>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowPreflightModal(true)}
+                                    className="text-xs h-9 px-3 gap-1.5"
+                                >
+                                    <ShieldCheck className="h-4 w-4 text-[#2F8F83]" />
+                                    <span>Preflight Audit</span>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={handleLaunch}
+                                    disabled={launchMutation.isPending}
+                                    className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 font-semibold shadow-xs"
+                                >
+                                    {launchMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Play className="h-3.5 w-3.5 mr-1" />}
+                                    Launch Campaign
+                                </Button>
+                            </>
                         )}
 
                         {/* Running controls: Pause & Cancel */}
@@ -669,6 +696,18 @@ export default function CampaignDetailPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Preflight Verification Modal */}
+            {campaign && (
+                <CampaignPreflightModal
+                    isOpen={showPreflightModal}
+                    onClose={() => setShowPreflightModal(false)}
+                    campaignId={campaign.id}
+                    campaignName={campaign.name}
+                    onConfirmLaunch={handleConfirmLaunch}
+                    isLaunching={launchMutation.isPending}
+                />
+            )}
         </div>
     );
 }

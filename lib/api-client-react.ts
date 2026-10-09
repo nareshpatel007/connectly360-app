@@ -2136,6 +2136,73 @@ export function useEstimateCampaignCredits(id: number | string | null | undefine
     });
 }
 
+export interface PreflightCheckItem {
+    key: string;
+    label: string;
+    status: "passed" | "failed" | "warning";
+    critical: boolean;
+    message: string;
+    details?: Record<string, any>;
+}
+
+export interface CampaignPreflightResult {
+    is_launchable: boolean;
+    summary: {
+        total: number;
+        eligible: number;
+        excluded: number;
+    };
+    reasons: {
+        no_phone: number;
+        invalid_phone: number;
+        duplicate_phone: number;
+        no_marketing_opt_in: number;
+        blocked_or_suppressed: number;
+        missing_variables: number;
+        [key: string]: number;
+    };
+    sample_eligible: Array<{ id: number; name: string; phone: string }>;
+    sample_excluded: Array<{ id: number; name: string; phone: string; reason: string }>;
+    checks: PreflightCheckItem[];
+    critical_failures: string[];
+}
+
+export function useGetCampaignPreflight(id?: number | string | null, options?: { enabled?: boolean }) {
+    return useQuery<CampaignPreflightResult>({
+        queryKey: ["campaignPreflight", id],
+        queryFn: async () => {
+            if (!id) throw new Error("Campaign ID required");
+            const res = await apiFetch(`${API_BASE}/campaigns/${id}/preflight`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to fetch campaign preflight");
+            }
+            const json = await res.json();
+            return json.data || json;
+        },
+        enabled: Boolean(id) && (options?.enabled ?? true),
+        staleTime: 5000,
+    });
+}
+
+export function useRunCampaignPreflightCheck() {
+    return useMutation<CampaignPreflightResult, Error, Record<string, any>>({
+        mutationFn: async (payload: Record<string, any>) => {
+            const res = await apiFetch(`${API_BASE}/campaigns/preflight-check`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to run campaign preflight check");
+            }
+            const json = await res.json();
+            return json.data || json;
+        },
+    });
+}
+
 export function usePrepareCampaign() {
     return useMutation({
         mutationFn: async ({ id, async = false }: { id: number; async?: boolean }) => {

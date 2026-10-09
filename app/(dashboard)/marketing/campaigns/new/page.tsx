@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -31,6 +31,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { UpgradeGuard } from "@/components/upgrade-guard";
 import { TemplatePreview } from "@/components/templates/template-preview";
+import { CampaignPreflightWidget } from "@/components/campaigns";
 import {
     useListTemplateAccounts,
     useListTemplates,
@@ -39,9 +40,11 @@ import {
     useScheduleCampaign,
     useValidateAudience,
     useCompanyProfile,
+    useRunCampaignPreflightCheck,
     MessageTemplate,
     WhatsAppAccountOption,
     AudienceValidationResult,
+    CampaignPreflightResult,
 } from "@/lib/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -105,6 +108,50 @@ export default function NewCampaignPage() {
     const launchCampaignMutation = useLaunchCampaign();
     const scheduleCampaignMutation = useScheduleCampaign();
     const validateAudienceMutation = useValidateAudience();
+    const preflightCheckMutation = useRunCampaignPreflightCheck();
+
+    // Preflight state for Step 4
+    const [preflightResult, setPreflightResult] = useState<CampaignPreflightResult | null>(null);
+    const [isRunningPreflight, setIsRunningPreflight] = useState(false);
+
+    const runWizardPreflight = useCallback(async () => {
+        setIsRunningPreflight(true);
+        try {
+            const audienceFilter: any = { type: audienceType };
+            if (audienceType === "segment" && selectedSegmentId) {
+                audienceFilter.segment_id = Number(selectedSegmentId);
+            }
+            if (audienceType === "tags" && tagsInput.trim()) {
+                audienceFilter.tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+            }
+
+            const payload = {
+                name: name.trim() || "Draft Campaign",
+                whatsapp_account_id: selectedAccount?.id || null,
+                template_id: selectedTemplate?.id || null,
+                template_name: selectedTemplate?.name || null,
+                template_language: selectedTemplate?.language || "en_US",
+                template_category: selectedTemplate?.category || "Marketing",
+                template_variables: variableMappings,
+                audience_type: audienceType,
+                audience_filter: audienceFilter,
+            };
+
+            const result = await preflightCheckMutation.mutateAsync(payload);
+            setPreflightResult(result);
+        } catch (e) {
+            console.error("Failed to run wizard preflight check", e);
+        } finally {
+            setIsRunningPreflight(false);
+        }
+    }, [audienceType, selectedSegmentId, tagsInput, name, selectedAccount, selectedTemplate, variableMappings]);
+
+    // Automatically run preflight when entering step 4 (Review & Launch)
+    useEffect(() => {
+        if (currentStep === 3) {
+            runWizardPreflight();
+        }
+    }, [currentStep, runWizardPreflight]);
 
     // Auto-select first connected WhatsApp account
     useEffect(() => {
@@ -929,6 +976,22 @@ export default function NewCampaignPage() {
                                         </p>
                                     </div>
 
+                                    {/* Preflight Verification Matrix & Audience Breakdown */}
+                                    {isRunningPreflight ? (
+                                        <div className="p-8 rounded-xl border border-border bg-card flex flex-col items-center justify-center gap-2">
+                                            <Loader2 className="h-6 w-6 animate-spin text-[#2F8F83]" />
+                                            <span className="text-xs text-muted-foreground font-medium">
+                                                Auditing 12-point preflight checklist (WABA, templates, audience, opt-in, credits)...
+                                            </span>
+                                        </div>
+                                    ) : preflightResult ? (
+                                        <CampaignPreflightWidget
+                                            preflight={preflightResult}
+                                            onRefresh={runWizardPreflight}
+                                            isRefreshing={isRunningPreflight}
+                                        />
+                                    ) : null}
+
                                     {/* Scheduling Options */}
                                     <div className="space-y-3 pt-2 border-t border-border/60">
                                         <div className="flex items-center gap-2">
@@ -961,58 +1024,76 @@ export default function NewCampaignPage() {
                         )}
 
                         {/* Navigation / Action Footer */}
-                        <div className="flex items-center justify-between pt-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => (currentStep === 0 ? router.push("/marketing/campaigns") : setCurrentStep((s) => s - 1))}
-                                className="text-xs h-9"
-                            >
-                                <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                                {currentStep === 0 ? "Cancel" : "Back"}
-                            </Button>
-
-                            <div className="flex items-center gap-2">
+                        <div className="space-y-1.5 pt-2">
+                            <div className="flex items-center justify-between">
                                 <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    disabled={isSubmitting}
-                                    onClick={() => handleSaveOrLaunch("draft")}
+                                    onClick={() => (currentStep === 0 ? router.push("/marketing/campaigns") : setCurrentStep((s) => s - 1))}
                                     className="text-xs h-9"
                                 >
-                                    Save as Draft
+                                    <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                                    {currentStep === 0 ? "Cancel" : "Back"}
                                 </Button>
 
-                                {currentStep < 3 ? (
+                                <div className="flex items-center gap-2">
                                     <Button
-                                        size="sm"
-                                        onClick={() => setCurrentStep((s) => s + 1)}
-                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 font-semibold"
-                                    >
-                                        Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                    </Button>
-                                ) : isScheduling ? (
-                                    <Button
+                                        variant="ghost"
                                         size="sm"
                                         disabled={isSubmitting}
-                                        onClick={() => handleSaveOrLaunch("schedule")}
-                                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-9 px-5 font-semibold"
+                                        onClick={() => handleSaveOrLaunch("draft")}
+                                        className="text-xs h-9"
                                     >
-                                        {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-                                        <Clock className="h-3.5 w-3.5 mr-1.5" /> Schedule Campaign
+                                        Save as Draft
                                     </Button>
-                                ) : (
-                                    <Button
-                                        size="sm"
-                                        disabled={isSubmitting || eligibleCount === 0}
-                                        onClick={() => handleSaveOrLaunch("launch")}
-                                        className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-5 font-semibold shadow-xs"
-                                    >
-                                        {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-                                        <Send className="h-3.5 w-3.5 mr-1.5" /> Launch Broadcast Now
-                                    </Button>
-                                )}
+
+                                    {currentStep < 3 ? (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => setCurrentStep((s) => s + 1)}
+                                            className="bg-[#2F8F83] hover:bg-[#267A70] text-white text-xs h-9 px-4 font-semibold"
+                                        >
+                                            Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                        </Button>
+                                    ) : isScheduling ? (
+                                        <Button
+                                            size="sm"
+                                            disabled={isSubmitting}
+                                            onClick={() => handleSaveOrLaunch("schedule")}
+                                            className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-9 px-5 font-semibold"
+                                        >
+                                            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                                            <Clock className="h-3.5 w-3.5 mr-1.5" /> Schedule Campaign
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            disabled={
+                                                isSubmitting ||
+                                                (preflightResult !== null && !preflightResult.is_launchable) ||
+                                                eligibleCount === 0
+                                            }
+                                            onClick={() => handleSaveOrLaunch("launch")}
+                                            className={`text-white text-xs h-9 px-5 font-semibold shadow-xs ${
+                                                preflightResult && !preflightResult.is_launchable
+                                                    ? "bg-slate-400 dark:bg-zinc-700 cursor-not-allowed opacity-70"
+                                                    : "bg-[#2F8F83] hover:bg-[#267A70]"
+                                            }`}
+                                        >
+                                            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                                            <Send className="h-3.5 w-3.5 mr-1.5" /> Launch Broadcast Now
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
+
+                            {currentStep === 3 && preflightResult && !preflightResult.is_launchable && (
+                                <div className="flex justify-end">
+                                    <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                                        ⚠️ Broadcast launch locked: 1 or more critical preflight checks failed above.
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
