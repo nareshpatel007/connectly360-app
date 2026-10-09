@@ -14,15 +14,17 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
     if (typeof window !== "undefined") {
         const token = localStorage.getItem("auth_token");
-        if (token && token !== "undefined" && token !== "null" && token.split(".").length === 3) {
+        if (!headers["Authorization"] && token && token !== "undefined" && token !== "null" && token.split(".").length === 3) {
             headers["Authorization"] = `Bearer ${token}`;
         }
         try {
-            const rawUser = localStorage.getItem("auth_user");
-            if (rawUser) {
-                const parsedUser = JSON.parse(rawUser);
-                if (parsedUser?.tenant_id) {
-                    headers["X-Tenant-Id"] = String(parsedUser.tenant_id);
+            if (!headers["X-Tenant-Id"]) {
+                const rawUser = localStorage.getItem("auth_user");
+                if (rawUser) {
+                    const parsedUser = JSON.parse(rawUser);
+                    if (parsedUser?.tenant_id) {
+                        headers["X-Tenant-Id"] = String(parsedUser.tenant_id);
+                    }
                 }
             }
         } catch {}
@@ -32,14 +34,6 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
         ...options,
         headers,
     });
-
-    if (res.status === 401 && typeof window !== "undefined") {
-        const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register");
-        if (!isAuthEndpoint) {
-            localStorage.removeItem("auth_token");
-            localStorage.removeItem("auth_user");
-        }
-    }
 
     return res;
 }
@@ -2552,19 +2546,29 @@ export function useUnreadNotificationCount(workspaceId?: number | null) {
     return useQuery({
         queryKey: ["notifications", "unread-count", workspaceId],
         queryFn: async () => {
-            const headers: Record<string, string> = {};
+            const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+            if (!token) return 0;
+            const headers: Record<string, string> = {
+                Authorization: `Bearer ${token}`,
+            };
             if (workspaceId) {
                 headers["X-Tenant-Id"] = String(workspaceId);
             }
-            const res = await apiFetch(`${API_BASE}/notifications/unread-count`, { headers });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                throw new Error(data.message || "Failed to fetch unread count");
+            try {
+                const res = await apiFetch(`${API_BASE}/notifications/unread-count`, { headers });
+                if (!res.ok) {
+                    return 0;
+                }
+                const data = await res.json().catch(() => ({}));
+                return (data.count ?? 0) as number;
+            } catch {
+                return 0;
             }
-            return (data.count ?? 0) as number;
         },
-        staleTime: 15 * 1000,
+        enabled: typeof window !== "undefined" ? Boolean(localStorage.getItem("auth_token")) : false,
+        staleTime: 30 * 1000,
         refetchInterval: 30 * 1000, // automatic background heartbeat poll
+        retry: false,
     });
 }
 

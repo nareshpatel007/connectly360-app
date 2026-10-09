@@ -28,9 +28,6 @@ export function usePermissions() {
                     },
                 });
                 if (res.status === 401) {
-                    if (typeof window !== "undefined") {
-                        localStorage.removeItem("auth_token");
-                    }
                     return null;
                 }
                 const json = await res.json();

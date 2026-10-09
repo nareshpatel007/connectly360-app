@@ -58,6 +58,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     "Authorization": `Bearer ${authToken}`
                 }
             });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                // Keep current session on transient server errors
+                return;
+            }
+
             const data = await res.json();
             if (data.status && data.data) {
                 const fetchedUser = data.data;
@@ -66,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                setUser({
+                const userData = {
                     id: fetchedUser.id,
                     tenant_id: fetchedUser.tenant_id,
                     company_id: fetchedUser.company_id,
@@ -78,12 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     credits: fetchedUser.credits,
                     onboarding_completed: fetchedUser.onboarding_completed,
                     status: fetchedUser.status,
-                });
-            } else {
-                logout();
+                };
+                setUser(userData);
+                if (typeof window !== "undefined") {
+                    localStorage.setItem("auth_user", JSON.stringify(userData));
+                }
             }
         } catch {
-            logout();
+            // Keep session on network hiccups / temporary disconnect
         } finally {
             setIsLoading(false);
         }
@@ -98,6 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     "Authorization": `Bearer ${authToken}`
                 }
             });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                return;
+            }
+
             const data = await res.json();
             if (data.status && data.data) {
                 const fetchedUser = data.data;
@@ -106,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                setUser({
+                const userData = {
                     id: fetchedUser.id,
                     tenant_id: fetchedUser.tenant_id,
                     company_id: fetchedUser.company_id,
@@ -118,19 +141,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     credits: fetchedUser.credits,
                     onboarding_completed: fetchedUser.onboarding_completed,
                     status: fetchedUser.status,
-                });
-            } else {
-                logout();
+                };
+                setUser(userData);
+                if (typeof window !== "undefined") {
+                    localStorage.setItem("auth_user", JSON.stringify(userData));
+                }
             }
         } catch {
-            logout();
+            // Silent ignore transient errors
         }
     }, [logout]);
 
     // Initial load / browser reload check
     useEffect(() => {
         const storedToken = localStorage.getItem("auth_token");
-        localStorage.removeItem("auth_user");
+        const rawUser = localStorage.getItem("auth_user");
+        if (rawUser) {
+            try {
+                setUser(JSON.parse(rawUser));
+            } catch {}
+        }
 
         // Validate that storedToken is a genuine JWT format (3 dot-separated segments)
         const isValidTokenFormat = Boolean(
@@ -147,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
             if (storedToken) {
                 localStorage.removeItem("auth_token");
+                localStorage.removeItem("auth_user");
             }
             setToken(null);
             setUser(null);

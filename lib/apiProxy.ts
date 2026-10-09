@@ -54,8 +54,11 @@ export async function handleApiProxy(
         const headers: Record<string, string> = {
             "Requested-Domain": SITE_URL,
             "X-Api-Token": API_TOKEN,
-            "Authorization": hasValidAuth && clientAuth ? clientAuth : `Bearer ${API_TOKEN}`
         };
+
+        if (hasValidAuth && clientAuth) {
+            headers["Authorization"] = clientAuth;
+        }
 
         if (tenantHeader) {
             headers["X-Tenant-Id"] = tenantHeader;
