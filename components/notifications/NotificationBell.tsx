@@ -96,6 +96,9 @@ export function NotificationBell() {
                 return <Users size={iconSize} className="text-blue-600" />;
             case "task":
                 return <CheckSquare size={iconSize} className="text-teal-600" />;
+            case "import":
+            case "contact":
+                return <Users size={iconSize} className="text-teal-600" />;
             case "automation":
                 return <Zap size={iconSize} className="text-amber-500" />;
             case "ai":
@@ -106,6 +109,8 @@ export function NotificationBell() {
                 return <Code size={iconSize} className="text-slate-700" />;
             case "security":
                 return <Shield size={iconSize} className="text-rose-500" />;
+            case "system":
+                return <AlertTriangle size={iconSize} className="text-amber-600" />;
             default:
                 return <Bell size={iconSize} className="text-[#35877D]" />;
         }
