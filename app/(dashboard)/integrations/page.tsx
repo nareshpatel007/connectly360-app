@@ -13,9 +13,13 @@ import {
     Zap,
     ExternalLink,
     ShieldCheck,
-    Cpu
+    Cpu,
+    Activity,
+    Radio,
+    CreditCard,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 
 export default function IntegrationsPage() {
     return (
@@ -26,10 +30,19 @@ export default function IntegrationsPage() {
                 title="Channels & Integrations"
                 description="Connect official channels, REST APIs, webhooks, and third-party tools to automate your messaging workflow."
                 breadcrumbs={[{ label: "Channels & Integrations" }]}
+                actions={
+                    <Link
+                        href="/integrations/health"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                    >
+                        <Activity size={14} className="text-emerald-600" />
+                        Health Dashboard
+                    </Link>
+                }
             />
 
             {/* Channels & Integrations Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* WhatsApp Cloud API Card */}
                 <div className="bg-white border border-[#E5E9EE] rounded-xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
@@ -105,6 +118,32 @@ export default function IntegrationsPage() {
                         className="w-full py-2 px-3.5 bg-[#172033] hover:bg-slate-800 text-white font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                     >
                         Configure Webhooks <ArrowRight size={13} />
+                    </Link>
+                </div>
+
+                {/* Integration Health Dashboard Card */}
+                <div className="bg-white border border-[#E5E9EE] rounded-xl p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="h-9 w-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100">
+                                <Activity size={18} />
+                            </div>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                4 Channels Live
+                            </span>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-[#172033]">System Health</h3>
+                            <p className="text-xs text-[#5F6B7A] mt-1 leading-relaxed">
+                                Live telemetry for WhatsApp, Pusher, Razorpay, and Webhook engines with latency tests.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/integrations/health"
+                        className="w-full py-2 px-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                        View Health Dashboard <ArrowRight size={13} />
                     </Link>
                 </div>
             </div>

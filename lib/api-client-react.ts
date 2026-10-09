@@ -4315,4 +4315,104 @@ export function useSetDefaultSavedView() {
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+// Integration & Webhook Health Dashboard Hooks
+// ─────────────────────────────────────────────────────────────
+
+export interface IntegrationHealthItem {
+    key: 'whatsapp' | 'pusher' | 'razorpay' | 'webhook';
+    name: string;
+    description: string;
+    status: 'connected' | 'degraded' | 'disconnected' | 'unconfigured' | 'idle';
+    connected: boolean;
+    last_successful_request: string | null;
+    last_webhook: {
+        timestamp: string | null;
+        event_type: string | null;
+        direction?: 'inbound' | 'outbound';
+        signature_verified?: boolean;
+    };
+    last_failure: {
+        timestamp: string | null;
+        message: string | null;
+    };
+    error_count_24h: number;
+    token_status: {
+        status: 'valid' | 'expiring_soon' | 'expired' | 'missing' | 'configured';
+        type?: string;
+        masked?: string | null;
+        webhook_secret_configured?: boolean;
+    };
+    metadata?: Record<string, any>;
+}
+
+export interface IntegrationHealthOverview {
+    overall_status: 'healthy' | 'degraded' | 'warning' | 'critical';
+    healthy_count: number;
+    degraded_count: number;
+    disconnected_count: number;
+    total_integrations: number;
+    total_errors_24h: number;
+    checked_at: string;
+    integrations: {
+        whatsapp: IntegrationHealthItem;
+        pusher: IntegrationHealthItem;
+        razorpay: IntegrationHealthItem;
+        webhook: IntegrationHealthItem;
+    };
+}
+
+export function useGetIntegrationHealth() {
+    return useQuery<{ status: boolean; data: IntegrationHealthOverview }>({
+        queryKey: ["integrationHealth"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/integrations/health`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to fetch integration health");
+            }
+            return res.json();
+        },
+        refetchInterval: 15000, // auto-refresh health every 15s
+    });
+}
+
+export function useTestIntegrationHealth() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ channel }: { channel: string }) => {
+            const res = await apiFetch(`${API_BASE}/integrations/health/${channel}/test`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || `Failed to test ${channel} integration`);
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["integrationHealth"] });
+        },
+    });
+}
+
+export function useTestAllIntegrations() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const res = await apiFetch(`${API_BASE}/integrations/health/test-all`, {
+                method: "POST",
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to test integrations");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["integrationHealth"] });
+        },
+    });
+}
+
 
