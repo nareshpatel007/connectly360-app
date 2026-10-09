@@ -577,6 +577,12 @@ export default function APIKeysPage() {
                                             {/* Metadata row */}
                                             <div className="flex items-center gap-3 text-[11px] text-[#8A95A3] flex-wrap">
                                                 <span>Created: {k.created_at_human}</span>
+                                                {k.created_by && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>By: <span className="text-[#172033] font-medium">{k.created_by.name}</span></span>
+                                                    </>
+                                                )}
                                                 <span>•</span>
                                                 <span className={k.last_used_human !== "Never" ? "text-[#172033] font-medium" : ""}>
                                                     Last used: {k.last_used_human}
@@ -995,6 +1001,13 @@ export default function APIKeysPage() {
                                     <span className="text-[#8A95A3] font-medium">Created</span>
                                     <span className="text-[#172033]">{selectedKey.created_at_human}</span>
                                 </div>
+
+                                {selectedKey.created_by && (
+                                    <div className="flex justify-between py-1.5">
+                                        <span className="text-[#8A95A3] font-medium">Created By</span>
+                                        <span className="text-[#172033] font-semibold">{selectedKey.created_by.name}</span>
+                                    </div>
+                                )}
 
                                 <div className="flex justify-between py-1.5">
                                     <span className="text-[#8A95A3] font-medium">Last Used</span>
