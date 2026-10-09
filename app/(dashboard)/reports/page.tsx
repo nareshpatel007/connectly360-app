@@ -27,7 +27,7 @@ export default function ReportsOverviewPage() {
             />
 
             {/* Reports Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Usage Reports */}
                 <Card className="bg-white border border-[#E5E9EE] rounded-xl p-6 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
@@ -88,6 +88,27 @@ export default function ReportsOverviewPage() {
                         className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
                     >
                         View Activity Logs <ArrowRight size={14} />
+                    </Link>
+                </Card>
+
+                {/* Data Exports & Privacy */}
+                <Card className="bg-white border border-[#E5E9EE] rounded-xl p-6 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                        <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                            <Download size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-[#172033]">Data Exports & Privacy</h3>
+                            <p className="text-xs text-[#5F6B7A] mt-1 leading-relaxed">
+                                GDPR/CCPA compliant exports for contacts, campaigns, transcripts, and transaction ledgers.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/reports/data-exports"
+                        className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                        Manage Exports <ArrowRight size={14} />
                     </Link>
                 </Card>
             </div>
