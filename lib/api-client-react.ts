@@ -4415,4 +4415,95 @@ export function useTestAllIntegrations() {
     });
 }
 
+// -------------------------------------------------------------
+// Audit Logs (TASK 18)
+// -------------------------------------------------------------
+
+export interface AuditLogRecord {
+    id: number;
+    tenant_id: number;
+    user_id: number | null;
+    user_name: string | null;
+    user_email: string | null;
+    category: string;
+    action: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    entity_name: string | null;
+    description: string;
+    old_values: Record<string, any> | null;
+    new_values: Record<string, any> | null;
+    metadata: Record<string, any> | null;
+    ip_address: string | null;
+    user_agent: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AuditLogsQueryParams {
+    category?: string;
+    action?: string;
+    search?: string;
+    user_id?: string | number;
+    from_date?: string;
+    to_date?: string;
+    page?: number;
+    per_page?: number;
+}
+
+export function useGetAuditLogs(params: AuditLogsQueryParams = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.category && params.category !== "all") queryParams.append("category", params.category);
+    if (params.action && params.action !== "all") queryParams.append("action", params.action);
+    if (params.search) queryParams.append("search", params.search);
+    if (params.user_id) queryParams.append("user_id", String(params.user_id));
+    if (params.from_date) queryParams.append("from_date", params.from_date);
+    if (params.to_date) queryParams.append("to_date", params.to_date);
+    if (params.page) queryParams.append("page", String(params.page));
+    if (params.per_page) queryParams.append("per_page", String(params.per_page));
+
+    return useQuery({
+        queryKey: ["auditLogs", params],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/audit-logs?${queryParams.toString()}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to load audit logs");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useGetAuditLogCategories() {
+    return useQuery({
+        queryKey: ["auditLogCategories"],
+        queryFn: async () => {
+            const res = await apiFetch(`${API_BASE}/audit-logs/categories`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to load audit categories");
+            }
+            return res.json();
+        },
+    });
+}
+
+export function useGetAuditLogDetail(id: number | null) {
+    return useQuery({
+        queryKey: ["auditLogDetail", id],
+        queryFn: async () => {
+            if (!id) return null;
+            const res = await apiFetch(`${API_BASE}/audit-logs/${id}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to load audit log details");
+            }
+            return res.json();
+        },
+        enabled: !!id,
+    });
+}
+
+
 
