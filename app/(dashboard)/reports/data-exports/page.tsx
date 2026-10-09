@@ -53,10 +53,11 @@ interface DataExportItem {
 }
 
 export default function DataExportsPage() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [exports, setExports] = useState<DataExportItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
     // Modal state
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -66,10 +67,24 @@ export default function DataExportsPage() {
     const [dateTo, setDateTo] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const getAuthToken = () => {
+        return token || (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
+    };
+
     const fetchExports = async (showRefresh = false) => {
+        const authToken = getAuthToken();
+        if (!authToken) {
+            setIsLoading(false);
+            return;
+        }
+
         if (showRefresh) setIsRefreshing(true);
         try {
-            const res = await fetch("/api/exports");
+            const res = await fetch("/api/exports", {
+                headers: {
+                    Authorization: `Bearer ${authToken}`
+                }
+            });
             const json = await res.json();
             if (json.success && Array.isArray(json.data)) {
                 setExports(json.data);
@@ -83,8 +98,11 @@ export default function DataExportsPage() {
     };
 
     useEffect(() => {
-        fetchExports();
-    }, []);
+        const authToken = getAuthToken();
+        if (authToken) {
+            fetchExports();
+        }
+    }, [token]);
 
     // Polling if any export is pending/processing
     useEffect(() => {
@@ -96,20 +114,30 @@ export default function DataExportsPage() {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [exports]);
+    }, [exports, token]);
 
     const handleCreateExport = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
         try {
+            const authToken = getAuthToken();
+            if (!authToken) {
+                toast.error("You must be logged in to request an export");
+                setIsSubmitting(false);
+                return;
+            }
+
             const filters: any = {};
             if (dateFrom) filters.date_from = dateFrom;
             if (dateTo) filters.date_to = dateTo;
 
             const res = await fetch("/api/exports", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`
+                },
                 body: JSON.stringify({
                     type: exportType,
                     format: exportFormat,
@@ -129,6 +157,37 @@ export default function DataExportsPage() {
             toast.error("Network error while creating export request");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDownload = async (item: DataExportItem) => {
+        try {
+            setDownloadingId(item.id);
+            const authToken = getAuthToken();
+            const downloadUrl = `/api/exports/${item.id}/download${authToken ? `?token=${encodeURIComponent(authToken)}` : ""}`;
+            const res = await fetch(downloadUrl, {
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+            });
+
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => null);
+                throw new Error(errJson?.message || "Failed to download export file");
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = item.file_name || `export_${item.type}_${item.id}.${item.format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Download started");
+        } catch (err: any) {
+            toast.error(err.message || "Failed to download export file");
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -289,15 +348,19 @@ export default function DataExportsPage() {
 
                                     {/* Action */}
                                     <div className="shrink-0">
-                                        {item.status === "completed" && item.download_url ? (
-                                            <a
-                                                href={item.download_url}
-                                                download
-                                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-[#2F8F83] hover:bg-[#267A70] text-white transition-colors shadow-2xs"
+                                        {item.status === "completed" ? (
+                                            <button
+                                                onClick={() => handleDownload(item)}
+                                                disabled={downloadingId === item.id}
+                                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-[#2F8F83] hover:bg-[#267A70] text-white transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
                                             >
-                                                <Download size={13} />
+                                                {downloadingId === item.id ? (
+                                                    <RefreshCw size={13} className="animate-spin" />
+                                                ) : (
+                                                    <Download size={13} />
+                                                )}
                                                 Download {item.format.toUpperCase()}
-                                            </a>
+                                            </button>
                                         ) : item.status === "processing" || item.status === "pending" ? (
                                             <div className="inline-flex items-center gap-1.5 text-xs text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
                                                 <RefreshCw size={12} className="animate-spin text-amber-600" />
