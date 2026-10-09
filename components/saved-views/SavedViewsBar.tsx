@@ -173,19 +173,19 @@ export function SavedViewsBar({
     }
 
     return (
-        <div className={`flex items-center justify-between gap-2 overflow-x-auto py-1 text-xs scrollbar-none ${className}`}>
-            <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+        <div className={`flex items-center gap-1.5 overflow-x-auto py-0.5 text-xs scrollbar-none no-scrollbar w-full ${className}`}>
+            <div className="flex items-center gap-1.5 shrink-0">
                 {/* Reset / All Pill */}
                 <button
                     type="button"
                     onClick={() => onSelectView(null)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold transition-all cursor-pointer border ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full font-medium text-xs transition-all cursor-pointer border shrink-0 whitespace-nowrap ${
                         activeViewId === null
-                            ? "bg-slate-900 text-white border-slate-900 shadow-xs dark:bg-zinc-100 dark:text-zinc-900"
+                            ? "bg-[#2F8F83] text-white border-[#2F8F83] shadow-xs dark:bg-teal-600 dark:border-teal-600"
                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
                     }`}
                 >
-                    <DefaultEntityIcon size={13} />
+                    <DefaultEntityIcon size={12} />
                     <span>All</span>
                 </button>
 
@@ -195,16 +195,16 @@ export function SavedViewsBar({
                     return (
                         <div
                             key={view.id}
-                            className={`group inline-flex items-center rounded-full border transition-all ${
+                            className={`group inline-flex items-center rounded-full border transition-all shrink-0 h-7 ${
                                 isActive
-                                    ? "bg-[#378179]/10 border-[#378179] text-[#2F6D66] font-bold shadow-2xs dark:bg-[#378179]/20 dark:text-teal-300 dark:border-teal-500"
-                                    : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800/80"
+                                    ? "bg-[#2F8F83]/10 border-[#2F8F83] text-[#246F66] font-semibold shadow-2xs dark:bg-teal-500/20 dark:text-teal-300 dark:border-teal-500"
+                                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800/80"
                             }`}
                         >
                             <button
                                 type="button"
                                 onClick={() => onSelectView(view)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-left font-medium"
+                                className="flex items-center gap-1.5 pl-2.5 pr-1 h-full cursor-pointer text-left font-medium text-xs whitespace-nowrap"
                             >
                                 {view.color && (
                                     <span
@@ -212,17 +212,17 @@ export function SavedViewsBar({
                                         style={{ backgroundColor: view.color }}
                                     />
                                 )}
-                                <span>{view.name}</span>
+                                <span className="truncate max-w-[130px]">{view.name}</span>
 
                                 {view.is_default && (
-                                    <Star size={11} className="text-amber-500 fill-amber-500 shrink-0" />
+                                    <Star size={10} className="text-amber-500 fill-amber-500 shrink-0" />
                                 )}
 
                                 {typeof view.calculated_count === "number" && (
                                     <span
-                                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
+                                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold shrink-0 ${
                                             isActive
-                                                ? "bg-[#378179] text-white"
+                                                ? "bg-[#2F8F83] text-white"
                                                 : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400"
                                         }`}
                                     >
@@ -236,7 +236,7 @@ export function SavedViewsBar({
                                 <DropdownMenuTrigger asChild>
                                     <button
                                         type="button"
-                                        className="pr-2 pl-0.5 py-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 cursor-pointer focus:outline-hidden"
+                                        className="pr-2 pl-0.5 h-full flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 cursor-pointer focus:outline-hidden"
                                         title="View options"
                                     >
                                         <MoreVertical size={12} />
@@ -256,7 +256,7 @@ export function SavedViewsBar({
                                             onClick={() => handleUpdateWithCurrentFilters(view)}
                                             className="gap-2 cursor-pointer"
                                         >
-                                            <Save size={13} className="text-teal-600" />
+                                            <Save size={13} className="text-[#2F8F83]" />
                                             <span>Update with current filters</span>
                                         </DropdownMenuItem>
                                     )}
@@ -302,10 +302,10 @@ export function SavedViewsBar({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsCreateOpen(true)}
-                className="h-8 px-2.5 rounded-full text-xs font-semibold gap-1.5 shrink-0 border-dashed border-[#378179]/50 text-[#378179] hover:bg-[#378179]/10 cursor-pointer dark:border-teal-500/50 dark:text-teal-300"
+                className="h-7 px-2 rounded-full text-xs font-medium gap-1 shrink-0 border-dashed border-[#2F8F83]/50 text-[#2F8F83] hover:bg-[#2F8F83]/10 cursor-pointer whitespace-nowrap dark:border-teal-500/50 dark:text-teal-300"
             >
-                <Plus size={13} />
-                <span>Save View</span>
+                <Plus size={12} />
+                <span>Save</span>
             </Button>
 
             {/* Create Saved View Dialog */}

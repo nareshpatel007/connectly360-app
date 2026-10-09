@@ -232,3 +232,44 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.6);
 }
+
+/* Modern sleek auto-hiding scrollbar for sidebar & navigation */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-in-out;
+}
+
+.sidebar-scroll:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background 0.2s ease-in-out;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+

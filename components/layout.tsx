@@ -167,7 +167,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Navigation Menu */}
-                <nav className="flex-1 overflow-y-auto p-3 space-y-4 font-sans scrollbar-thin">
+                <nav className="flex-1 overflow-y-auto p-3 space-y-4 font-sans sidebar-scroll">
                     {CLIENT_NAV_SECTIONS.map((section, sIdx) => {
                         const accessibleItems = section.items.filter((item) => {
                             if (!isAllowed(item)) return false;

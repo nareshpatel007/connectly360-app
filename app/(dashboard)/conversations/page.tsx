@@ -929,12 +929,12 @@ function ConversationsContent() {
                 }`}
             >
                 {/* Header & New Conversation Action */}
-                <div className="p-3 border-b border-slate-150 shrink-0 bg-white space-y-2.5">
+                <div className="p-3 border-b border-slate-200 shrink-0 bg-white space-y-2.5">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                            <h2 className="text-sm font-semibold text-[#172033] tracking-tight">Inbox</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-base font-bold text-slate-900 tracking-tight">Inbox</h2>
                             {counts.unread > 0 && (
-                                <span className="bg-[#2F8F83] text-white text-[10px] font-medium px-1.5 py-0.2 rounded-full shadow-2xs">
+                                <span className="bg-[#2F8F83] text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-2xs">
                                     {counts.unread}
                                 </span>
                             )}
@@ -948,22 +948,22 @@ function ConversationsContent() {
                                 className="p-1.5 text-slate-400 hover:text-[#2F8F83] hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
                                 title="SLA & Response Time Policy Settings"
                             >
-                                <Clock size={15} />
+                                <Clock size={16} />
                             </button>
                             <Button
                                 type="button"
                                 size="sm"
                                 onClick={() => setIsNewConvOpen(true)}
-                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-7.5 px-2.5 rounded-lg flex items-center gap-1 shadow-2xs cursor-pointer"
+                                className="bg-[#2F8F83] hover:bg-[#267A70] text-white font-medium text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
                             >
-                                <Plus size={13} strokeWidth={2} />
+                                <Plus size={14} strokeWidth={2.5} />
                                 <span>New Message</span>
                             </Button>
                         </div>
                     </div>
 
                     {/* Reusable Saved Views Pills (TASK 14) */}
-                    <div className="pb-1 border-b border-slate-100">
+                    <div>
                         <SavedViewsBar
                             entityType="inbox"
                             activeViewId={activeViewId}
@@ -977,8 +977,8 @@ function ConversationsContent() {
                         />
                     </div>
 
-                    {/* Filter Pills with Dynamic Counts */}
-                    <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    {/* Status Filter Tabs with Dynamic Counts */}
+                    <div className="flex items-center gap-1 w-full overflow-x-auto no-scrollbar scrollbar-none py-0.5">
                         {[
                             { key: "all", label: "All", count: counts.all },
                             { key: "open", label: "Open", count: counts.open },
@@ -986,36 +986,40 @@ function ConversationsContent() {
                             { key: "resolved", label: "Resolved", count: counts.resolved },
                             { key: "unread", label: "Unread", count: counts.unread },
                             { key: "overdue", label: "Overdue", count: counts.overdue || 0 },
-                        ].map((tabItem) => (
-                            <button
-                                key={tabItem.key}
-                                onClick={() => handleTabChange(tabItem.key)}
-                                className={`text-[10px] font-medium py-1 px-1.5 sm:px-2 rounded-full border transition-all cursor-pointer uppercase tracking-tight flex items-center justify-center gap-1 shrink-0 ${
-                                    selectedTab === tabItem.key
-                                        ? tabItem.key === "overdue"
-                                            ? "bg-rose-600 text-white border-transparent shadow-xs"
-                                            : "bg-[#2F8F83] text-white border-transparent shadow-xs"
-                                        : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
-                                            ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
-                                            : "bg-white border-[#E5E9EE] text-[#5F6B7A] hover:bg-slate-50"
-                                }`}
-                            >
-                                <span>{tabItem.label}</span>
-                                {tabItem.count !== undefined && (
-                                    <span
-                                        className={`text-[9px] px-1 py-0.2 rounded-full font-semibold ${
-                                            selectedTab === tabItem.key
-                                                ? "bg-white/25 text-white"
-                                                : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
-                                                    ? "bg-rose-100 text-rose-800"
-                                                    : "bg-slate-100 text-slate-500"
-                                        }`}
-                                    >
-                                        {tabItem.count}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+                        ].map((tabItem) => {
+                            const isSelected = selectedTab === tabItem.key;
+                            return (
+                                <button
+                                    key={tabItem.key}
+                                    type="button"
+                                    onClick={() => handleTabChange(tabItem.key)}
+                                    className={`text-xs h-7 px-2.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 select-none ${
+                                        isSelected
+                                            ? tabItem.key === "overdue"
+                                                ? "bg-rose-600 text-white font-semibold shadow-xs"
+                                                : "bg-[#2F8F83] text-white font-semibold shadow-xs"
+                                            : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
+                                                ? "bg-rose-50 text-rose-700 hover:bg-rose-100 font-medium"
+                                                : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 font-medium"
+                                    }`}
+                                >
+                                    <span>{tabItem.label}</span>
+                                    {tabItem.count !== undefined && (
+                                        <span
+                                            className={`text-[10px] min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold leading-none ${
+                                                isSelected
+                                                    ? "bg-white/20 text-white"
+                                                    : tabItem.key === "overdue" && (tabItem.count ?? 0) > 0
+                                                        ? "bg-rose-200/80 text-rose-800"
+                                                        : "bg-white text-slate-600 shadow-2xs"
+                                            }`}
+                                        >
+                                            {tabItem.count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Tag Filter Row */}
