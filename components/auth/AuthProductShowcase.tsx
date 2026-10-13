@@ -5,7 +5,7 @@ import { MessageSquare, Bot, Sparkles, TrendingUp, CheckCheck, Users, Zap, Check
 
 export function AuthProductShowcase() {
     return (
-        <div className="relative w-full max-w-[560px] xl:max-w-[580px] select-none">
+        <div className="relative w-full select-none">
             {/* Ambient subtle backdrops */}
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-[#35877D]/12 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />

@@ -146,7 +146,7 @@ function LoginContent() {
     };
 
     return (
-        <Card className="w-full bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 rounded-2xl sm:rounded-3xl p-5 sm:p-7 space-y-4">
+        <Card className="w-full bg-white border border-slate-200/90 shadow-xl shadow-slate-200/40 rounded-2xl sm:rounded-3xl p-6 sm:p-8 space-y-4.5">
             {/* Form Header */}
             <div className="space-y-1 text-left">
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
