@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MessageSquare, Megaphone, Bot, Sparkles } from "lucide-react";
 import { AuthProductShowcase } from "./AuthProductShowcase";
 
+const MAIN_SITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com";
+
 interface AuthSplitLayoutProps {
     children: React.ReactNode;
 }
@@ -33,7 +35,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
             {/* ============================================================== */}
             {/* LEFT COLUMN: Platform Introduction & Visual Showcase (50%)     */}
             {/* ============================================================== */}
-            <aside className="hidden lg:flex lg:w-1/2 h-full relative bg-gradient-to-br from-teal-50/70 via-slate-50/90 to-emerald-50/50 border-r border-slate-200/80 px-8 lg:px-12 xl:px-16 2xl:px-20 py-6 lg:py-8 flex-col justify-between overflow-y-auto shrink-0">
+            <aside className="hidden lg:flex lg:w-1/2 h-full relative bg-gradient-to-br from-teal-50/70 via-slate-50/90 to-emerald-50/50 border-r border-slate-200/80 px-8 lg:px-10 xl:px-14 2xl:px-16 py-5 lg:py-6 xl:py-7 flex-col justify-between overflow-hidden shrink-0 select-none">
                 {/* Decorative Subtle Ambient Geometry */}
                 <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-[#35877D]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute top-1/3 -right-20 w-80 h-80 bg-gradient-to-tl from-emerald-200/25 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -49,17 +51,17 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                 />
 
                 {/* Top: Connectly360 Brand Header */}
-                <div className="relative z-10 flex items-center justify-between w-full max-w-[620px] 2xl:max-w-[680px] mx-auto shrink-0">
-                    <Link href="/" className="inline-flex flex-col items-start group transition-transform">
+                <div className="relative z-10 flex items-center justify-between w-full max-w-[620px] 2xl:max-w-[660px] mx-auto shrink-0">
+                    <a href={MAIN_SITE_URL} className="inline-flex flex-col items-start group transition-transform">
                         <img
                             src="/images/logo.png"
                             alt="Connectly360"
-                            className="h-8 xl:h-9 w-auto object-contain transition-opacity group-hover:opacity-95"
+                            className="h-8 xl:h-8.5 w-auto object-contain transition-opacity group-hover:opacity-95"
                         />
                         <span className="text-[9px] font-bold text-[#35877D] tracking-widest uppercase mt-0.5">
                             CONNECT • AUTOMATE • GROW
                         </span>
-                    </Link>
+                    </a>
 
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/85 border border-slate-200/80 text-[11px] font-semibold text-slate-700 shadow-2xs backdrop-blur-xs">
                         <Sparkles size={12} className="text-[#35877D]" />
@@ -68,34 +70,34 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                 </div>
 
                 {/* Center Content: Headline, Highlights, & Visual Product Mockup */}
-                <div className="relative z-10 my-auto py-4 xl:py-6 space-y-4 xl:space-y-5 2xl:space-y-6 w-full max-w-[620px] 2xl:max-w-[680px] mx-auto">
+                <div className="relative z-10 my-auto py-2 xl:py-3 space-y-3 xl:space-y-4 w-full max-w-[620px] 2xl:max-w-[660px] mx-auto">
                     {/* Value Proposition Headline & Subtitle */}
-                    <div className="space-y-2">
-                        <h1 className="text-2xl lg:text-3xl xl:text-[32px] 2xl:text-[34px] font-extrabold tracking-tight text-slate-900 leading-[1.2]">
+                    <div className="space-y-1 xl:space-y-1.5">
+                        <h1 className="text-2xl xl:text-[28px] 2xl:text-[32px] font-extrabold tracking-tight text-slate-900 leading-[1.2]">
                             Every customer conversation. <br />
                             <span className="bg-gradient-to-r from-[#205C55] via-[#35877D] to-[#2B7068] bg-clip-text text-transparent">
                                 One powerful platform.
                             </span>
                         </h1>
-                        <p className="text-xs sm:text-sm text-slate-600 font-normal leading-relaxed max-w-xl">
+                        <p className="text-xs xl:text-[13px] text-slate-600 font-normal leading-relaxed max-w-xl">
                             Manage WhatsApp conversations, organize your contacts, automate engagement, and grow your business from one place.
                         </p>
                     </div>
 
                     {/* Feature Highlights Grid */}
-                    <div className="grid grid-cols-3 gap-2.5 xl:gap-3">
+                    <div className="grid grid-cols-3 gap-2 xl:gap-2.5">
                         {features.map((feature, idx) => {
                             const IconComponent = feature.icon;
                             return (
                                 <div
                                     key={idx}
-                                    className="bg-white/85 backdrop-blur-xs border border-slate-200/80 rounded-xl p-3 shadow-2xs transition-all hover:bg-white hover:border-[#35877D]/30"
+                                    className="bg-white/85 backdrop-blur-xs border border-slate-200/80 rounded-xl p-2.5 shadow-2xs transition-all hover:bg-white hover:border-[#35877D]/30"
                                 >
-                                    <div className="w-7 h-7 rounded-lg bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mb-2">
-                                        <IconComponent size={14} />
+                                    <div className="w-6.5 h-6.5 rounded-lg bg-[#35877D]/10 text-[#35877D] flex items-center justify-center mb-1.5">
+                                        <IconComponent size={13} />
                                     </div>
                                     <h2 className="text-xs font-bold text-slate-900 mb-0.5 leading-tight">{feature.title}</h2>
-                                    <p className="text-[10.5px] text-slate-500 leading-snug">{feature.description}</p>
+                                    <p className="text-[10px] text-slate-500 leading-snug">{feature.description}</p>
                                 </div>
                             );
                         })}
@@ -114,7 +116,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
             <main className="w-full lg:w-1/2 h-full flex flex-col justify-between items-center p-6 sm:p-8 lg:p-10 xl:p-14 2xl:p-16 overflow-y-auto bg-slate-50/60">
                 {/* Mobile / Tablet Header (shown when left column is hidden) */}
                 <div className="lg:hidden flex flex-col items-center justify-center pt-2 pb-4 text-center">
-                    <Link href="/" className="inline-flex flex-col items-center">
+                    <a href={MAIN_SITE_URL} className="inline-flex flex-col items-center group transition-transform">
                         <img
                             src="/images/logo.png"
                             alt="Connectly360"
@@ -123,7 +125,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                         <span className="text-[9px] font-bold text-[#35877D] tracking-widest uppercase mt-0.5">
                             CONNECT • AUTOMATE • GROW
                         </span>
-                    </Link>
+                    </a>
                     <p className="text-xs text-slate-500 font-medium mt-1">
                         Every customer conversation. One powerful platform.
                     </p>
@@ -138,7 +140,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                 <footer className="w-full max-w-[450px] sm:max-w-[470px] xl:max-w-[490px] 2xl:max-w-[510px] mx-auto text-center py-3 space-y-1.5 text-[11px] text-slate-500 font-medium shrink-0">
                     <div className="flex items-center justify-center gap-3 text-slate-500">
                         <a
-                            href={`${process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com"}/terms`}
+                            href={`${MAIN_SITE_URL}/terms`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-slate-800 hover:underline transition-colors"
@@ -147,7 +149,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                         </a>
                         <span>•</span>
                         <a
-                            href={`${process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com"}/privacy`}
+                            href={`${MAIN_SITE_URL}/privacy`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-slate-800 hover:underline transition-colors"
@@ -156,7 +158,7 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
                         </a>
                         <span>•</span>
                         <a
-                            href={`${process.env.NEXT_PUBLIC_WEBSITE_URL || "https://connectly360.com"}/contact`}
+                            href={`${MAIN_SITE_URL}/contact`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-slate-800 hover:underline transition-colors"
