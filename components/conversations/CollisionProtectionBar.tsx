@@ -79,26 +79,43 @@ export function ViewingAgentsHeader({ presenceData }: ViewingAgentsHeaderProps) 
 
 interface ComposingIndicatorBannerProps {
     presenceData?: ConversationPresenceData | null;
+    typingAgents?: { id: number; name: string; avatar?: string | null }[];
 }
 
-export function ComposingIndicatorBanner({ presenceData }: ComposingIndicatorBannerProps) {
-    if (!presenceData) return null;
+export function ComposingIndicatorBanner({ presenceData, typingAgents }: ComposingIndicatorBannerProps) {
+    // Prefer instant real-time Pusher typing agents if available, fallback to presence composing agents
+    const activeAgents = (typingAgents && typingAgents.length > 0)
+        ? typingAgents
+        : (presenceData?.composing_agents || []);
 
-    const composingAgents = presenceData.composing_agents || [];
-    if (composingAgents.length === 0) return null;
+    if (activeAgents.length === 0) return null;
 
-    const names = composingAgents.map((a) => a.name).join(", ");
+    const names = activeAgents.length === 1
+        ? activeAgents[0].name
+        : activeAgents.length === 2
+        ? `${activeAgents[0].name} and ${activeAgents[1].name}`
+        : `${activeAgents[0].name}, ${activeAgents[1].name}, and ${activeAgents.length - 2} other`;
+
+    const label = activeAgents.length === 1 ? "is typing…" : "are typing…";
 
     return (
-        <div className="px-3 py-1 bg-amber-50 border-t border-amber-200/80 flex items-center justify-between text-xs text-amber-900 animate-in slide-in-from-bottom-1 duration-150 shrink-0">
+        <div
+            role="status"
+            aria-live="polite"
+            className="px-3 py-1.5 bg-amber-50/90 border-t border-amber-200/70 flex items-center justify-between text-xs text-amber-950 animate-in slide-in-from-bottom-1 duration-150 shrink-0"
+        >
             <div className="flex items-center gap-2 min-w-0">
-                <Edit3 size={13} className="text-amber-600 shrink-0 animate-bounce" />
-                <span className="text-[11px] font-medium truncate">
-                    <strong className="font-bold">{names}</strong> is composing a reply...
+                <span className="inline-flex items-center gap-1 text-amber-600 shrink-0" aria-hidden="true">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-bounce motion-reduce:animate-none [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-bounce motion-reduce:animate-none [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-bounce motion-reduce:animate-none" />
+                </span>
+                <span className="text-[11.5px] font-medium truncate text-amber-900">
+                    <strong className="font-semibold text-slate-900">{names}</strong> {label}
                 </span>
             </div>
-            <span className="text-[10px] text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded font-semibold shrink-0">
-                Live Presence
+            <span className="text-[10px] text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded font-medium shrink-0">
+                Agent Typing
             </span>
         </div>
     );

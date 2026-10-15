@@ -19,6 +19,7 @@ import {
     useWorkspaceTags,
     useConversationPresence,
     useUpdatePresence,
+    useSendConversationTyping,
     type QuickReplyItem,
     type Conversation,
 } from "@workspace/api-client-react";
@@ -32,6 +33,7 @@ import {
 } from "@/components/conversations/CollisionProtectionBar";
 import { SavedViewsBar } from "@/components/saved-views";
 import { type SavedViewItem } from "@/lib/api-client-react";
+import { getEcho } from "@/lib/realtime-echo";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -415,6 +417,13 @@ function ConversationsContent() {
         activeThread?.id || null
     );
     const updatePresenceMutation = useUpdatePresence();
+    const sendTypingMutation = useSendConversationTyping();
+
+    // Internal real-time agent typing state
+    const [typingAgents, setTypingAgents] = useState<{ id: number; name: string; avatar?: string | null }[]>([]);
+    const typingTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+    const lastTypingSentRef = useRef<number>(0);
+    const typingInactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Heartbeat viewing presence while viewing conversation
     useEffect(() => {
@@ -432,9 +441,9 @@ function ConversationsContent() {
             updatePresenceMutation.mutate({
                 customerId: custId,
                 conversationId: convId,
-                state: replyText.trim() ? "composing" : "viewing",
+                state: "viewing",
             });
-        }, 12000);
+        }, 15000);
 
         return () => {
             clearInterval(timer);
@@ -446,22 +455,115 @@ function ConversationsContent() {
         };
     }, [activeCustomerId]);
 
-    // Composing presence throttled on input change
+    // Clear typing state on conversation change or disconnect
+    useEffect(() => {
+        typingTimeoutsRef.current.forEach((t) => clearTimeout(t));
+        typingTimeoutsRef.current.clear();
+        setTypingAgents([]);
+
+        if (typingInactivityTimerRef.current) {
+            clearTimeout(typingInactivityTimerRef.current);
+            typingInactivityTimerRef.current = null;
+        }
+        lastTypingSentRef.current = 0;
+    }, [activeCustomerId, connectionStatus]);
+
+    // Real-time Pusher subscription for internal agent typing indicators
+    useEffect(() => {
+        if (!token) return;
+        const tenantId = (user as any)?.tenant_id || (user as any)?.workspace_id;
+        const echo = getEcho(token, tenantId);
+        if (!echo) return;
+
+        const channel = echo.private(`workspace.${tenantId}`);
+
+        const handleTyping = (event: any) => {
+            const isTargetCustomer = activeCustomerId && Number(event.customer_id) === Number(activeCustomerId);
+            const isTargetConv = activeThread?.id && Number(event.conversation_id) === Number(activeThread.id);
+            if (!isTargetCustomer && !isTargetConv) return;
+
+            // Never display current agent typing to themselves
+            if (user?.id && Number(event.user?.id) === Number(user.id)) return;
+
+            const agentId = Number(event.user?.id);
+            if (!agentId) return;
+
+            if (event.is_typing) {
+                setTypingAgents((prev) => {
+                    const exists = prev.some((a) => a.id === agentId);
+                    if (exists) return prev;
+                    return [...prev, { id: agentId, name: event.user.name, avatar: event.user.avatar }];
+                });
+
+                const existing = typingTimeoutsRef.current.get(agentId);
+                if (existing) clearTimeout(existing);
+
+                const t = setTimeout(() => {
+                    setTypingAgents((prev) => prev.filter((a) => a.id !== agentId));
+                    typingTimeoutsRef.current.delete(agentId);
+                }, 4000);
+
+                typingTimeoutsRef.current.set(agentId, t);
+            } else {
+                const existing = typingTimeoutsRef.current.get(agentId);
+                if (existing) clearTimeout(existing);
+                typingTimeoutsRef.current.delete(agentId);
+                setTypingAgents((prev) => prev.filter((a) => a.id !== agentId));
+            }
+        };
+
+        channel.listen(".conversation.typing", handleTyping);
+        channel.listen("conversation.typing", handleTyping);
+
+        return () => {
+            channel.stopListening(".conversation.typing");
+            channel.stopListening("conversation.typing");
+        };
+    }, [token, user, activeCustomerId, activeThread?.id]);
+
+    // Detect agent typing in message composer (throttled broadcasts, 3.5s inactivity stop)
     useEffect(() => {
         if (!activeCustomerId) return;
         const custId = activeCustomerId;
         const convId = activeThread?.id || null;
-        const isComposing = replyText.trim().length > 0;
+        const hasText = replyText.trim().length > 0;
 
-        const handler = setTimeout(() => {
-            updatePresenceMutation.mutate({
-                customerId: custId,
-                conversationId: convId,
-                state: isComposing ? "composing" : "viewing",
-            });
-        }, 400);
+        if (hasText) {
+            const now = Date.now();
+            if (now - lastTypingSentRef.current >= 2000) {
+                lastTypingSentRef.current = now;
+                sendTypingMutation.mutate({
+                    customerId: custId,
+                    conversationId: convId,
+                    isTyping: true,
+                });
+            }
 
-        return () => clearTimeout(handler);
+            if (typingInactivityTimerRef.current) {
+                clearTimeout(typingInactivityTimerRef.current);
+            }
+            typingInactivityTimerRef.current = setTimeout(() => {
+                sendTypingMutation.mutate({
+                    customerId: custId,
+                    conversationId: convId,
+                    isTyping: false,
+                });
+                typingInactivityTimerRef.current = null;
+            }, 3500);
+        } else {
+            if (typingInactivityTimerRef.current || lastTypingSentRef.current > 0) {
+                if (typingInactivityTimerRef.current) {
+                    clearTimeout(typingInactivityTimerRef.current);
+                    typingInactivityTimerRef.current = null;
+                }
+                lastTypingSentRef.current = 0;
+                sendTypingMutation.mutate({
+                    customerId: custId,
+                    conversationId: convId,
+                    isTyping: false,
+                });
+            }
+        }
     }, [replyText, activeCustomerId]);
 
 
@@ -596,6 +698,20 @@ function ConversationsContent() {
 
         const outgoingBody = replyText.trim();
         const tempId = Date.now();
+
+        // Clear agent typing indicator immediately when submitting message
+        if (activeCustomerId) {
+            if (typingInactivityTimerRef.current) {
+                clearTimeout(typingInactivityTimerRef.current);
+                typingInactivityTimerRef.current = null;
+            }
+            lastTypingSentRef.current = 0;
+            sendTypingMutation.mutate({
+                customerId: activeCustomerId,
+                conversationId: activeThread?.id || null,
+                isTyping: false,
+            });
+        }
 
         // 1. Sending Attachment Flow
         if (pendingAttachment) {
@@ -1607,7 +1723,7 @@ function ConversationsContent() {
                                     )}
 
                                     {/* Composing Presence & Collision Hazard Indicators */}
-                                    <ComposingIndicatorBanner presenceData={presenceData} />
+                                    <ComposingIndicatorBanner presenceData={presenceData} typingAgents={typingAgents} />
                                     <CollisionWarningBanner presenceData={presenceData} />
 
                                     <Textarea

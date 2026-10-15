@@ -4190,6 +4190,34 @@ export function useUpdatePresence() {
     });
 }
 
+export function useSendConversationTyping() {
+    return useMutation({
+        mutationFn: async ({
+            customerId,
+            conversationId,
+            isTyping,
+        }: {
+            customerId: number;
+            conversationId?: number | null;
+            isTyping: boolean;
+        }) => {
+            const endpoint = conversationId
+                ? `${API_BASE}/conversations/${conversationId}/typing`
+                : `${API_BASE}/customers/${customerId}/typing`;
+            const res = await apiFetch(endpoint, {
+                method: "POST",
+                body: JSON.stringify({ is_typing: isTyping, conversation_id: conversationId }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to update typing state");
+            }
+            return res.json();
+        },
+        // Ephemeral typing events: intentionally do not invalidate cache
+    });
+}
+
 // -------------------------------------------------------------
 // Saved Views / Filters (TASK 14)
 // -------------------------------------------------------------
